@@ -19,8 +19,8 @@
 }
 
 .tab-active {
-  background-color: #ddd;
-  color: #222224;
+  background-color: rgba(15, 16, 17, 0.75);
+  color: rgb(243, 242, 241);
 }
 
 form {

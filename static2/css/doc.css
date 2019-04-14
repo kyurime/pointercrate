@@ -60,27 +60,25 @@ th {
   height: 1.5em;
   padding: 6px;
   min-width: 20%;
-  background: #f5f5f5;
+  background: rgba(21, 22, 23, 0.5);
 }
 
 code {
-  background: #eee;
-  border: 1px solid #ddd;
+  background: rgba(0, 0, 0, 0.25);
   border-radius: 3px;
   padding: 0px 2px;
 }
 
 h2 > code:not(.verb) {
-  background: white;
   border: none;
 }
 
 tr.odd {
-  background: #fafafa;
+  background: rgba(13, 14, 15, 0.5);
 }
 
 tr.even {
-  background: #f5f5f5;
+  background: rgba(21, 22, 23, 0.5);
 }
 
 td {
@@ -90,8 +88,7 @@ td {
 }
 
 pre {
-  background: #eee;
-  border: 1px solid #ddd;
+  background: rgba(0, 0, 0, 0.25);
   border-radius: 5px;
   padding: 10px;
 }
@@ -99,10 +96,11 @@ pre {
 pre > code {
   border: initial;
   padding: initial;
+  background: transparent;
 }
 
 .panel a:not(.link-anchor) {
-  color: #ff6c00;
+  color: #d8ad5c;
   font-weight: bold;
 }
 
@@ -230,8 +228,10 @@ pre.numberSource {
   border-left: 1px solid #aaaaaa;
   padding-left: 4px;
 }
+/*
 div.sourceCode {
 }
+*/
 @media screen {
   a.sourceLine::before {
     text-decoration: underline;
@@ -243,8 +243,10 @@ code span.al {
 code span.an {
   color: #008000;
 } /* Annotation */
+/*
 code span.at {
 } /* Attribute */
+/*
 code span.bu {
 } /* BuiltIn */
 code span.cf {
@@ -253,6 +255,7 @@ code span.cf {
 code span.ch {
   color: #008080;
 } /* Char */
+/*
 code span.cn {
 } /* Constant */
 code span.co {
@@ -265,23 +268,26 @@ code span.do {
   color: #008000;
 } /* Documentation */
 code span.er {
-  color: #ff0000;
+  color: #ff6868;
   font-weight: bold;
 } /* Error */
+/*
 code span.ex {
 } /* Extension */
+/*
 code span.im {
 } /* Import */
 code span.in {
   color: #008000;
 } /* Information */
 code span.kw {
-  color: #006fff;
+  color: #4e97f6;
 } /* Keyword */
+/*
 code span.op {
 } /* Operator */
 code span.ot {
-  color: #ff4000;
+  color: #ff906b;
 } /* Other */
 code span.pp {
   color: #ff4000;
@@ -293,8 +299,9 @@ code span.ss {
   color: #008080;
 } /* SpecialString */
 code span.st {
-  color: #008080;
+  color: #1eb9b9;
 } /* String */
+/*
 code span.va {
 } /* Variable */
 code span.vs {

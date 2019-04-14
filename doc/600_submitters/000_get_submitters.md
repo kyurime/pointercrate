@@ -12,7 +12,7 @@ This endpoint supports [pagination and filtering](/documentation/#pagination) vi
 on the additional request and response fields headers.
 </div>
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Access Restrictions:</b><br>
 Access to this endpoint requires at least `LIST_ADMIN` permissions.
 </div>

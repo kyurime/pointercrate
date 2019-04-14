@@ -4,12 +4,12 @@
 
 ## `POST`{.verb} `/records/`
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Rate Limits:</b><br>
 This endpoint is ratelimited at 3 successfully submitted records per 20 minutes per submitter and 20 records per hour globally
 </div>
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Access Restrictions:</b><br>
 Unless you set `status` to `SUBMITTED` (or omit the field), access to this endpoint requires at least `LIST_HELPER` permissions.
 </div>

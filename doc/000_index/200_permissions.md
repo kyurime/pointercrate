@@ -13,7 +13,7 @@ Permissions can be granted by other users with special permissions via the [`PAT
 
 If an endpoints requires special permissions to be accessed, it's documentation will contain a notice similar to this one:
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Access Restrictions:</b><br>
 Access to this endpoint requires at least `LIST_HELPER` permissions.
 </div>

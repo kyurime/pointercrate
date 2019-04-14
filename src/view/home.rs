@@ -102,22 +102,15 @@ impl Page for Homepage {
                             }
                         }
                     }
-                    a.big.blue.hover.button.js-scroll-anim data-anim="fade" href = "/demonlist/"{
+                    a.big.dark-grey.hover.button.js-scroll-anim data-anim="fade" href = "/demonlist/"{
                         "Check it out"(PreEscaped("&nbsp;&nbsp;&nbsp;"))
                         i.fa.fa-arrow-right aria-hidden="true" {}
                     }
                 }
             }
-            div.center.information-stripe {
-                div.flex style="flex-wrap: wrap; align-items: center" {
-                    span { "Over 13 000 daily visitors!" }
-                    span { "Over 150 ranked demons!" }
-                    span { "Over 15 000 records!" }
-                }
-            }
             div.center.information-banner.right {
                 div {
-                    a.big.blue.hover.button.js-scroll-anim data-anim="fade" href = "https://github.com/stadust/pointercrate" target = "_blank"{
+                    a.big.dark-grey.hover.button.js-scroll-anim data-anim="fade" href = "https://github.com/stadust/pointercrate" target = "_blank"{
                         i.fa.fa-github aria-hidden="true" {}
                         (PreEscaped("&nbsp;&nbsp;&nbsp;"))
                         "To the repository"
@@ -130,13 +123,6 @@ impl Page for Homepage {
                     }
                 }
             }
-            div.center.information-stripe {
-                div.flex style="flex-wrap: wrap; align-items: center" {
-                    span { "Written in Rust!" }
-                    span { "Actively Maintained!" }
-                    span { "I don't know what to write anymore!" }
-                }
-            }
             div.tabbed.center.information-banner.left#changelog {
                 div.tab-display {
                     div style = "display: flex; flex-flow: column;"{
@@ -145,96 +131,16 @@ impl Page for Homepage {
                         }
                         div.tab-content.tab-content-active data-tab-id ="99" {
                             h3 style="text-align: left; font-size: 110%" {
-                                "2019-03-02: Rustification!"
+                                "2019-04-13: Making it ours.."
                             }
                             p {
-                                "The entire website has been rewritten in Rust! Various minor bugs that were noticed while porting over from the old python backend were fixed and performance has greatly improved. Other than that, it's mostly an internal change, so the list of (visible) changes is rather short:"
-                            }
-                            ul {
-                                li {
-                                    "I have (yet again) redesigned the home page! Most notably, it has been merged it with the former about page, as both were very under-utilized."
-                                }
-                                li {
-                                    "The demonlist now has an overview page over"
-                                    a href = "/demonlist/" { " here. " }
-                                    "which shows an actual list (revolutionary, I know) of all demons"
-                                }
-                                li {
-                                    "The API has been majorly overhauled. " i{"Most"} " changes should be backward compatible, since I just added a ton of fields, but there are some other changes as well, so be sure to check the documentation again. Mainly, there is no `state` parameter for demons anymore and `player.beaten` has become the more general `player.records`"
-                                }
-                                li {
-                                    "There is now deeper integration with the GD servers, allowing me to display additions stats for each demon. The code to calculate level length and accurately count objects was contributed by cos8o, so big thanks to him!"
-                                }
-                            }
-                            p {
-                                "Now onto some more serious topics: As some of you might know, I took up a second undergrad course (mathmatics) in october, meaning my university schedule became much more demanding, leaving me nearly no time to work on pointercrate. Development on discord bots related to pointercrate and the demonlist has already been taken over by GunnerBones, and with pointercrate becoming open source, I'm hoping to find more people will to work on it. In the long run, I'm probably searching for someone who wants to take over pointercrate."
-                            }
-                        }
-                        div.tab-content data-tab-id ="100" {
-                            h3 style="text-align: left" {
-                                "2018-04-04: Anniversary Update!"
-                            }
-                            p {
-                                "Its been one year since I rented the pointercrate domain and started hosting the demonlist! Today I'm happy to announce the official pointercrate API, which can be used to programmatically access the demonlist. The documentation can be found"
-                                a href = "/documentation/" { " here. " }
-                                "Further minor changes include:"
-                            }
-                            ul {
-                                li {
-                                    "Internal rework of how list mods are authenticated. They now use the account system."
-                                }
-                                li {
-                                    "The website now embeds nicely into discord!"
-                                }
-                                li {
-                                    "We added a link to the official demonlist discord server, which is an awesome place where I get help with spellchecking"
-                                }
-                                li {
-                                    "There is now a public discord bot that integrates with the demonlist! Find it in the discord server!"
-                                }
-                                li {
-                                    "The API is actually just the first step in something way more awesome hopefully coming \"soon\"... :)"
-                                }
-                            }
-                        }
-                        div.tab-content data-tab-id ="101" {
-                            h3 style="text-align: left" {
-                                "2017-10-29: New design!"
-                            }
-                            p {
-                                "Pointercrate's design has been completely overhauled, to fix various issues we had with the old version:"
-                            }
-                            ul {
-                                li {
-                                    "The old homepage was thrown together in 5 minutes and you all knew it"
-                                }
-                                li {
-                                    "Scrollbars were working weirdly or not at all"
-                                }
-                                li {
-                                    "On mobile you couldn't close the demonlist after clicking that weird button in the bottom left corner"
-                                }
-                                li {
-                                    "There was way too much blue"
-                                }
-                            }
-                            p {
-                                "Most of these issues arose because the old version was not designed with mobile in mind, and mobile support was 'hacked in' later. The new design uses a mobile-first approach and should be a lot more responsive."
+                                "I literally don't understand rust. Like, " i{"at all"}
                             }
                         }
                     }
                     div.tab-selection style="padding: 20px 0px; text-align: center"{
-                        h3.tab.tab-active data-tab-id="99" style="padding: 10px; text-align:left" { "2019-03-02" }
-                        h3.tab data-tab-id="100" style="padding: 10px; text-align:left" { "2018-04-04" }
-                        h3.tab data-tab-id="101" style="padding: 10px; text-align: left" { "2017-10-29" }
+                        h3.tab.tab-active data-tab-id="99" style="padding: 10px; text-align:left" { "2019-04-13" }
                     }
-                }
-            }
-            div.center.information-stripe {
-                div.flex style="flex-wrap: wrap; align-items: center" {
-                    span { "On average updated once a year!" }
-                    span { "I redo the homepage every time!" }
-                    span { "No new features since 1975!" }
                 }
             }
             div.center.information-banner.right {
@@ -244,7 +150,7 @@ impl Page for Homepage {
                     }
                     div.flex#about-inner {
                         div style = "flex-basis: 0; padding: 5px" {
-                            h3 { "Demonlist Team: "}
+                            h3 { "1.9 Demonlist Team: "}
                             p {
                                 "The demonlist is managed by a large team of players lead by:"
                             }
@@ -257,23 +163,23 @@ impl Page for Homepage {
                                 "Contact these people for any list related questions/issues"
                             }
                             i {
+                                "Website: "
+                                a href = "https://absolllute.com/gdps/" {"GDPS Website"}
+                            }
+                            br ;
+                            i {
                                 "Twitter: "
-                                a href = "https://twitter.com/demonlistgd" {"demonlistgd"}
+                                a href = "https://twitter.com/official19gdps" {"official19gdps"}
                             }
                             br ;
                             i {
                                 "YouTube: "
-                                a href = "https://www.youtube.com/channel/UCqI5feGZEqJRp6VcrP5gVyw" {"Demon List GD"}
-                            }
-                            br ;
-                            i {
-                                "Twitch: "
-                                a href = "https://twitch.tv/demonlistgd/" {"DemonListGD"}
+                                a href = "https://www.youtube.com/channel/UCIUpOcn9GZ-IlEw34czouIg" {"1.9 GDPS"}
                             }
                             br ;
                             i {
                                 "Discord: "
-                                a href = "https://discord.gg/cZcBxQT" {"Demon List Public Server"}
+                                a href = "https://discord.gg/eCGFrCG" {"1.9 GDPS Server"}
                             }
                         }
                         div style = "flex-basis: 0; padding: 5px" {

@@ -3,7 +3,7 @@ use std::{fmt::Debug, fs::File, io::Read, str::FromStr};
 
 lazy_static! {
     pub static ref LIST_SIZE: i16 = from_env_or_default("LIST_SIZE", 50);
-    pub static ref EXTENDED_LIST_SIZE: i16 = from_env_or_default("EXTENDED_LIST_SIZE", 100);
+    pub static ref EXTENDED_LIST_SIZE: i16 = from_env_or_default("EXTENDED_LIST_SIZE", 50);
     pub static ref SECRET: Vec<u8> = {
         let path: String = from_env_or_default("SECRET_FILE", ".secret".into());
         let file = File::open(path).unwrap();

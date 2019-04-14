@@ -4,7 +4,7 @@
 
 ## `POST`{.verb} `/auth/`
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Rate Limits:</b><br>
 This endpoint is ratelimited at 3 requests per 30 minutes
 </div>

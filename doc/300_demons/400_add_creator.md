@@ -4,7 +4,7 @@
 
 ## `POST`{.verb} `/demons/` `position`{.param} `/creators/`
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Access Restrictions:</b><br>
 Access to this endpoint requires at least `ListModerator` permissions.
 </div>

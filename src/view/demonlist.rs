@@ -47,7 +47,7 @@ static EXTENDED_SECTION: ListSection = ListSection {
 
 static LEGACY_SECTION: ListSection  = ListSection{
     name: "Legacy List",
-    description: "These are demons that used to be in the top 100, but got pushed off as new demons were added. They are here for nostalgic reasons. This list is in no order whatsoever and will not be maintained any longer at all. This means no new records will be added for these demons.",
+    description: "These are demons that used to be in the top 50, but got pushed off as new demons were added. They are here for nostalgic reasons. This list is in no order whatsoever and will not be maintained any longer at all. This means no new records will be added for these demons.",
     id: "legacy",
     numbered: false,
 };
@@ -71,11 +71,11 @@ pub fn overview_handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
 
 impl Page for DemonlistOverview {
     fn title(&self) -> String {
-        "Geometry Dash Demonlist".to_string()
+        "Geometry Dash 1.9 Demonlist".to_string()
     }
 
     fn description(&self) -> String {
-        "The official Geometry Dash Demonlist on pointercrate!".to_string()
+        "The official Geometry Dash 1.9 Demonlist on a rehosted pointercrate!".to_string()
     }
 
     fn scripts(&self) -> Vec<&str> {
@@ -170,8 +170,8 @@ impl Page for DemonlistOverview {
                             }}
                         ]
                     }},
-                    "name": "Geometry Dash Demonlist",
-                    "description": "The official Geometry Dash Demonlist on pointercrate!",
+                    "name": "Geometry Dash 1.9 Demonlist",
+                    "description": "The official Geometry Dash 1.9 Demonlist on pointercrate rehost!!!",
                     "url": "https://pointercrate.com/demonlist/"
                 }}
                 </script>
@@ -303,10 +303,11 @@ impl Page for Demonlist {
                         }
                         div.underlined.pad.flex.wrap#level-info {
                             @if let Some(ref level) = self.server_level {
+                                /*
                                 @let level_data = level.decompress_data().ok();
                                 @let level_data = level_data.as_ref().and_then(|data| gdcf_parse::level::data::parse_lazy_parallel(data).ok());
                                 @let stats = level_data.map(LevelInformationSource::stats);
-
+                                */
                                 span {
                                     b {
                                         "Level Password: "
@@ -325,6 +326,7 @@ impl Page for Demonlist {
                                     br;
                                     (level.base.level_id)
                                 }
+                                /*
                                 span {
                                     b {
                                         "Level length: "
@@ -344,7 +346,8 @@ impl Page for Demonlist {
                                         Some(ref stats) => (stats.object_count),
                                         _ => (level.base.object_amount)
                                     }
-                                }
+                                }*/
+                                br ;
                             }
                             @if self.data.demon.position <= *EXTENDED_LIST_SIZE {
                                 span {
@@ -366,7 +369,6 @@ impl Page for Demonlist {
                             }
                         }
                     }
-                    (rules_panel())
                     @if !self.data.records.is_empty() || self.data.demon.position <= *EXTENDED_LIST_SIZE {
                         div.records.panel.fade.js-scroll-anim data-anim = "fade" {
                             div.underlined.pad {
@@ -406,13 +408,13 @@ impl Page for Demonlist {
                                 table {
                                     tbody {
                                         tr {
-                                            th.blue {
+                                            th.dark-grey {
                                                 "Record Holder"
                                             }
-                                            th.blue {
+                                            th.dark-grey {
                                                 "Progress"
                                             }
-                                            th.video-link.blue {
+                                            th.video-link.dark-grey {
                                                 "Video Proof"
                                             }
                                         }
@@ -441,6 +443,7 @@ impl Page for Demonlist {
                 }
                 div.right {
                     (team_panel(&self.overview.admins, &self.overview.mods, &self.overview.helpers))
+                    (rules_panel())
                     (submit_panel())
                     (stats_viewer_panel())
                     (discord_panel())
@@ -526,7 +529,6 @@ fn dropdowns(
             // The drop down for the main list:
             (dropdown(req, &MAIN_SECTION, main, current))
             // The drop down for the extended list:
-            (dropdown(req, &EXTENDED_SECTION, extended, current))
             // The drop down for the legacy list:
             (dropdown(req, &LEGACY_SECTION, legacy, current))
         }
@@ -560,7 +562,7 @@ fn dropdown(
 
     html! {
         div {
-            div.button.white.hover.no-shadow.js-toggle data-toggle-group="0" onclick={"javascript:void(DropDown.toggleDropDown('" (section.id) "'))"} {
+            div.button.dark-grey.hover.no-shadow.js-toggle data-toggle-group="0" onclick={"javascript:void(DropDown.toggleDropDown('" (section.id) "'))"} {
                 (section.name)
             }
 
@@ -575,11 +577,11 @@ fn dropdown(
                     @for demon in demons {
                         @match current {
                             Some(current) if current.position == demon.position =>
-                                li.hover.white.active title={"#" (demon.position) " - " (demon.name)} {
+                                li.hover.dark-grey.active title={"#" (demon.position) " - " (demon.name)} {
                                     (format(demon))
                                 },
                             _ =>
-                                li.hover.white title={"#" (demon.position) " - " (demon.name)} {
+                                li.hover.dark-grey title={"#" (demon.position) " - " (demon.name)} {
                                     (format(demon))
                                 }
                         }
@@ -645,7 +647,7 @@ fn submission_panel() -> Markup {
                         input type = "url" name = "video" required = "" placeholder = "e.g. 'https://youtu.be/cHEGAqOgddA'" ;
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Submit record";
+                    input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Submit record";
                 }
             }
         }
@@ -910,7 +912,7 @@ fn submit_panel() -> Markup {
             p {
                 "Note: Please do not submit nonsense, it only makes it harder for us all and will get you banned. Also note that the form rejects duplicate submission"
             }
-            a.blue.hover.button.slightly-rounded.js-scroll data-destination = "submitter" data-reveal = "true" {
+            a.dark-grey.hover.button.slightly-rounded.js-scroll data-destination = "submitter" data-reveal = "true" {
                 "Submit a record!"
             }
         }
@@ -928,7 +930,7 @@ fn stats_viewer_panel() -> Markup {
             p {
                 "Get a detailed overview of who completed the most, created the most demons or beat the hardest demons! There is even a leaderboard to compare yourself to the very best!"
             }
-            a.blue.hover.button.slightly-rounded.js-scroll#show-stats-viewer data-destination = "statsviewer" data-reveal = "true" {
+            a.dark-grey.hover.button.slightly-rounded.js-scroll#show-stats-viewer data-destination = "statsviewer" data-reveal = "true" {
                 "Open the stats viewer!"
             }
         }
@@ -938,9 +940,9 @@ fn stats_viewer_panel() -> Markup {
 fn discord_panel() -> Markup {
     html! {
         div.panel.fade.js-scroll-anim#discord data-anim = "fade" {
-            iframe.js-delay-attr style = "width: 100%; height: 400px;" allowtransparency="true" frameborder = "0" data-attr = "src" data-attr-value = "https://discordapp.com/widget?id=395654171422097420&theme=light" {}
+            iframe.js-delay-attr style = "width: 100%; height: 400px;" allowtransparency="true" frameborder = "0" data-attr = "src" data-attr-value = "https://canary.discordapp.com/widget?id=328307969882062848" {}
             p {
-                "Join the official demonlist discord server, where you can get in touch with the demonlist team!"
+                "Join the official 1.9 GDPS discord server, where you can get in touch with the team!"
             }
         }
     }

@@ -59,7 +59,7 @@ impl Page for AccountPage {
             span#chicken-salad-red-fish style = "display:none" {(self.user.generate_csrf_token())}
             div.tabbed {
                 div.tab-selection.flex.wrap.m-center.fade style="text-align: center;" {
-                    div.tab.tab-active.button.white.hover.no-shadow data-tab-id="1" {
+                    div.tab.tab-active.button.dark-grey.hover.no-shadow data-tab-id="1" {
                         b {
                             "Profile"
                         }
@@ -67,7 +67,7 @@ impl Page for AccountPage {
                         i class = "fa fa-user fa-2x" aria-hidden="true" {}
                     }
                     @if self.user.has_any(&perms!(Administrator)) {
-                        div.tab.button.white.hover.no-shadow data-tab-id="2" {
+                        div.tab.button.dark-grey.hover.no-shadow data-tab-id="2" {
                             b {
                                 "Users"
                             }

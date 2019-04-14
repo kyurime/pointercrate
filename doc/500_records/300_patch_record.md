@@ -4,7 +4,7 @@
 
 ## `PATCH`{.verb} `/records/` `record_id`{.param} `/`
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Access Restrictions:</b><br>
 Access to this endpoint requires at least `LIST_HELPER` permissions.
 </div>

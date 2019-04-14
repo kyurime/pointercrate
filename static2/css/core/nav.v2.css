@@ -10,7 +10,9 @@
 
   z-index: 999;
 
-  background: white;
+  background-color: rgb(25, 38, 43);
+
+  color: rgb(232, 230, 227);
 
   font-size: 1.2em;
   font-weight: 600;

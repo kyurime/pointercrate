@@ -4,7 +4,7 @@
 
 ## `GET`{.verb} `/users/` `user_id`{.param} `/`
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Access Restrictions:</b><br>
 Access to this endpoint requires at least `Moderator` or have the requested user fall inside your jurisdiction
 </div>

@@ -27,7 +27,7 @@
 /* Link styles */
 
 a.link {
-  color: blue;
+  color: darkgrey;
 }
 
 a.link:after {
@@ -117,7 +117,7 @@ ul {
 }
 
 a {
-  color: #222;
+  color: rgb(232, 230, 227);
   text-decoration: none;
   cursor: pointer;
 }
@@ -169,7 +169,7 @@ a {
 
   position: relative;
 
-  background: white;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* Roman list */
@@ -348,6 +348,12 @@ form input[type="password"]:invalid {
   flex-grow: 2;
 }
 
+input::placeholder {
+  /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: rgb(232, 230, 227);
+}
+
+
 .search.seperated input {
   border-left: 1px solid #888;
   border-right: 1px solid #888;
@@ -470,6 +476,13 @@ form input[type="password"]:invalid {
 
 .overlined.pad {
   padding-top: 10px;
+}
+
+.info-dark-grey {
+  background: rgba(23, 23, 23, 0.8);
+  border-radius: 10px;
+  padding: 5px 15px;
+  margin: 25px 0px;
 }
 
 .info-green {

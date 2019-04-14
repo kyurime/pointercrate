@@ -61,6 +61,16 @@
 }
 
 /* color modifying styles */
+.dark-grey {
+  background-color: rgba(21, 22, 23, 0.5);
+  color: rgb(243, 242, 241);
+}
+
+.dark-grey.hover:not(.disabled):not([disabled]):hover,
+.dark-grey.active {
+  background-color: rgb(34, 36, 37);
+  color: rgb(232, 230, 227);
+}
 
 .blue {
   background-color: #0881c6;

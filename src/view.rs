@@ -83,7 +83,7 @@ pub trait Page {
                         link rel = "stylesheet" href = {(STATIC) (sheet)};
                     }
                 }
-                body style={"background-image: url(" (STATIC) "images/squares3.png)"}{
+                body {
                     (nav_bar(req))
                     div {}
                     (self.body(req))
@@ -96,23 +96,18 @@ pub trait Page {
 
 pub fn nav_bar(req: &HttpRequest<PointercrateState>) -> Markup {
     html! {
-        div.nav.center.collapse.underlined.see-through {
+
+        div.nav.center.collapse.see-through {
             div.nav-icon {
                 a href = "/" {
-                    img src = {(STATIC) "images/pointercrate2.png"} style="height:15px";
+                    img src = {(STATIC) "images/19diamond.png"} style="height:55px";
                 }
             }
             div.nav-group-right.nav-group {
-                a.nav-item.hover.white href = "/documentation/" {
-                    span style ="display:flex; flex-direction:column;" {
-                        span style ="font-size: 50%" {"REST API"}
-                        span {"Documentation"}
-                    }
-                }
-                a.nav-item.hover.white href = "/demonlist/" title = "Geometry Dash Demonlist" {
+                a.nav-item.hover.dark-grey href = "/demonlist/" title = "Geometry Dash 1.9 Demonlist" {
                     span style ="display:flex; flex-direction:column;" {
                         span style ="font-size: 50%" {"Geometry Dash"}
-                        span {"DEMONLIST"}
+                        span {"1.9 DEMONLIST"}
                     }
                 }
                 div.nav-item.collapse-button {
@@ -140,6 +135,8 @@ pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
                 "All rights reserved"
                 br;
                 "pointercrate.com and the Demonlist are in no way affiliated with RobTopGamesAB ®"
+                br;
+                "The 1.9 Demonlist is not affiliated with the official GD Demonlist"
             }
             div.flex.no-stretch {
                 div {
@@ -170,10 +167,6 @@ pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
                     }
                     a.link href="/demonlist/1/" title = "Hardest demon" {
                         "Current top demon"
-                    }
-                    br;
-                    a.link href = {"/demonlist/" (first_extended) "/"} title="Extended list" {
-                        "Extended list"
                     }
                     br;
                     a.link href = {"/demonlist/" (first_legacy) "/"} title="Legacy list" {

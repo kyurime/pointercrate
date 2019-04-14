@@ -1,5 +1,7 @@
 body {
-  color: #444446;
+  color: rgb(232, 230, 227);;
+
+  background-image: linear-gradient(rgb(55, 82, 92) 0%, rgb(80, 58, 84) 100%);
 
   position: relative;
 

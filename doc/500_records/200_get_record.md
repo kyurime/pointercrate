@@ -4,7 +4,7 @@
 
 ## `GET`{.verb} `/records/` `record_id`{.param} `/`
 
-<div class='info-yellow'>
+<div class='info-dark-grey'>
 <b>Acces Restrictions:</b><br>
 If the requested record is not approved, access to this endpoint requires at least `ExtendedAccess` permissions.
 </div>
