@@ -121,7 +121,7 @@ tr:nth-child(even) {
 #statsviewer li i {
   padding-left: 5px;
 
-  color: #444;
+  color: #ccc;
 
   font-size: 70%;
   font-variant: small-caps;

@@ -4,7 +4,7 @@ class StatsViewer {
     var b = document.createElement("b");
     var i = document.createElement("i");
 
-    li.className = "white hover";
+    li.className = "dark-grey hover";
     li.dataset.id = player.id;
     li.dataset.rank = player.rank;
 
