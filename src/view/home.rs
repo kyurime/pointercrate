@@ -39,7 +39,7 @@ impl Page for Homepage {
     }
 
     fn description(&self) -> String {
-        "Pointercrate is the home of the official Geometry Dash demonlist, a ranking of the hardest rated demons maintained by some of the game's most skilled players".to_owned()
+        "This is the home of the Geometry Dash 1.9 Private Server demonlist".to_owned()
     }
 
     fn scripts(&self) -> Vec<&str> {
@@ -223,13 +223,13 @@ impl Page for Homepage {
   {
     "@context": "http://schema.org",
     "@type": "Organization",
-    "name": "pointercrate",
-    "description": "Pointercrate is the home of the official Geometry Dash demonlist, a ranking of the hardest rated demons maintained by some of the game's most skilled players",
-    "url": "https://pointercrate.com/",
-    "logo": "https://pointercrate.com/static2/images/pointercrate2.png",
+    "name": "GDPS1.9 Demonlist",
+    "description": "This is the home of the Geometry Dash 1.9 PS demonlist",
+    "url": "https://pointercrate.xyze.dev/",
+    "logo": "https://pointercrate.xyze.dev/static2/images/19diamond.png",
     "sameAs": [
-      "https://twitter.com/demonlistgd",
-      "https://www.youtube.com/channel/UCqI5feGZEqJRp6VcrP5gVyw"
+      "https://twitter.com/official19gdps",
+      "https://www.youtube.com/channel/UCIUpOcn9GZ-IlEw34czouIg"
     ]
   }
 </script>

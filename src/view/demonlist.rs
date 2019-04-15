@@ -157,22 +157,22 @@ impl Page for DemonlistOverview {
                                 "@type": "ListItem",
                                 "position": 1,
                                 "item": {{
-                                    "@id": "https://pointercrate.com/",
+                                    "@id": "https://pointercrate.xyze.dev/demonlist/",
                                     "name": "pointercrate"
                                 }}
                             }},{{
                                 "@type": "ListItem",
                                 "position": 2,
                                 "item": {{
-                                    "@id": "https://pointercrate.com/demonlist/",
+                                    "@id": "https://pointercrate.xyze.dev/demonlist/",
                                     "name": "demonlist"
                                 }}
                             }}
                         ]
                     }},
                     "name": "Geometry Dash 1.9 Demonlist",
-                    "description": "The official Geometry Dash 1.9 Demonlist on pointercrate rehost!!!",
-                    "url": "https://pointercrate.com/demonlist/"
+                    "description": "The Geometry Dash 1.9 Demonlist on pointercrate rehost!!!",
+                    "url": "https://pointercrate.xyze.dev/demonlist/"
                 }}
                 </script>
             "#))

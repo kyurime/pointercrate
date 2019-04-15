@@ -46,8 +46,8 @@ pub trait Page {
                     meta property="og:description" content = (self.description());
 
                     meta name ="viewport" content="initial-scale=1, maximum-scale=1";
-                    meta name="author" content = "stadust, GunnerBones";
-                    meta name="keywords" content ="stardust1971,official,geometry,dash,hardest,extreme,insane,demon,list,demonlist,hardest,levels,gmd,gd,stadust,official,game,top";
+                    meta name="author" content = "stadust, GunnerBones, onetweet";
+                    meta name="keywords" content ="geometry,dash,hardest,insane,demon,list,demonlist,hardest,levels,gmd,gd,game,top,1.9,gdps";
                     meta name="description" content = (self.description());
                     meta http-equiv="Content-Type" content = "text/html; charset=utf-8";
                     meta http-equiv="Content-Style-Type" content="text/css";
