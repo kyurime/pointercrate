@@ -70,7 +70,13 @@ impl Post<PostDemon> for Demon {
                 .values(&new)
                 .execute(connection)?;
 
-            for creator in &data.creators {
+            let mut creator_list = data.creators;
+
+            // 500 errors happen if duplicates do
+            creator_list.sort();
+            creator_list.dedup();
+
+            for creator in creator_list {
                 Creator::create_from(
                     (data.name.as_ref(), creator.as_ref()),
                     RequestContext::Internal(connection),
