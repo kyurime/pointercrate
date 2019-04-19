@@ -69,28 +69,28 @@ impl<'a> Page for Documentation<'a> {
         "@type": "ListItem",
         "position": 1,
         "item": {
-          "@id": "https://pointercrate.com/",
+          "@id": "https://pointercrate.xyze.dev/",
           "name": "pointercrate"
         }
       },{
         "@type": "ListItem",
         "position": 2,
         "item": {
-          "@id": "https://pointercrate.com/documentation/",
+          "@id": "https://pointercrate.xyze.dev/documentation/",
           "name": "documentation"
         }
       },{
         "@type": "ListItem",
         "position": 3,
         "item": {
-            "@id": "https://pointercrate.com/documentation/account/",
+            "@id": "https://pointercrate.xyze.dev/documentation/account/",
             "name": "account"
         }
       }]
     },
     "name": "API Documentation",
     "description": "The pointercrate API, which allows you to programmatically interface with the demonlist",
-    "url": "https://pointercrate.com/documentation/account/",
+    "url": "https://pointercrate.xyze.dev/documentation/account/",
     "dateCreated": "2017-04-08"
   }
 </script>

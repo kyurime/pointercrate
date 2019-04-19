@@ -60,10 +60,10 @@ impl Page for Homepage {
                                 "Pointercrate"
                             }
                             h2 style="text-align: left" {
-                                "Home of the official Geometry Dash Demonlist"
+                                "Home of the official Geometry Dash 1.9 Private Server Demonlist"
                             }
                             div.tab-content.tab-content-active data-tab-id ="1" {
-                                "The pointercrate demonlist is the most popular ranking of the game's hardest demons with multiple thousand visitors each day! Even RobTop himself likes it!"
+                                "The pointercrate 1.9 demonlist is the only ranking of 1.9 PS' hardest demons!"
                             }
                             div.tab-content data-tab-id = "2" {
                                 "The demonlist stats viewer assigns each player a score based on how many demons they've beaten and then ranks them, showing exactly who's the best!"
@@ -110,16 +110,15 @@ impl Page for Homepage {
             }
             div.center.information-banner.right {
                 div {
-                    a.big.dark-grey.hover.button.js-scroll-anim data-anim="fade" href = "https://github.com/stadust/pointercrate" target = "_blank"{
+                    a.big.dark-grey.hover.button.js-scroll-anim data-anim="fade" href = "https://github.com/zmxhawrhbg/pointercrate" target = "_blank"{
                         i.fa.fa-github aria-hidden="true" {}
                         (PreEscaped("&nbsp;&nbsp;&nbsp;"))
                         "To the repository"
                     }
                     div.information {
-                        h2 { "Now on GitHub "}
-                        h3 { "The entirety of the pointercrate codebase can now be found on GitHub"}
+                        h2 { "GitHub Repo ~"}
+                        h3 { "The entirety of the pointercrate codebase - on GitHub!"}
                         p{"Found a bug on the website? Want to help with development? Or maybe you just want to find out how everything here works? Head over to the pointercrate GitHub repository!"}
-                        p{"Even our custom Geometry Dash API wrapper, GDCF, can be found there!"}
                     }
                 }
             }
@@ -152,7 +151,7 @@ impl Page for Homepage {
                         div style = "flex-basis: 0; padding: 5px" {
                             h3 { "1.9 Demonlist Team: "}
                             p {
-                                "The demonlist is managed by a large team of players lead by:"
+                                "This demonlist is managed by a large team of players lead by:"
                             }
                             div.flex.wrap style = "padding: 20px" {
                                 @for member in &self.demonlist_team {
