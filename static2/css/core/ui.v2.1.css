@@ -375,7 +375,7 @@ input::placeholder {
 .tooltip {
   position: static;
   display: inline-block;
-  border-bottom: 1px dotted #555;
+  border-bottom: 1px dotted #f9eaff;
 }
 
 .tooltip .tooltiptext {
@@ -387,8 +387,7 @@ input::placeholder {
   visibility: hidden;
   z-index: 9;
 
-  border: 3px solid #ddd;
-  background: #fff;
+  background: #4a3b54;
 
   left: 50%;
   transform: translateX(-50%);
