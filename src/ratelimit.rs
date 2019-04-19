@@ -35,7 +35,7 @@ impl Ratelimits {
     pub fn initialize() -> Self {
         Ratelimits {
             // 3 per 20  minutes
-            record_submission: KeyedRateLimiter::new(nonzero!(3u32), Duration::from_secs(20 * 60)),
+            record_submission: KeyedRateLimiter::new(nonzero!(3u32), Duration::from_secs(5 * 60)),
             // 20 per hour
             record_submission_global: DirectRateLimiter::new(
                 nonzero!(20u32),
