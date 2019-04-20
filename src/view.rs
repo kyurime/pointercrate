@@ -132,11 +132,7 @@ pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
     html! {
         div.footer.center.fade {
             span.overline.pad style="text-align:center" {
-                "© Copyright 2017-2019 pointercrate.com"
-                br;
-                "All rights reserved"
-                br;
-                "pointercrate.com and the Demonlist are in no way affiliated with RobTopGamesAB ®"
+                "pointercrate.com and the (1.9) Demonlist are in no way affiliated with RobTopGamesAB ®"
                 br;
                 "The 1.9 Demonlist is not affiliated with the official GD Demonlist"
             }
@@ -183,8 +179,8 @@ pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
                     "Developer"
                 }
                 (PreEscaped("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"))
-                a href = "https://twitter.com/demonlistgd" target = "_black" style = "color: #666" {
-                    "Demonlist Team"
+                a href = "https://twitter.com/official19gdps" target = "_black" style = "color: #666" {
+                    "1.9 GDPS"
                 }
             }
         }
