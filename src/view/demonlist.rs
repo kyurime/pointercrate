@@ -308,6 +308,7 @@ impl Page for Demonlist {
                                 @let level_data = level_data.as_ref().and_then(|data| gdcf_parse::level::data::parse_lazy_parallel(data).ok());
                                 @let stats = level_data.map(LevelInformationSource::stats);
                                 */
+                                /*
                                 span {
                                     b {
                                         "Level Password: "
@@ -319,6 +320,7 @@ impl Page for Demonlist {
                                         Password::PasswordCopy(ref pw) => (pw)
                                     }
                                 }
+                                */
                                 span {
                                     b {
                                         "Level ID: "
