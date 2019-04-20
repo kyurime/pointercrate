@@ -146,8 +146,8 @@ impl AccountPage {
                                 span.checkmark {}
                             }
                             div.flex.no-stretch {
-                                input.button.blue.hover.slightly-round#delete-user type = "button" style = "margin: 15px auto 0px;" value="Delete user";
-                                input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Edit user";
+                                input.button.dark-grey.hover.slightly-round#delete-user type = "button" style = "margin: 15px auto 0px;" value="Delete user";
+                                input.button.dark-grey.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Edit user";
                             }
                         }
                     }
@@ -167,7 +167,7 @@ impl AccountPage {
                                 input required = "" type = "number" name = "id" min = "0" style="width:93%"; // FIXME: I have no clue why the input thinks it's a special snowflake and fucks up its width, but I dont have the time to fix it
                                 p.error {}
                             }
-                            input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
+                            input.button.dark-grey.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
                         }
                         form.flex.col#find-name-form novalidate = "" {
                             p.info-red.output {}
@@ -176,7 +176,7 @@ impl AccountPage {
                                 input required = "" type = "text" name = "name" minlength = "3";
                                 p.error {}
                             }
-                            input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Find by name";
+                            input.button.dark-grey.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Find by name";
                         }
                     }
                     div.panel.fade {
@@ -190,11 +190,11 @@ impl AccountPage {
                             p.info-red.output#load-users-error {}
                             ul.selection-list#user-list {}
                             div.flex {
-                                div.button.blue.hover.slightly-round.prev style="margin-right: 20px" { "Previous"}
-                                div.button.blue.hover.slightly-round.next {"Next"} // *clap* next *clap* user
+                                div.button.dark-grey.hover.slightly-round.prev style="margin-right: 20px" { "Previous"}
+                                div.button.dark-grey.hover.slightly-round.next {"Next"} // *clap* next *clap* user
                             }
                         }
-                        a.blue.hover.button.slightly-round#load-users {
+                        a.dark-grey.hover.button.slightly-round#load-users {
                             "Load"
                         }
                     }
@@ -291,7 +291,7 @@ impl AccountPage {
                                 input type = "password" name ="auth-password" minlength = "10" required = "";
                                 p.error {}
                             }
-                            input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Submit edit";
+                            input.button.dark-grey.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Submit edit";
                         }
                     }
                 }
@@ -313,13 +313,13 @@ impl AccountPage {
                                 input required = "" type = "password" name = "password" minlength = "10";
                                 p.error {}
                             }
-                            input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Log in";
+                            input.button.dark-grey.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Log in";
                         }
                         div.overlined.pad#token-area style = "display: none" {
                             b {"Your access token is:"}
                             textarea#access-token readonly="" style = "resize: none; width: 100%; margin-top: 8px; min-height:75px" {}
                         }
-                        a.blue.hover.button.slightly-round#get-token {
+                        a.dark-grey.hover.button.slightly-round#get-token {
                             "Get access token"
                         }
                     }
@@ -330,7 +330,7 @@ impl AccountPage {
                         p {
                             "Edit some of the stuff displayed on your profile! You can change your display name and youtube channel link! You can also change your password here"
                         }
-                        a.blue.hover.button.slightly-round.js-scroll data-destination = "edit" data-reveal = "true" {
+                        a.dark-grey.hover.button.slightly-round.js-scroll data-destination = "edit" data-reveal = "true" {
                             "Edit"
                         }
                     }
@@ -351,9 +351,9 @@ impl AccountPage {
                                 input required = "" type = "password" name = "password" minlength = "10";
                                 p.error {}
                             }
-                            input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Invalidate";
+                            input.button.dark-grey.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Invalidate";
                         }
-                        a.blue.hover.button.slightly-round#invalidate-token {
+                        a.dark-grey.hover.button.slightly-round#invalidate-token {
                             "Invalidate all access tokens"
                         }
                     }
