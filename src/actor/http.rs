@@ -223,7 +223,7 @@ impl Handler<PostProcessRecord> for HttpActor {
             let progress = f32::from(record.progress) / 100f32;
 
             let mut payload = json!({
-                "content": format!("**New record submitted! ID: {}**", record_id),
+                "content": format!("**New record {}! ID: {}**", record.status, record_id),
                 "embeds": [
                     {
                         "type": "rich",
