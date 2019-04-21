@@ -17,7 +17,7 @@ use crate::{
 };
 use actix_web::{AsyncResponder, FromRequest, HttpRequest, Path, Responder};
 use gdcf_model::{
-    level::{data::LevelInformationSource, Level, Password},
+    level::{/* data::LevelInformationSource, Password, */ Level},
     user::Creator,
 };
 use joinery::Joinable;
@@ -37,14 +37,14 @@ static MAIN_SECTION: ListSection = ListSection {
     id: "mainlist",
     numbered: true,
 };
-
+/*
 static EXTENDED_SECTION: ListSection = ListSection {
     name: "Extended List",
     description: "These are demons that dont qualify for the main section of the list, but are still of high relevance. Only 100% records are accepted for these demons! Note that non-100% that were submitted/approved before a demon fell off the main list will be retained",
     id: "extended",
     numbered: true
 };
-
+*/
 static LEGACY_SECTION: ListSection  = ListSection{
     name: "Legacy List",
     description: "These are demons that used to be in the top 50, but got pushed off as new demons were added. They are here for nostalgic reasons. This list is in no order whatsoever and will not be maintained any longer at all. This means no new records will be added for these demons.",
@@ -271,8 +271,19 @@ impl Page for Demonlist {
                     div.panel.fade.js-scroll-anim data-anim = "fade" {
                         div.underlined {
                             h1 style = "overflow: hidden"{
+                                @if self.data.demon.position != 1 {
+                                    a href=(format!("/demonlist/{:?}", self.data.demon.position - 1)) {
+                                        i class="fa fa-chevron-left" style="padding-right: 5%" {}
+                                    }
+                                }
                                 (self.data.demon.name)
+                                @if self.data.demon.position as usize != self.overview.demon_overview.len() {
+                                    a href=(format!("/demonlist/{:?}", self.data.demon.position + 1)) {
+                                        i class="fa fa-chevron-right" style="padding-left: 5%" {}
+                                    }
+                                }
                             }
+
                             h3 {
                                 @if self.data.creators.0.len() > 3 {
                                     "by " (self.data.creators.0[0].name) " and "
