@@ -283,7 +283,6 @@ impl Page for Demonlist {
                                     }
                                 }
                             }
-
                             h3 {
                                 @if self.data.creators.0.len() > 3 {
                                     "by " (self.data.creators.0[0].name) " and "
