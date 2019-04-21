@@ -182,9 +182,9 @@ impl Page for Homepage {
                             }
                         }
                         div style = "flex-basis: 0; padding: 5px" {
-                            h3 { "Pointercrate Team: "}
+                            h3 { "(Rehosted) Pointercrate Team: "}
                             p {
-                                "Pointercrate as an entity independent from the demonlist is administrated and moderated by the following people:"
+                                "This fork of Pointercrate is administrated and moderated by the following people:"
                             }
                             div.flex.wrap style = "padding: 20px" {
                                 @for member in &self.pointercrate_team {
