@@ -11,6 +11,8 @@ use diesel::{insert_into, Connection, RunQueryDsl};
 use log::info;
 use serde_derive::Deserialize;
 
+use std::collections::HashSet;
+
 #[derive(Deserialize, Debug)]
 pub struct PostDemon {
     name: CiString,
@@ -70,13 +72,10 @@ impl Post<PostDemon> for Demon {
                 .values(&new)
                 .execute(connection)?;
 
-            let mut creator_list = data.creators;
+            // removes duplicate creators to prevent 500 errors from occuring due to the unique key value pairs not unique
+            let creators_hash: HashSet<CiString> = data.creators.iter().cloned().collect();
 
-            // 500 errors happen if duplicates do
-            creator_list.sort();
-            creator_list.dedup();
-
-            for creator in creator_list {
+            for creator in creators_hash {
                 Creator::create_from(
                     (data.name.as_ref(), creator.as_ref()),
                     RequestContext::Internal(connection),
