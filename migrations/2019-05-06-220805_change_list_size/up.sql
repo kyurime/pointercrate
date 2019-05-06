@@ -16,7 +16,7 @@ SELECT players.id,
        nationalities.nation
 FROM
   ( SELECT pseudo_records.player,
-           SUM(record_score(pseudo_records.progress::FLOAT, pseudo_records.position::FLOAT, 50::FLOAT)) as total_score
+           SUM(record_score(pseudo_records.progress::FLOAT, pseudo_records.position::FLOAT, 100::FLOAT)) as total_score
    FROM
      ( SELECT player,
               progress,
