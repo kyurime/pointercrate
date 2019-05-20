@@ -12,8 +12,6 @@ use log::info;
 use serde_derive::Deserialize;
 use std::collections::HashSet;
 
-use std::collections::HashSet;
-
 #[derive(Deserialize, Debug)]
 pub struct PostDemon {
     name: CiString,
