@@ -10,6 +10,7 @@ use crate::{
 use diesel::{insert_into, Connection, RunQueryDsl};
 use log::info;
 use serde_derive::Deserialize;
+use std::collections::HashSet;
 
 use std::collections::HashSet;
 
@@ -71,10 +72,9 @@ impl Post<PostDemon> for Demon {
             insert_into(demons::table)
                 .values(&new)
                 .execute(connection)?;
-
-            // removes duplicate creators to prevent 500 errors from occuring due to the unique key value pairs not unique
-            let creators_hash: HashSet<CiString> = data.creators.iter().cloned().collect();
-
+            
+            let creators_hash: HashSet<CiString> = data.creators.into_iter().collect();
+            
             for creator in creators_hash {
                 Creator::create_from(
                     (data.name.as_ref(), creator.as_ref()),

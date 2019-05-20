@@ -33,7 +33,7 @@ struct ListSection {
 
 static MAIN_SECTION: ListSection = ListSection {
     name: "Main List",
-    description: "The main section of the demonlist. These demons are the hardest rated levels in the game. Records are accepted above a given threshold and award a large amount of points!",
+    description: "The main section of the Demonlist. These demons are the hardest rated levels in the game. Records are accepted above a given threshold and award a large amount of points!",
     id: "mainlist",
     numbered: true,
 };
@@ -75,7 +75,7 @@ impl Page for DemonlistOverview {
     }
 
     fn description(&self) -> String {
-        "The official Geometry Dash 1.9 Demonlist on a rehosted pointercrate!".to_string()
+        "The official Geometry Dash 1.9 Private Server Demonlist on a rehosted pointercrate!".to_string()
     }
 
     fn scripts(&self) -> Vec<&str> {
@@ -693,7 +693,7 @@ fn stats_viewer() -> Markup {
                     }
                     div#stats-data style = "display:none" {
                         div.flex.col {
-                            h3#player-name style = "font-size:1.4em" {}
+                            h3#player-name style = "font-size:1.4em; overflow: hidden" {}
                             div.stats-container.flex.space {
                                 span {
                                     b {

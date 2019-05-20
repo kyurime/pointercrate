@@ -66,10 +66,10 @@ impl Page for Homepage {
                                 "The pointercrate 1.9 demonlist is the only ranking of 1.9 PS' hardest demons!"
                             }
                             div.tab-content data-tab-id = "2" {
-                                "The demonlist stats viewer assigns each player a score based on how many demons they've beaten and then ranks them, showing exactly who's the best!"
+                                "The Demonlist stats viewer assigns each player a score based on how many demons they've beaten and then ranks them, showing exactly who's the best!"
                             }
                             div.tab-content data-tab-id = "3" {
-                                "Each submitted record on the demonlist is manually accepted or rejected by our competent list editors!"
+                                "Each submitted record on the Demonlist is manually accepted or rejected by our competent list editors!"
                             }
                             div.tab-content data-tab-id = "4" {
                                 "Thanks to our specialized way of connecting to the Geometry Dash servers we are able to display a whole range of information about the demons, including their description, download count and much more!"

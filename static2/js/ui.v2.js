@@ -134,14 +134,14 @@ $(document).ready(function() {
 
   $(document).click(() => {
     if (!$(event.target).is('.dropdown,.js-toggle')) {
-        if (DropDown.currentlyShown) { // don't try to hide undefined
-          DropDown.hideDropDown(DropDown.currentlyShown);
-          // remove active class to remove highlight
-          $(".js-toggle.active").removeClass("active");
-        }
+      if (DropDown.currentlyShown) { // don't try to hide undefined
+        DropDown.hideDropDown(DropDown.currentlyShown);
+        // remove active class to remove highlight
+        $(".js-toggle.active").removeClass("active");
+      }
     }
   });
-
+  
   // toggle button event handling
 
   var toggleGroups = {};
