@@ -18,7 +18,7 @@ use crate::{
 use actix_web::{AsyncResponder, FromRequest, HttpRequest, Path, Responder};
 use gdcf::cache::CacheEntry;
 use gdcf_model::{
-    level::{/* data::LevelInformationSource, Password, */ Level},
+    level::{ data::LevelInformationSource, Password, Level},
     user::Creator,
 };
 use joinery::Joinable;
@@ -354,6 +354,7 @@ impl Page for Demonlist {
                                         br;
                                         (level.base.level_id)
                                     }
+                                    /*
                                     span {
                                         b {
                                             "Level length: "
@@ -373,9 +374,8 @@ impl Page for Demonlist {
                                             Some(ref stats) => (stats.object_count),
                                             _ => (level.base.object_amount.unwrap_or(0))
                                         }
-                                    }
-                                }*/
-                                br ;
+                                    }*/
+                                }
                             }
                             @if self.data.demon.position <= *EXTENDED_LIST_SIZE {
                                 span {
