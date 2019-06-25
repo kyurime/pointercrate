@@ -50,8 +50,9 @@ features = ["serde_support"]
 git = "https://github.com/zmxhawrhbg/gdcf"
 features = ["parallel"]
 
-[dependencies.gdcf_dbcache]
+[dependencies.gdcf_diesel]
 git = "https://github.com/zmxhawrhbg/gdcf"
+default-features = false
 features = ["pg"]
 
 [dependencies.gdrs]

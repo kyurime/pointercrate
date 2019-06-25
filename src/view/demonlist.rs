@@ -16,6 +16,7 @@ use crate::{
     video,
 };
 use actix_web::{AsyncResponder, FromRequest, HttpRequest, Path, Responder};
+use gdcf::cache::CacheEntry;
 use gdcf_model::{
     level::{/* data::LevelInformationSource, Password, */ Level},
     user::Creator,
@@ -193,7 +194,7 @@ impl Page for DemonlistOverview {
 pub struct Demonlist {
     overview: DemonlistOverview,
     data: DemonWithCreatorsAndRecords,
-    server_level: Option<Level<u64, Creator>>,
+    server_level: CacheEntry<Level<u64, Option<Creator>>, gdcf_diesel::Entry>,
 }
 
 pub fn handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
@@ -215,11 +216,17 @@ pub fn handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
                                 .gdcf
                                 .send(GetDemon(data.demon.name.to_string()))
                                 .map_err(PointercrateError::internal)
-                                .map(move |demon| {
+                                .and_then(move |result| {
+                                    match result {
+                                        Ok(entry) => Ok(entry),
+                                        Err(err) => Err(PointercrateError::internal(err)),
+                                    }
+                                })
+                                .map(move |entry| {
                                     Demonlist {
                                         overview,
                                         data,
-                                        server_level: demon,
+                                        server_level: entry,
                                     }
                                     .render(&req_clone)
                                     .respond_to(&req_clone)
@@ -240,7 +247,7 @@ impl Page for Demonlist {
     }
 
     fn description(&self) -> String {
-        if let Some(ref level) = self.server_level {
+        if let CacheEntry::Cached(ref level, _) = self.server_level {
             if let Some(ref description) = level.base.description {
                 return format!("{}: {}", self.title(), description)
             }
@@ -299,7 +306,7 @@ impl Page for Demonlist {
                                 }
                             }
                         }
-                        @if let Some(ref level) = self.server_level {
+                        @if let CacheEntry::Cached(ref level, _) = self.server_level {
                             @if let Some(ref description) = level.base.description {
                                 div.underlined.pad {
                                     q {
@@ -312,51 +319,60 @@ impl Page for Demonlist {
                             iframe."ratio-16-9"."js-delay-attr" style="width:90%; margin: 15px 5%" data-attr = "src" data-attr-value = (video::embed(video)) {"Verification Video"}
                         }
                         div.underlined.pad.flex.wrap#level-info {
-                            @if let Some(ref level) = self.server_level {
-                                /*
-                                @let level_data = level.decompress_data().ok();
-                                @let level_data = level_data.as_ref().and_then(|data| gdcf_parse::level::data::parse_lazy_parallel(data).ok());
-                                @let stats = level_data.map(LevelInformationSource::stats);
-                                */
-                                /*
-                                span {
-                                    b {
-                                        "Level Password: "
+                            @match self.server_level {
+                                CacheEntry::Missing => {
+                                    p.info-yellow {
+                                        "The data from the Geometry Dash servers has not yet been cached. Please wait a bit and refresh the page."
                                     }
-                                    br;
-                                    @match level.password {
-                                        Password::NoCopy => "Not copyable",
-                                        Password::FreeCopy => "Free to copy",
-                                        Password::PasswordCopy(ref pw) => (pw)
+                                },
+                                CacheEntry::DeducedAbsent | CacheEntry::MarkedAbsent(_) => {
+                                    p.info-red {
+                                        "This demon has not been found on the Geometry Dash servers. Its name was most likely misspelled when entered into the database. Please contact a list moderator to fix this."
                                     }
-                                }
-                                */
-                                span {
-                                    b {
-                                        "Level ID: "
+                                },
+                                CacheEntry::Cached(ref level, ref meta) => {
+                                    @let level_data = level.decompress_data().ok();
+                                    @let level_data = level_data.as_ref().and_then(|data| gdcf_parse::level::data::parse_lazy_parallel(data).ok());
+                                    @let stats = level_data.map(LevelInformationSource::stats);
+                                    /*
+                                    span {
+                                        b {
+                                            "Level Password: "
+                                        }
+                                        br;
+                                        @match level.password {
+                                            Password::NoCopy => "Not copyable",
+                                            Password::FreeCopy => "Free to copy",
+                                            Password::PasswordCopy(ref pw) => (pw)
+                                        }
                                     }
-                                    br;
-                                    (level.base.level_id)
-                                }
-                                /*
-                                span {
-                                    b {
-                                        "Level length: "
+                                    */
+                                    span {
+                                        b {
+                                            "Level ID: "
+                                        }
+                                        br;
+                                        (level.base.level_id)
                                     }
-                                    br;
-                                    @match stats {
-                                        Some(ref stats) => (format!("{}m:{:02}s", stats.duration.as_secs() / 60, stats.duration.as_secs() % 60)),
-                                        _ => (level.base.length.to_string())
+                                    span {
+                                        b {
+                                            "Level length: "
+                                        }
+                                        br;
+                                        @match stats {
+                                            Some(ref stats) => (format!("{}m:{:02}s", stats.duration.as_secs() / 60, stats.duration.as_secs() % 60)),
+                                            _ => (level.base.length.to_string())
+                                        }
                                     }
-                                }
-                                span {
-                                    b {
-                                        "Object count: "
-                                    }
-                                    br;
-                                    @match stats {
-                                        Some(ref stats) => (stats.object_count),
-                                        _ => (level.base.object_amount)
+                                    span {
+                                        b {
+                                            "Object count: "
+                                        }
+                                        br;
+                                        @match stats {
+                                            Some(ref stats) => (stats.object_count),
+                                            _ => (level.base.object_amount.unwrap_or(0))
+                                        }
                                     }
                                 }*/
                                 br ;
