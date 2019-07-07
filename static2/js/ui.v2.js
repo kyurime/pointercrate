@@ -78,6 +78,10 @@ class Search {
 
     this.target = this.container.find("li");
     this.registerHandlers();
+
+    if (this.input.val()) {
+        this.updateResults(this.input.val().toLowerCase());
+    }
   }
 
   updateResults(searchString) {
@@ -126,7 +130,7 @@ $(document).ready(function() {
 
   // register search elements
 
-  $(".search").each((index, element) => {
+  $(".js-search").each((index, element) => {
     Search.allSearchBars.push(new Search(element));
   });
 

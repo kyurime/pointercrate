@@ -10,6 +10,7 @@ use crate::{
     error::PointercrateError,
     model::{
         demon::{self, Demon, DemonWithCreatorsAndRecords, PartialDemon},
+        nationality::Nationality,
         user::User,
     },
     state::PointercrateState,
@@ -48,7 +49,7 @@ static EXTENDED_SECTION: ListSection = ListSection {
 */
 static LEGACY_SECTION: ListSection  = ListSection{
     name: "Legacy List",
-    description: "These are demons that used to be in the top 50, but got pushed off as new demons were added. They are here for nostalgic reasons. This list is in no order whatsoever and will not be maintained any longer at all. This means no new records will be added for these demons.",
+    description: "These are demons that used to be on the list, but got pushed off as new demons were added. They are here for nostalgic reasons. This list is in no order whatsoever and will not be maintained any longer at all. This means no new records will be added for these demons.",
     id: "legacy",
     numbered: false,
 };
@@ -59,6 +60,7 @@ pub struct DemonlistOverview {
     pub admins: Vec<User>,
     pub mods: Vec<User>,
     pub helpers: Vec<User>,
+    pub nations: Vec<Nationality>,
 }
 
 pub fn overview_handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
@@ -96,10 +98,10 @@ impl Page for DemonlistOverview {
             div.flex.m-center.container {
                 div.left {
                     (submission_panel())
-                    (stats_viewer())
+                    (stats_viewer(&self.nations))
                     @for demon in &self.demon_overview {
                         @if demon.position <= *EXTENDED_LIST_SIZE {
-                            div.panel.fade {
+                            div.panel.fade style="overflow:hidden" {
                                 div.underlined.flex style = "padding-bottom: 10px; align-items: center" {
                                     @if let Some(ref video) = demon.video {
                                         div.thumb."ratio-16-9"."js-delay-css" style = "position: relative" data-property = "background-image" data-property-value = {"url('" (video::thumbnail(video)) "')"} {
@@ -274,7 +276,7 @@ impl Page for Demonlist {
             div.flex.m-center.container {
                 div.left {
                     (submission_panel())
-                    (stats_viewer())
+                    (stats_viewer(&self.overview.nations))
                     div.panel.fade.js-scroll-anim data-anim = "fade" {
                         div.underlined {
                             h1 style = "overflow: hidden"{
@@ -535,7 +537,9 @@ impl Page for Demonlist {
 }
 
 fn dropdowns(
-    req: &HttpRequest<PointercrateState>, all_demons: &[PartialDemon], current: Option<&Demon>,
+    req: &HttpRequest<PointercrateState>,
+    all_demons: &[PartialDemon],
+    current: Option<&Demon>,
 ) -> Markup {
     let (main, extended, legacy) = if all_demons.len() < *LIST_SIZE as usize {
         (&all_demons[..], Default::default(), Default::default())
@@ -564,7 +568,9 @@ fn dropdowns(
 }
 
 fn dropdown(
-    req: &HttpRequest<PointercrateState>, section: &ListSection, demons: &[PartialDemon],
+    req: &HttpRequest<PointercrateState>,
+    section: &ListSection,
+    demons: &[PartialDemon],
     current: Option<&Demon>,
 ) -> Markup {
     let format = |demon: &PartialDemon| -> Markup {
@@ -595,7 +601,7 @@ fn dropdown(
             }
 
             div.see-through.fade.dropdown#(section.id) {
-                div.search.seperated {
+                div.search.js-search.seperated {
                     input placeholder = "Filter..." type = "text" {}
                 }
                 p style = "margin: 10px" {
@@ -682,16 +688,39 @@ fn submission_panel() -> Markup {
     }
 }
 
-fn stats_viewer() -> Markup {
+fn stats_viewer(nations: &[Nationality]) -> Markup {
     html! {
         div.panel.fade.closable#statsviewer style = "display:none" {
             span.plus.cross.hover {}
             h2.underlined.pad {
                 "Stats Viewer"
+                div.dropdown-menu.js-search {
+                    input#nation-filter type="text" value = "International" style = "color: #444446; font-weight: bold;";
+                    div.menu style = "font-size: 0.55em; font-weight: normal"{
+                        ul#nation-list {
+                            li.white.hover.underlined data-name = "International" {
+                                span.em.em-world_map {}
+                                (PreEscaped("&nbsp;"))
+                                b {"WORLD"}
+                                br;
+                                span style = "font-size: 90%; font-style: italic" { "International" }
+                            }
+                            @for nation in nations {
+                                li.white.hover data-code = {(nation.country_code)} data-name = {(nation.nation)}{
+                                    span class = {"em em-flag-" (nation.country_code.to_lowercase())} {}
+                                    (PreEscaped("&nbsp;"))
+                                    b {(nation.country_code)}
+                                    br;
+                                    span style = "font-size: 90%; font-style: italic" {(nation.nation)}
+                                }
+                            }
+                        }
+                    }
+                }
             }
             div.flex#stats-viewer-cont {
                 div.flex.no-stretch#stats-viewer-pagination style="flex-direction: column"{
-                    div.search.seperated style = "margin-bottom: 0px"{
+                    div.search.js-search.seperated style = "margin-bottom: 0px"{
                         input#pagination-filter placeholder = "Enter to search..." type = "text" style = "height: 1em";
                     }
                     p.info-red.output style = "margin: 10px 10px 0px"{}
