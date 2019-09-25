@@ -12,6 +12,8 @@
 
   background-color: rgb(25, 38, 43);
 
+  backdrop-filter: blur(15px);
+
   color: rgb(232, 230, 227);
 
   font-size: 1.2em;
