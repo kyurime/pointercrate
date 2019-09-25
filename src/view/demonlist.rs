@@ -353,7 +353,6 @@ impl Page for Demonlist {
                                         br;
                                         (level.base.level_id)
                                     }
-                                    /*
                                     span {
                                         b {
                                             "Level length: "
@@ -373,7 +372,7 @@ impl Page for Demonlist {
                                             Some(ref stats) => (stats.object_count),
                                             _ => (level.base.object_amount.unwrap_or(0))
                                         }
-                                    }*/
+                                    }
                                 }
                             }
                             @if self.data.demon.position <= *EXTENDED_LIST_SIZE {

@@ -159,6 +159,7 @@ fn main() {
                                 r.route().f(allowed!(GET, PATCH, DELETE))
                             })
                     })
+                    /*
                     .resource("/gd/levels/{level_id}/", |r| {
                         r.get().f(|req| {
                             use crate::actor::http::LevelById;
@@ -195,6 +196,7 @@ fn main() {
                                 .responder()
                         })
                     })
+                    */
                     .nested("/demons", |demon_scope| {
                         demon_scope
                             .resource("/", |r| {
