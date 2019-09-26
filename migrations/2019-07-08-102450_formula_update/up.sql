@@ -8,11 +8,11 @@ CREATE FUNCTION record_score(progress FLOAT, demon FLOAT, list_size FLOAT, requi
 $record_score$
     SELECT CASE
         WHEN progress = 100 THEN
-            150.0 * EXP((1.0 - demon) * LN(1.0 / 30.0) / (-149.0))
+            50.0 * EXP((1.0 - demon) * LN(1.0 / 30.0) / (-49.0))
         WHEN progress < requirement THEN
             0.0
         ELSE
-            150.0 * EXP((1.0 - demon) * LN(1.0 / 30.0) / (-149.0)) * (0.25 * (progress - requirement) / (100 - requirement) + 0.25)
+            50.0 * EXP((1.0 - demon) * LN(1.0 / 30.0) / (-49.0)) * (0.25 * (progress - requirement) / (100 - requirement) + 0.25)
     END;
 $record_score$
 LANGUAGE SQL IMMUTABLE;
@@ -37,12 +37,12 @@ CREATE VIEW players_with_score AS
             FROM records
             INNER JOIN demons
             ON demons.name = demon
-            WHERE demons.position <= 150 AND status_ = 'APPROVED'
+            WHERE demons.position <= 50 AND status_ = 'APPROVED'
 
             UNION
 
             SELECT verifier as player,
-                   CASE WHEN demons.position > 150 THEN 0.0::FLOAT ELSE 100.0::FLOAT END as progress,
+                   CASE WHEN demons.position > 50 THEN 0.0::FLOAT ELSE 100.0::FLOAT END as progress,
                    position as position,
                    100.0::FLOAT
             FROM demons
