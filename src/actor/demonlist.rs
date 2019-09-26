@@ -78,7 +78,7 @@ impl Handler<PostProcessRecord> for HttpActor {
             let progress = f32::from(record.progress) / 100f32;
 
             let mut payload = json!({
-                "content": format!("**New record submitted! ID: {}**", record_id),
+                "content": format!("**New record {}! ID: {}**", record.status, record_id),
                 "embeds": [
                     {
                         "type": "rich",
@@ -93,7 +93,7 @@ impl Handler<PostProcessRecord> for HttpActor {
                             "url": record.video
                         },
                         "thumbnail": {
-                            "url": "https://cdn.discordapp.com/avatars/277391246035648512/b03c85d94dc02084c413a7fdbe2cea79.webp?size=1024"
+                            "url": "https://cdn.discordapp.com/emojis/561867333476286464.png?size=1024"
                         },
                     }
                 ]
