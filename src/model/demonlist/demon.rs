@@ -420,7 +420,7 @@ impl Demon {
 
     pub fn score(&self, progress: i16) -> f64 {
         let mut score =
-            50f64 * f64::exp((1f64 - f64::from(self.position)) * (1f64 / 30f64).ln() / (-49f64));
+            100f64 * f64::exp((1f64 - f64::from(self.position)) * (1f64 / 30f64).ln() / (-99f64));
 
         if progress != 100 {
             score *= 0.25f64
