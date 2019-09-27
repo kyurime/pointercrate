@@ -347,24 +347,24 @@ impl Page for Demonlist {
                                     */
                                     span {
                                         b {
-                                            "Level ID: "
+                                            "ID: "
                                         }
                                         br;
                                         (level.base.level_id)
                                     }
                                     span {
                                         b {
-                                            "Level length: "
+                                            "Length: "
                                         }
                                         br;
                                         @match stats {
-                                            Some(ref stats) => (format!("{}m:{:02}s", stats.duration.as_secs() / 60, stats.duration.as_secs() % 60)),
+                                            Some(ref stats) => (format!("{}:{:02}", stats.duration.as_secs() / 60, stats.duration.as_secs() % 60)),
                                             _ => (level.base.length.to_string())
                                         }
                                     }
                                     span {
                                         b {
-                                            "Object count: "
+                                            "Objects: "
                                         }
                                         br;
                                         @match stats {
@@ -377,7 +377,7 @@ impl Page for Demonlist {
                             @if self.data.demon.position <= *EXTENDED_LIST_SIZE {
                                 span {
                                     b {
-                                        "Demonlist score (100%): "
+                                        "List score (100%): "
                                     }
                                     br;
                                         (format!("{:.2}", score100))
@@ -386,7 +386,7 @@ impl Page for Demonlist {
                             @if self.data.demon.position <= *LIST_SIZE {
                                 span {
                                     b {
-                                        "Demonlist score (" (self.data.demon.requirement) "%)"
+                                        "List score (" (self.data.demon.requirement) "%)"
                                     }
                                     br;
                                     (format!("{:.2}", score_requirement))
