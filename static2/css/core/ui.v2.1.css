@@ -374,7 +374,9 @@ input::placeholder {
   max-height: 400px;
   overflow-y: scroll;
 
-  background:white;
+  background:rgba(21, 22, 23, 0.8);
+
+  backdrop-filter: blur(15px);
 
   border: 1px solid #Bbb;
 
