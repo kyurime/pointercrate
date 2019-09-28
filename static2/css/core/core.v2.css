@@ -44,6 +44,7 @@
 
 .see-through {
   opacity: 0.95;
+  backdrop-filter: blur(10px);
 }
 
 .disabled,

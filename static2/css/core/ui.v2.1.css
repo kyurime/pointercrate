@@ -222,7 +222,7 @@ form input[type="text"]:invalid,
 form input[type="number"]:invalid,
 form input[type="url"]:invalid,
 form input[type="password"]:invalid {
-  border-bottom: 1px solid coral;
+  border-bottom: 1px solid #ff926b;
 }
 
 .form-input > * {
@@ -374,11 +374,11 @@ input::placeholder {
   max-height: 400px;
   overflow-y: scroll;
 
-  background:rgba(21, 22, 23, 0.8);
+  background:rgba(21, 22, 23, 0.5);
 
   backdrop-filter: blur(15px);
 
-  border: 1px solid #Bbb;
+  /* border: 1px solid #Bbb; */
 
   margin-left: 10px;
   margin-right: 10px;
