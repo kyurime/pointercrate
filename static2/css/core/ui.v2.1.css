@@ -211,6 +211,13 @@ input[type="password"] {
   box-sizing: border-box;
 }
 
+form input[type="text"],
+form input[type="number"],
+form input[type="url"],
+form input[type="password"] {
+  color: rgb(232, 230, 227);
+}
+
 form input[type="text"]:valid,
 form input[type="number"]:valid,
 form input[type="url"]:valid,
@@ -388,6 +395,10 @@ input::placeholder {
   /*box-shadow: 0px 8px 10px #ccc, -10px 8px 15px #ccc, 10px 8px 15px #ccc;*/
 }
 
+.dropdown-menu .menu .underlined {
+  margin-bottom: 0;
+}
+
 .dropdown-menu > input[type="text"] {
   border: none;
   border-bottom: 1px dotted #555;
@@ -401,9 +412,10 @@ input::placeholder {
 /*  box-shadow: 0px 0px 10px 5px #ccc; */
 }
 
-.dropdown-menu input:focus + .menu {
+.dropdown-menu input:focus +.menu {
   opacity: 0.95;
   border-top: none;
+  pointer-events: auto;
 }
 
 .dropdown-menu .menu ul li {

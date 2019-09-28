@@ -103,20 +103,17 @@ class StatsViewer {
     nationFilter.value = "International"; // in case some browser randomly decide to store text field values
 
     nationFilter.addEventListener("focus", () => {
-        console.log("Focus on nation filter");
         this._nationName = nationFilter.value;
         nationFilter.value = '';
         nationFilter.dispatchEvent(new Event('change'));
     });
 
     nationFilter.addEventListener("focusout", () => {
-        console.log("Focus of nation filter lost!");
         nationFilter.value = this._nationName;
     });
 
     for(let li of nationFilter.parentNode.getElementsByTagName('li')) {
         li.addEventListener('click', () => {
-            console.log("Selected nation " + li.dataset.name);
             this._nationName = li.dataset.name;
             this._nation = li.dataset.code;
             nationFilter.value = this._nationName;
@@ -142,11 +139,7 @@ class StatsViewer {
       },
       success: data => {
         let json = data.data;
-
-        console.log(json);
-
         if (json.nationality == null) {
-          console.log("no nation :(");
           this._name.text(json.name);
         } else {
           this._name.html(
