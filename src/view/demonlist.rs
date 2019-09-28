@@ -386,7 +386,7 @@ impl Page for Demonlist {
                             @if self.data.demon.position <= *LIST_SIZE {
                                 span {
                                     b {
-                                        "List score (" (self.data.demon.requirement) "%)"
+                                        "List score (" (self.data.demon.requirement) "%): "
                                     }
                                     br;
                                     (format!("{:.2}", score_requirement))
@@ -844,7 +844,7 @@ fn team_panel(admins: &[User], mods: &[User], helpers: &[User]) -> Markup {
                 }
             }
             p {
-                "Contact any of these people if you have problems with the list or want to see a specific thing changed."
+                "Contact any of these people if you have problems with the list."
             }
             ul style = "line-height: 30px" {
                 @for admin in admins {
@@ -862,7 +862,7 @@ fn team_panel(admins: &[User], mods: &[User], helpers: &[User]) -> Markup {
                 }
             }
             p {
-                "Contact these people if you have any questions regarding why a specific record was rejected. Do not needlessly bug them about checking submissions though!"
+                "Contact these people if you have any questions about why a specific record was rejected. Do not bug them about checking submissions though!"
             }
             ul style = "line-height: 30px" {
                 @for helper in helpers {
@@ -935,12 +935,7 @@ fn rules_panel() -> Markup {
                 }
                 li {
                     span {
-                        "Records using a level's built-in LDM are always eligible. "
-                    }
-                }
-                li {
-                    span {
-                        "Records on appropriate LDM copies of levels are eligible. Please take contact with a List Moderator if you are unsure of which decorations can or cannot be removed. Generally speaking, a LDM copy should not remove decorations that obstruct the player's vision, blind transitions, flashes or boss fights, for example. Referring to the first guideline, if the previously stated decorations are removed in a level's built-in LDM though, it is perfectly fine to use it."
+                        "Records on appropriate LDM copies of levels are eligible. Please take contact with a List Moderator if you are unsure of which decorations can or cannot be removed. Generally speaking, a LDM copy should not remove decorations that obstruct the player's vision, blind transitions, flashes or boss fights, for example."
                     }
                 }
                 li {
@@ -962,7 +957,7 @@ fn submit_panel() -> Markup {
                 }
             }
             p {
-                "Note: Please do not submit nonsense, it only makes it harder for us all and will get you banned. Also note that the form rejects duplicate submission"
+                "Note: Please do not submit nonsense, it will get you banned... The form checks for duplicate submissions."
             }
             a.dark-grey.hover.button.slightly-rounded.js-scroll data-destination = "submitter" data-reveal = "true" {
                 "Submit a record!"
@@ -980,7 +975,7 @@ fn stats_viewer_panel() -> Markup {
                 }
             }
             p {
-                "Get a detailed overview of who completed the most, created the most demons or beat the hardest demons! There is even a leaderboard to compare yourself to the very best!"
+                "Get an overview of all the players on the list, or just stare at the point leaderboards."
             }
             a.dark-grey.hover.button.slightly-rounded.js-scroll#show-stats-viewer data-destination = "statsviewer" data-reveal = "true" {
                 "Open the stats viewer!"
