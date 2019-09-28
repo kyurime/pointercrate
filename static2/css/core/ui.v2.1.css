@@ -351,10 +351,10 @@ form input[type="password"]:invalid {
   margin: 5px;
   border: 0;
   flex-grow: 2;
+  color: rgb(232, 230, 227);
 }
 
 input::placeholder {
-  /* Chrome, Firefox, Opera, Safari 10.1+ */
   color: rgb(232, 230, 227);
 }
 
