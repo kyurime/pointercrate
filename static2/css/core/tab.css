@@ -12,11 +12,11 @@
 }
 
 .tab:first-of-type {
-  border-radius: 0 0 12px 0;
+  border-radius: 0 0 0 12px;
 }
 
 .tab:last-of-type {
-  border-radius: 0 0 0 12px;
+  border-radius: 0 0 12px 0;
 }
 
 .tab:only-of-type {
