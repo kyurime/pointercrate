@@ -4,8 +4,21 @@
 
 .tab {
   cursor: pointer;
+  border-radius: none;
 }
 
 .tab-active {
   color: rgb(165, 165, 165);
+}
+
+.tab:first-of-type {
+  border-radius: 0 0 12px 0;
+}
+
+.tab:last-of-type {
+  border-radius: 0 0 0 12px;
+}
+
+.tab:only-of-type {
+  border-radius: 0 0 12px 12px;
 }
