@@ -99,7 +99,7 @@ impl Page for DemonlistOverview {
                     @for demon in &self.demon_overview {
                         @if demon.position <= *EXTENDED_LIST_SIZE {
                             div.panel.fade style="overflow:hidden" {
-                                div.underlined.flex style = "padding-bottom: 10px; align-items: center" {
+                                div.underlined.flex style = "align-items: center" {
                                     @if let Some(ref video) = demon.video {
                                         div.thumb."ratio-16-9"."js-delay-css" style = "position: relative" data-property = "background-image" data-property-value = {"url('" (video::thumbnail(video)) "')"} {
                                             a.play href = (video) {}
@@ -468,9 +468,9 @@ impl Page for Demonlist {
                 }
                 div.right {
                     (team_panel(&self.overview.admins, &self.overview.mods, &self.overview.helpers))
-                    (rules_panel())
                     (submit_panel())
                     (stats_viewer_panel())
+                    (rules_panel())
                     (discord_panel())
                 }
             }
