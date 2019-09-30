@@ -1,6 +1,6 @@
 table {
   width: 90%;
-  margin: 0 5%;
+  margin: 1% 5%;
 }
 
 th {
@@ -10,9 +10,25 @@ th {
   color: #fff;
 }
 
+th:first-of-type {
+  border-radius: 12px 0 0 0;
+}
+
+th:last-of-type {
+  border-radius: 0 12px 0 0;
+}
+
 td {
   line-height: 2em;
   text-indent: 5px;
+}
+
+tr:last-of-type td:first-of-type {
+  border-radius: 0 0 0 12px;
+}
+
+tr:last-of-type td:last-of-type {
+  border-radius: 0 0 12px 0;
 }
 
 tr {
@@ -86,6 +102,9 @@ tr:nth-child(even) {
 .dropdown {
   background: rgb(34, 36, 37);
   text-align: center;
+  border-radius: 12px;
+  margin-top: 2%;
+  box-shadow: 4px 4px 12px 3px rgba(0,0,0,0.2)
 }
 
 .dropdown li {
@@ -93,6 +112,12 @@ tr:nth-child(even) {
   min-width: 200px;
   width: 200px;
   flex-grow: 1;
+  background-color: transparent;
+  border-radius: 12px;
+}
+
+.dropdown li:hover {
+  background-color: rgba(21, 22, 23, 0.5);
 }
 
 .dropdown i {
@@ -102,6 +127,14 @@ tr:nth-child(even) {
 
 #lists .button {
   font-weight: 600;
+}
+
+#lists div:first-of-type .button {
+  border-radius: 0 0 0 12px;
+}
+
+#lists div:last-of-type .button {
+  border-radius: 0 0 12px 0;
 }
 
 /* Stats viewer styles */

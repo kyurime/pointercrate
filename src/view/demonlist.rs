@@ -132,9 +132,9 @@ impl Page for DemonlistOverview {
 
                 div.right {
                     (team_panel(&self.admins, &self.mods, &self.helpers))
-                    (rules_panel())
                     (submit_panel())
                     (stats_viewer_panel())
+                    (rules_panel())
                     (discord_panel())
                 }
             }
@@ -309,9 +309,9 @@ impl Page for Demonlist {
                             }
                         }
                         @if let Some(ref video) = self.data.demon.video {
-                            iframe."ratio-16-9"."js-delay-attr" style="width:90%; margin: 15px 5%" data-attr = "src" data-attr-value = (video::embed(video)) {"Verification Video"}
+                            iframe."ratio-16-9"."js-delay-attr" style="border-radius: 12px; width:90%; margin: 15px 5%" data-attr = "src" data-attr-value = (video::embed(video)) {"Verification Video"}
                         }
-                        div.underlined.pad.flex.wrap#level-info {
+                        div.pad.flex.wrap#level-info {
                             @match self.server_level {
                                 None => {
                                     p.info-red {
@@ -396,7 +396,7 @@ impl Page for Demonlist {
                     }
                     @if !self.data.records.is_empty() || self.data.demon.position <= *EXTENDED_LIST_SIZE {
                         div.records.panel.fade.js-scroll-anim data-anim = "fade" {
-                            div.underlined.pad {
+                            div.pad {
                                 h2 {
                                     "Records"
                                 }
@@ -720,7 +720,7 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
                     }
                     p.info-red.output style = "margin: 10px 10px 0px"{}
                     div style="position:relative; margin: 0px 10px; min-height: 400px; flex-grow:1" {
-                        ul.selection-list style = "position: absolute; top: 0px; bottom:0px; left: 0px; right:0px" {}
+                        ul.selection-list style = "position: absolute; top: 0px; bottom:0px; left: 0px; right:0px; border-radius: 12px" {}
                     }
                     div.flex style = "font-variant: small-caps; font-weight: bolder"{
                         div.button.small.prev { "Previous" }

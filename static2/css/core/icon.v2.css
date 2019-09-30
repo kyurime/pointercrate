@@ -18,7 +18,7 @@
   content: " ";
   height: 25px;
   width: 3px;
-  background-color: #333;
+  background-color: rgb(232, 230, 227);
   border-radius: 10px;
 }
 
@@ -62,7 +62,7 @@
   margin-bottom: 5px;
   position: relative;
 
-  background: #888;
+  background: rgb(232, 230, 227);
   border-radius: 3px;
 
   z-index: 1;
@@ -99,7 +99,7 @@
 .hamburger.hover,
 .plus.hover,
 .arrow.hover {
-  opacity: 0.3;
+  opacity: 0.6;
   cursor: pointer;
 }
 
@@ -108,7 +108,7 @@
 }
 
 .hamburger.hover > span {
-  background: #333;
+  background: rgb(232, 230, 227);
 }
 
 .hamburger.hover:hover,
@@ -138,7 +138,7 @@
   display: inline-block;
   width: 12px;
   height: 3px;
-  background-color: #333;
+  background-color: rgb(232, 230, 227);
   transition: 0.4s ease;
 }
 
