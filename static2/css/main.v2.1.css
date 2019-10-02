@@ -1,10 +1,4 @@
 @import url('https://fonts.googleapis.com/css?family=Noto+Sans&display=swap');
-
-@font-face {
-  font-family: Hieroglify;
-  src: url(/static2/images/Hieroglify.ttf);
-}
-
 body {
   color: rgb(232, 230, 227);;
 
@@ -25,8 +19,7 @@ body {
 body,
 input[type="submit"],
 input [type="button"] {
-  font-family: "Hieroglify",
-  sans-serif;
+  font-family: "Noto Sans", sans-serif;
   font-size: inherit;
 }
 
