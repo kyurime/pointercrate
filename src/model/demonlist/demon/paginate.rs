@@ -1,14 +1,14 @@
-use super::PartialDemon;
 use crate::{
     citext::CiString,
     context::RequestContext,
-    error::PointercrateError,
-    model::Model,
-    operation::{Paginate, Paginator},
-    schema::demons,
+    model::{
+        demonlist::{demon::demons_pv, Demon},
+        Model,
+    },
+    operation::{Paginate, Paginator, PaginatorQuery, TablePaginator},
     Result,
 };
-use diesel::{pg::Pg, query_builder::BoxedSelectStatement, QueryDsl, RunQueryDsl};
+use diesel::QueryDsl;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -19,7 +19,7 @@ pub struct DemonPagination {
     #[serde(rename = "after")]
     after_position: Option<i16>,
 
-    limit: Option<i64>,
+    limit: Option<u8>,
 
     name: Option<CiString>,
 
@@ -32,50 +32,34 @@ pub struct DemonPagination {
     requirement_lt: Option<i16>,
 }
 
-impl Paginator for DemonPagination {
-    type Model = PartialDemon;
-    type PaginationColumn = demons::position;
-    type PaginationColumnType = i16;
+impl TablePaginator for DemonPagination {
+    type ColumnType = i16;
+    type PaginationColumn = demons_pv::position;
+    type Table = demons_pv::table;
 
-    filter_method!(demons[
-        name = name,
-        requirement = requirement,
-        requirement < requirement_lt,
-        requirement > requirement_gt
-    ]);
+    fn query(&self, _: RequestContext) -> PaginatorQuery<demons_pv::table> {
+        let mut query = Demon::boxed_all();
 
-    fn page(
-        &self,
-        last_on_page: Option<Self::PaginationColumnType>,
-        first_on_page: Option<Self::PaginationColumnType>,
-    ) -> Self {
-        DemonPagination {
-            before_position: last_on_page.map(|i| i + 1),
-            after_position: first_on_page.map(|i| i - 1),
-            ..self.clone()
-        }
-    }
+        filter!(query[
+            demons_pv::name = self.name,
+            demons_pv::requirement = self.requirement,
+            demons_pv::requirement < self.requirement_lt,
+            demons_pv::requirement > self.requirement_gt
+        ]);
 
-    fn limit(&self) -> i64 {
-        self.limit.unwrap_or(50)
-    }
-
-    fn before(&self) -> Option<i16> {
-        self.before_position
-    }
-
-    fn after(&self) -> Option<i16> {
-        self.after_position
+        query
     }
 }
 
-impl Paginate<DemonPagination> for PartialDemon {
+delegate_to_table_paginator!(DemonPagination, limit, before_position, after_position);
+
+impl Paginate<DemonPagination> for Demon {
     fn load(pagination: &DemonPagination, ctx: RequestContext) -> Result<Vec<Self>> {
-        let mut query = pagination.filter(PartialDemon::boxed_all(), ctx);
+        let mut query = pagination.query(ctx);
 
         filter!(query[
-            demons::position > pagination.after_position,
-            demons::position < pagination.before_position
+            demons_pv::position > pagination.after_position,
+            demons_pv::position < pagination.before_position
         ]);
 
         pagination_result!(
@@ -83,7 +67,7 @@ impl Paginate<DemonPagination> for PartialDemon {
             pagination,
             before_position,
             after_position,
-            demons::position,
+            demons_pv::position,
             ctx.connection()
         )
     }

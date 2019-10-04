@@ -6,9 +6,8 @@ use crate::{
     middleware::{auth::Token, cond::HttpResponseBuilderExt},
     model::demonlist::{
         creator::{Creator, PostCreator},
-        demon::{
-            DemonPagination, DemonWithCreatorsAndRecords, PartialDemon, PatchDemon, PostDemon,
-        },
+        demon::{DemonPagination, FullDemon, PatchDemon, PostDemon},
+        Demon,
     },
     state::PointercrateState,
 };
@@ -29,29 +28,26 @@ pub fn paginate(req: &HttpRequest<PointercrateState>) -> PCResponder {
     pagination
         .into_future()
         .and_then(move |pagination: DemonPagination| {
-            req.state().paginate::<Token, PartialDemon, _>(
-                &req,
-                pagination,
-                "/api/v1/demons/".to_string(),
-            )
+            req.state()
+                .paginate::<Token, Demon, _>(&req, pagination, "/api/v1/demons/".to_string())
         })
         .map(|(demons, links)| HttpResponse::Ok().header("Links", links).json(demons))
         .responder()
 }
 
-post_handler!("/api/v1/demons/", PostDemon, DemonWithCreatorsAndRecords);
+post_handler!("/api/v1/demons/", PostDemon, FullDemon);
 get_handler!(
     "/api/v1/demons/[position]/",
     i16,
     "Demon position",
-    DemonWithCreatorsAndRecords
+    FullDemon
 );
 patch_handler!(
     "/api/v1/demons/[position]/",
     i16,
     "Demon position",
     PatchDemon,
-    DemonWithCreatorsAndRecords
+    FullDemon
 );
 
 pub fn post_creator(req: &HttpRequest<PointercrateState>) -> PCResponder {

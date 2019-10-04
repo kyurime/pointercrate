@@ -6,7 +6,7 @@ use crate::{
     context::RequestData,
     error::PointercrateError,
     model::{
-        demonlist::demon::{Demon, DemonWithCreatorsAndRecords, PartialDemon},
+        demonlist::demon::{Demon, FullDemon, MinimalDemonP},
         nationality::Nationality,
         user::User,
     },
@@ -53,7 +53,7 @@ static LEGACY_SECTION: ListSection  = ListSection{
 
 #[derive(Debug)]
 pub struct DemonlistOverview {
-    pub demon_overview: Vec<PartialDemon>,
+    pub demon_overview: Vec<MinimalDemonP>,
     pub admins: Vec<User>,
     pub mods: Vec<User>,
     pub helpers: Vec<User>,
@@ -192,7 +192,7 @@ impl Page for DemonlistOverview {
 #[derive(Debug)]
 pub struct Demonlist {
     overview: DemonlistOverview,
-    data: DemonWithCreatorsAndRecords,
+    data: FullDemon,
     server_level: Option<CacheEntry<Level<Option<u64>, Option<Creator>>, gdcf_diesel::Entry>>,
 }
 
@@ -207,7 +207,7 @@ pub fn handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
         .and_then(move |position| {
             state
                 .database(GetMessage::new(position.into_inner(), request_data))
-                .and_then(move |data: DemonWithCreatorsAndRecords| {
+                .and_then(move |data: FullDemon| {
                     state
                         .database(GetDemonlistOverview)
                         .and_then(move |overview| {
@@ -533,7 +533,7 @@ impl Page for Demonlist {
 
 fn dropdowns(
     req: &HttpRequest<PointercrateState>,
-    all_demons: &[PartialDemon],
+    all_demons: &[MinimalDemonP],
     current: Option<&Demon>,
 ) -> Markup {
     let (main, extended, legacy) = if all_demons.len() < *LIST_SIZE as usize {
@@ -565,24 +565,24 @@ fn dropdowns(
 fn dropdown(
     req: &HttpRequest<PointercrateState>,
     section: &ListSection,
-    demons: &[PartialDemon],
+    demons: &[MinimalDemonP],
     current: Option<&Demon>,
 ) -> Markup {
-    let format = |demon: &PartialDemon| -> Markup {
+    let format = |demon: &MinimalDemonP| -> Markup {
         html! {
             a href = {"/demonlist/" (demon.position)} {
                 @if section.numbered {
                     {"#" (demon.position) " - " (demon.name)}
                     br ;
                     i {
-                        (demon.publisher)
+                        (demon.publisher.name)
                     }
                 }
                 @else {
                     {(demon.name)}
                     br ;
                     i {
-                        (demon.publisher)
+                        (demon.publisher.name)
                     }
                 }
             }

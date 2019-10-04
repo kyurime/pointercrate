@@ -7,31 +7,46 @@ use crate::{
     error::PointercrateError,
     model::{
         demonlist::{
-            demon::EmbeddedDemon,
-            record::{EmbeddedRecordD, RecordStatus},
+            demon::MinimalDemon,
+            record::{MinimalRecordD, RecordStatus},
         },
         nationality::Nationality,
         By, Model,
     },
-    schema::{nationalities, players, records},
+    schema::{players, records},
     Result,
 };
 use derive_more::Display;
 use diesel::{
-    expression::Expression,
-    insert_into,
-    pg::Pg,
-    query_source::joins::{Join, JoinOn, LeftOuter},
-    ExpressionMethods, NullableExpressionMethods, PgConnection, QueryResult, Queryable,
-    RunQueryDsl,
+    expression::Expression, pg::Pg, ExpressionMethods, PgConnection, QueryResult, Queryable,
+    RunQueryDsl, Table,
 };
-use log::{info, trace};
+use log::trace;
 use serde_derive::Serialize;
 use std::hash::{Hash, Hasher};
 
 mod get;
 mod paginate;
 mod patch;
+
+#[derive(Queryable, Debug, Hash, Eq, PartialEq, Serialize, Display)]
+#[display(fmt = "{} (ID: {})", name, id)]
+pub struct DatabasePlayer {
+    pub id: i32,
+    pub name: CiString,
+    pub banned: bool,
+}
+
+#[derive(Debug, Serialize, Display)]
+#[display(fmt = "{}", player)]
+pub struct FullPlayer {
+    #[serde(flatten)]
+    pub player: Player,
+    pub records: Vec<MinimalRecordD>,
+    pub created: Vec<MinimalDemon>,
+    pub verified: Vec<MinimalDemon>,
+    pub published: Vec<MinimalDemon>,
+}
 
 table! {
     use diesel::sql_types::*;
@@ -48,80 +63,51 @@ table! {
     }
 }
 
-#[derive(Queryable, Debug, Hash, Eq, PartialEq, Serialize, Display)]
-#[display(fmt = "{} (ID: {})", name, id)]
-pub struct EmbeddedPlayer {
-    pub id: i32,
-    pub name: CiString,
-    pub banned: bool,
-}
-
 #[derive(Debug, PartialEq, Serialize, Display)]
 #[display(fmt = "{} (ID: {}) at rank {} with score {}", name, id, rank, score)]
-pub struct RankedPlayer2 {
+pub struct RankedPlayer {
     pub id: i32,
     pub name: CiString,
     pub rank: i64,
     pub score: f64,
-
-    /// This field exists solely for pagination purposes, code should never interact with it.
-    /// It is not possible to paginate reliable over the `rank` value, since it can contain
-    /// duplicates. All our other values aren't ordered. This field is simply something that
-    /// counts the rows returned from the database deterministically
-    #[serde(skip)]
-    pub index: i64,
-
     pub nationality: Option<Nationality>,
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::citext::CiText;
+
+    players_n (id) {
+        id -> Int4,
+        name -> CiText,
+        banned -> Bool,
+        iso_country_code -> Nullable<Varchar>,
+        nation -> Nullable<CiText>,
+    }
 }
 
 #[derive(Debug, Eq, Hash, PartialEq, Serialize, Display)]
 #[display(fmt = "{}", inner)]
-pub struct ShortPlayer {
+pub struct Player {
     #[serde(flatten)]
-    pub inner: EmbeddedPlayer,
+    pub inner: DatabasePlayer,
 
     pub nationality: Option<Nationality>,
 }
 
-#[derive(Debug, Serialize, Display)]
-#[display(fmt = "{}", player)]
-pub struct PlayerWithDemonsAndRecords {
-    #[serde(flatten)]
-    pub player: ShortPlayer,
-    pub records: Vec<EmbeddedRecordD>,
-    pub created: Vec<EmbeddedDemon>,
-    pub verified: Vec<EmbeddedDemon>,
-    pub published: Vec<EmbeddedDemon>,
-}
-
-impl Hash for PlayerWithDemonsAndRecords {
+impl Hash for FullPlayer {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.player.hash(state)
     }
 }
 
-#[derive(Insertable, Debug)]
-#[table_name = "players"]
-struct NewPlayer<'a> {
-    name: &'a CiStr,
-}
+impl By<players::id, i32> for DatabasePlayer {}
+impl By<players::name, &CiStr> for DatabasePlayer {}
 
-impl By<players::id, i32> for EmbeddedPlayer {}
-impl By<players::name, &CiStr> for EmbeddedPlayer {}
+impl By<players_n::id, i32> for Player {}
+impl By<players_n::name, &CiStr> for Player {}
 
-impl By<players::id, i32> for ShortPlayer {}
-impl By<players::name, &CiStr> for ShortPlayer {}
-
-impl EmbeddedPlayer {
-    pub fn insert(name: &CiStr, conn: &PgConnection) -> QueryResult<EmbeddedPlayer> {
-        info!("Creating new player with name {}", name);
-
-        insert_into(players::table)
-            .values(&NewPlayer { name })
-            .returning(EmbeddedPlayer::selection())
-            .get_result(conn)
-    }
-
+impl DatabasePlayer {
     pub fn ban(&self, conn: &PgConnection) -> QueryResult<()> {
         // delete all submissions
         diesel::delete(records::table)
@@ -149,7 +135,7 @@ impl EmbeddedPlayer {
         Ok(())
     }
 
-    pub fn merge(&self, with: EmbeddedPlayer, conn: &PgConnection) -> Result<()> {
+    pub fn merge(&self, with: DatabasePlayer, conn: &PgConnection) -> Result<()> {
         // FIXME: I had a serious headache while writing this code and didn't really think much
         // while doing so. Maybe look over it again at some point If both `self` and `with`
         // are registered as the creator of a level, delete `with` as creator
@@ -205,7 +191,7 @@ impl EmbeddedPlayer {
     }
 }
 
-impl Model for EmbeddedPlayer {
+impl Model for DatabasePlayer {
     type From = players::table;
     type Selection = (players::id, players::name, players::banned);
 
@@ -218,39 +204,20 @@ impl Model for EmbeddedPlayer {
     }
 }
 
-impl Model for ShortPlayer {
-    type From = JoinOn<
-        Join<players::table, nationalities::table, LeftOuter>,
-        diesel::dsl::Eq<
-            players::nationality,
-            diesel::expression::nullable::Nullable<nationalities::iso_country_code>,
-        >,
-    >;
-    type Selection = (
-        players::id,
-        players::name,
-        players::banned,
-        diesel::expression::nullable::Nullable<nationalities::iso_country_code>,
-        diesel::expression::nullable::Nullable<nationalities::nation>,
-    );
+impl Model for Player {
+    type From = players_n::table;
+    type Selection = <players_n::table as Table>::AllColumns;
 
     fn from() -> Self::From {
-        Join::new(players::table, nationalities::table, LeftOuter)
-            .on(players::nationality.eq(nationalities::iso_country_code.nullable()))
+        players_n::table
     }
 
     fn selection() -> Self::Selection {
-        (
-            players::id,
-            players::name,
-            players::banned,
-            nationalities::iso_country_code.nullable(),
-            nationalities::nation.nullable(),
-        )
+        players_n::all_columns
     }
 }
 
-impl Model for RankedPlayer2 {
+impl Model for RankedPlayer {
     type From = players_with_score::table;
     type Selection = (
         players_with_score::id,
@@ -271,7 +238,7 @@ impl Model for RankedPlayer2 {
     }
 }
 
-impl Queryable<<<ShortPlayer as Model>::Selection as Expression>::SqlType, Pg> for ShortPlayer {
+impl Queryable<<<Player as Model>::Selection as Expression>::SqlType, Pg> for Player {
     type Row = (i32, CiString, bool, Option<String>, Option<CiString>);
 
     fn build(row: Self::Row) -> Self {
@@ -280,8 +247,8 @@ impl Queryable<<<ShortPlayer as Model>::Selection as Expression>::SqlType, Pg> f
             _ => None,
         };
 
-        ShortPlayer {
-            inner: EmbeddedPlayer {
+        Player {
+            inner: DatabasePlayer {
                 id: row.0,
                 name: row.1,
                 banned: row.2,
@@ -291,7 +258,7 @@ impl Queryable<<<ShortPlayer as Model>::Selection as Expression>::SqlType, Pg> f
     }
 }
 
-impl Queryable<<<RankedPlayer2 as Model>::Selection as Expression>::SqlType, Pg> for RankedPlayer2 {
+impl Queryable<<<RankedPlayer as Model>::Selection as Expression>::SqlType, Pg> for RankedPlayer {
     type Row = (
         i32,
         CiString,
@@ -307,12 +274,11 @@ impl Queryable<<<RankedPlayer2 as Model>::Selection as Expression>::SqlType, Pg>
             (Some(country_code), Some(name)) => Some(Nationality::new(country_code, name)),
             _ => None,
         };
-        RankedPlayer2 {
+        RankedPlayer {
             id: row.0,
             name: row.1,
             rank: row.2,
             score: row.3,
-            index: row.4,
             nationality,
         }
     }

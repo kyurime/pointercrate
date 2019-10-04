@@ -1,8 +1,8 @@
-use super::{Demon, DemonWithCreatorsAndRecords};
+use super::{Demon, FullDemon};
 use crate::{
     citext::{CiStr, CiString},
     context::RequestContext,
-    model::demonlist::{creator::Creator, player::EmbeddedPlayer},
+    model::demonlist::{creator::Creator, player::DatabasePlayer},
     operation::{Get, Post},
     schema::demons,
     video, Result,
@@ -53,8 +53,8 @@ impl Post<PostDemon> for Demon {
             Demon::validate_name(&mut data.name, connection)?;
             Demon::validate_position(&mut data.position, connection)?;
 
-            let publisher = EmbeddedPlayer::get(data.publisher.as_ref(), ctx)?;
-            let verifier = EmbeddedPlayer::get(data.verifier.as_ref(), ctx)?;
+            let publisher = DatabasePlayer::get(data.publisher.as_ref(), ctx)?;
+            let verifier = DatabasePlayer::get(data.verifier.as_ref(), ctx)?;
 
             let new = NewDemon {
                 name: data.name.as_ref(),
@@ -92,8 +92,8 @@ impl Post<PostDemon> for Demon {
     }
 }
 
-impl Post<PostDemon> for DemonWithCreatorsAndRecords {
+impl Post<PostDemon> for FullDemon {
     fn create_from(data: PostDemon, ctx: RequestContext) -> Result<Self> {
-        DemonWithCreatorsAndRecords::get(Demon::create_from(data, ctx)?, ctx)
+        FullDemon::get(Demon::create_from(data, ctx)?, ctx)
     }
 }

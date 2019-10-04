@@ -2,15 +2,11 @@ use super::{Record, RecordStatus};
 use crate::{
     citext::CiString,
     context::RequestContext,
-    error::PointercrateError,
-    model::Model,
-    operation::{Paginate, Paginator},
-    schema::{demons, records},
+    model::{demonlist::record::records_pd, Model},
+    operation::{Paginate, Paginator, PaginatorQuery, TablePaginator},
     Result,
 };
-use diesel::{
-    pg::Pg, query_builder::BoxedSelectStatement, ExpressionMethods, QueryDsl, RunQueryDsl,
-};
+use diesel::{ExpressionMethods, QueryDsl};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -21,7 +17,7 @@ pub struct RecordPagination {
     #[serde(rename = "after")]
     after_id: Option<i32>,
 
-    limit: Option<i64>,
+    limit: Option<u8>,
 
     progress: Option<i16>,
     #[serde(rename = "progress__lt")]
@@ -43,73 +39,49 @@ pub struct RecordPagination {
     video: Option<String>,
 }
 
-impl Paginator for RecordPagination {
-    type Model = Record;
-    type PaginationColumn = records::id;
-    type PaginationColumnType = i32;
+impl TablePaginator for RecordPagination {
+    type ColumnType = i32;
+    type PaginationColumn = records_pd::id;
+    type Table = records_pd::table;
 
-    fn filter<'a, ST>(
-        &'a self,
-        mut query: BoxedSelectStatement<'a, ST, <Record as Model>::From, Pg>,
-        ctx: RequestContext,
-    ) -> BoxedSelectStatement<'a, ST, <Record as Model>::From, Pg> {
+    fn query(&self, ctx: RequestContext) -> PaginatorQuery<records_pd::table> {
+        let mut query = Record::boxed_all();
+
         filter!(query[
-            records::progress = self.progress,
-            records::progress < self.progress_lt,
-            records::progress > self.progress_gt,
-            records::status_ = self.status,
-            records::player = self.player,
-            records::demon = self.demon,
-            records::video = self.video
+            records_pd::progress = self.progress,
+            records_pd::progress < self.progress_lt,
+            records_pd::progress > self.progress_gt,
+            records_pd::status_ = self.status,
+            records_pd::player_id = self.player,
+            records_pd::demon_name = self.demon,
+            records_pd::video = self.video
         ]);
 
         match ctx.is_list_mod() {
-            true => filter!(query[records::submitter = self.submitter]),
-            false => query = query.filter(records::status_.eq(RecordStatus::Approved)),
+            true => filter!(query[records_pd::submitter_id = self.submitter]),
+            false => query = query.filter(records_pd::status_.eq(RecordStatus::Approved)),
         };
 
         query
     }
-
-    fn page(
-        &self,
-        last_on_page: Option<Self::PaginationColumnType>,
-        first_on_page: Option<Self::PaginationColumnType>,
-    ) -> Self {
-        RecordPagination {
-            before_id: last_on_page.map(|i| i + 1),
-            after_id: first_on_page.map(|i| i - 1),
-            ..self.clone()
-        }
-    }
-
-    fn limit(&self) -> i64 {
-        self.limit.unwrap_or(50)
-    }
-
-    fn before(&self) -> Option<i32> {
-        self.before_id
-    }
-
-    fn after(&self) -> Option<i32> {
-        self.after_id
-    }
 }
+
+delegate_to_table_paginator!(RecordPagination);
 
 impl Paginate<RecordPagination> for Record {
     fn load(pagination: &RecordPagination, ctx: RequestContext) -> Result<Vec<Self>> {
-        let mut query = pagination.filter(Record::boxed_all(), ctx);
+        let mut query = pagination.query(ctx);
 
         filter!(query[
-            records::id > pagination.after_id,
-            records::id < pagination.before_id,
-            demons::position = pagination.demon_position,
-            demons::position < pagination.demon_position_lt,
-            demons::position > pagination.demon_position_gt
+            records_pd::id > pagination.after_id,
+            records_pd::id < pagination.before_id,
+            records_pd::position = pagination.demon_position,
+            records_pd::position < pagination.demon_position_lt,
+            records_pd::position > pagination.demon_position_gt
         ]);
 
         let mut records: Vec<Record> =
-            pagination_result!(query, pagination, records::id, ctx.connection())?;
+            pagination_result!(query, pagination, records_pd::id, ctx.connection())?;
 
         if !ctx.is_list_mod() {
             for record in &mut records {

@@ -1,8 +1,8 @@
-use super::{Demon, DemonWithCreatorsAndRecords};
+use super::{Demon, FullDemon};
 use crate::{
     citext::{CiStr, CiString},
     context::RequestContext,
-    model::demonlist::player::EmbeddedPlayer,
+    model::demonlist::player::DatabasePlayer,
     operation::{deserialize_non_optional, deserialize_optional, Get, Patch},
     schema::demons,
     Result,
@@ -34,7 +34,7 @@ impl Patch<PatchDemon> for Demon {
         validate_db!(patch, connection: Demon::validate_name[name], Demon::validate_position[position]);
         validate_nullable!(patch: Demon::validate_video[video]);
 
-        let map = |name: &CiStr| EmbeddedPlayer::get(name, ctx);
+        let map = |name: &CiStr| DatabasePlayer::get(name, ctx);
 
         patch!(self, patch: name, video, requirement);
         try_map_patch!(self, patch: map => verifier, map => publisher);
@@ -65,9 +65,9 @@ impl Patch<PatchDemon> for Demon {
     }
 }
 
-impl Patch<PatchDemon> for DemonWithCreatorsAndRecords {
+impl Patch<PatchDemon> for FullDemon {
     fn patch(self, patch: PatchDemon, ctx: RequestContext) -> Result<Self> {
-        Ok(DemonWithCreatorsAndRecords {
+        Ok(FullDemon {
             demon: self.demon.patch(patch, ctx)?,
             ..self
         })
