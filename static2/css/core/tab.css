@@ -7,8 +7,12 @@
   border-radius: none;
 }
 
+.tab:not(.tab-active) {
+  color: rgb(167, 167, 167);
+}
+
 .tab-active {
-  color: rgb(165, 165, 165);
+  color: rgb(232, 230, 227);
 }
 
 .tab:first-of-type {
