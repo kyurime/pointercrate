@@ -84,7 +84,7 @@
 .hamburger input:checked ~ span {
   opacity: 1;
   transform: rotate(45deg) translate(-1px, -1px);
-  background: #232323;
+  background: rgb(232, 230, 227);
 }
 
 .hamburger input:checked ~ span:nth-last-child(2) {
