@@ -26,6 +26,7 @@ make_patch! {
         status: RecordStatus,
         player: CiString,
         demon: CiString,
+        notes: Option<String>,
     }
 }
 
@@ -59,6 +60,7 @@ impl Patch<PatchRecord> for FullRecord {
 
         let map = move |_| {
             MinimalDemon {
+                id: demon.id,
                 name: demon.name,
                 position: demon.position,
             }
@@ -67,7 +69,7 @@ impl Patch<PatchRecord> for FullRecord {
 
         map_patch!(self, patch: map => demon);
         try_map_patch!(self, patch: map2 => player);
-        patch!(self, patch: progress, video, status);
+        patch!(self, patch: progress, video, status, notes);
 
         connection.transaction(move || {
             // If there is a record that would validate the unique (status_, demon, player),
@@ -75,7 +77,7 @@ impl Patch<PatchRecord> for FullRecord {
             let max_progress: Option<i16> = records::table
                 .select(records::all_columns)
                 .filter(records::player.eq(&self.player.id))
-                .filter(records::demon.eq(&self.demon.name))
+                .filter(records::demon.eq(&self.demon.id))
                 .filter(records::status_.eq(&self.status))
                 .filter(records::id.ne(&self.id))
                 .select(diesel::dsl::max(records::progress))
@@ -87,7 +89,7 @@ impl Patch<PatchRecord> for FullRecord {
                     // deleted
                     let record = DatabaseRecord::all()
                         .filter(records::player.eq(&self.player.id))
-                        .filter(records::demon.eq(&self.demon.name))
+                        .filter(records::demon.eq(&self.demon.id))
                         .filter(records::status_.eq(&self.status))
                         .filter(records::progress.eq(&max_progress))
                         .get_result::<DatabaseRecord>(connection)?;
@@ -97,14 +99,12 @@ impl Patch<PatchRecord> for FullRecord {
                 }
             }
 
-            let demon_name: &CiStr = self.demon.name.as_ref();
-
             // By now, our record is for sure the one with the highest progress - all others can be
             // deleted
             diesel::delete(
                 records::table
                     .filter(records::player.eq(self.player.id))
-                    .filter(records::demon.eq(demon_name))
+                    .filter(records::demon.eq(self.demon.id))
                     .filter(
                         records::status_
                             .eq(RecordStatus::Approved)
@@ -122,7 +122,8 @@ impl Patch<PatchRecord> for FullRecord {
                     records::video.eq(&self.video),
                     records::status_.eq(&self.status),
                     records::player.eq(&self.player.id),
-                    records::demon.eq(&self.demon.name),
+                    records::demon.eq(&self.demon.id),
+                    records::notes.eq(&self.notes),
                 ))
                 .execute(connection)?;
 

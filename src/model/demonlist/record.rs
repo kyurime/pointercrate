@@ -81,7 +81,7 @@ impl<'de> Deserialize<'de> for RecordStatus {
 }
 
 #[derive(Debug, Queryable, Display, Hash)]
-#[display(fmt = "{} {}% on {} (ID: {})", player_id, progress, demon_name, id)]
+#[display(fmt = "{} {}% on {} (ID: {})", player_id, progress, demon_id, id)]
 pub struct DatabaseRecord {
     id: i32,
     progress: i16,
@@ -89,7 +89,8 @@ pub struct DatabaseRecord {
     status: RecordStatus,
     player_id: i32,
     submitter_id: i32,
-    demon_name: CiString,
+    demon_id: i32,
+    notes: Option<String>,
 }
 
 impl Model for DatabaseRecord {
@@ -115,9 +116,11 @@ table! {
         progress -> Int2,
         video -> Nullable<Varchar>,
         status_ -> Record_status,
+        notes -> Nullable<Text>,
         player_id -> Int4,
         player_name -> CiText,
         player_banned -> Bool,
+        demon_id -> Int4,
         demon_name -> CiText,
         position -> Int2,
         submitter_id -> Int4,
@@ -135,6 +138,7 @@ pub struct FullRecord {
     pub player: DatabasePlayer,
     pub demon: MinimalDemon,
     pub submitter: Option<Submitter>,
+    pub notes: Option<String>,
 }
 
 table! {
@@ -151,6 +155,7 @@ table! {
         player_id -> Int4,
         player_name -> CiText,
         player_banned -> Bool,
+        demon_id -> Int4,
         demon_name -> CiText,
         position -> Int2,
     }
@@ -190,6 +195,7 @@ table! {
         video -> Nullable<Varchar>,
         status_ -> Record_status,
         player -> Int4,
+        demon_id -> Int4,
         demon_name -> CiText,
         position -> Int2,
     }
@@ -215,7 +221,7 @@ table! {
         progress -> Int2,
         video -> Nullable<Varchar>,
         status_ -> Record_status,
-        demon -> CiText,
+        demon -> Int4,
         player_id -> Int4,
         player_name -> CiText,
         player_banned -> Bool,
@@ -252,9 +258,11 @@ impl Queryable<<<FullRecord as Model>::Selection as Expression>::SqlType, Pg> fo
         i16,
         Option<String>,
         RecordStatus,
+        Option<String>,
         i32,
         CiString,
         bool,
+        i32,
         CiString,
         i16,
         i32,
@@ -267,18 +275,20 @@ impl Queryable<<<FullRecord as Model>::Selection as Expression>::SqlType, Pg> fo
             progress: row.1,
             video: row.2,
             status: row.3,
+            notes: row.4,
             player: DatabasePlayer {
-                id: row.4,
-                name: row.5,
-                banned: row.6,
+                id: row.5,
+                name: row.6,
+                banned: row.7,
             },
             demon: MinimalDemon {
-                position: row.8,
-                name: row.7,
+                id: row.8,
+                position: row.10,
+                name: row.9,
             },
             submitter: Some(Submitter {
-                id: row.9,
-                banned: row.10,
+                id: row.11,
+                banned: row.12,
             }),
         }
     }
@@ -313,6 +323,7 @@ impl Queryable<<<Record as Model>::Selection as Expression>::SqlType, Pg> for Re
         CiString,
         bool,
         // demon
+        i32,
         CiString,
         i16,
     );
@@ -330,8 +341,9 @@ impl Queryable<<<Record as Model>::Selection as Expression>::SqlType, Pg> for Re
                 banned: row.7,
             },
             demon: MinimalDemon {
-                name: row.8,
-                position: row.9,
+                id: row.8,
+                name: row.9,
+                position: row.10,
             },
         }
     }
@@ -355,6 +367,7 @@ impl Model for EmbeddedRecordPD {
         records_pd::player_id,
         records_pd::player_name,
         records_pd::player_banned,
+        records_pd::demon_id,
         records_pd::demon_name,
         records_pd::position,
     );
@@ -379,6 +392,7 @@ impl Queryable<<<EmbeddedRecordPD as Model>::Selection as Expression>::SqlType, 
         i32,
         CiString,
         bool,
+        i32,
         CiString,
         i16,
     );
@@ -395,8 +409,9 @@ impl Queryable<<<EmbeddedRecordPD as Model>::Selection as Expression>::SqlType, 
                 banned: row.6,
             },
             demon: MinimalDemon {
-                name: row.7,
-                position: row.8,
+                id: row.7,
+                name: row.8,
+                position: row.9,
             },
         }
     }
@@ -418,7 +433,16 @@ impl Model for MinimalRecordD {
 impl Queryable<<<MinimalRecordD as Model>::Selection as Expression>::SqlType, Pg>
     for MinimalRecordD
 {
-    type Row = (i32, i16, Option<String>, RecordStatus, i32, CiString, i16);
+    type Row = (
+        i32,
+        i16,
+        Option<String>,
+        RecordStatus,
+        i32,
+        i32,
+        CiString,
+        i16,
+    );
 
     fn build(row: Self::Row) -> Self {
         MinimalRecordD {
@@ -428,8 +452,9 @@ impl Queryable<<<MinimalRecordD as Model>::Selection as Expression>::SqlType, Pg
             status: row.3,
             // skip index 4, player id
             demon: MinimalDemon {
-                name: row.5,
-                position: row.6,
+                id: row.5,
+                name: row.6,
+                position: row.7,
             },
         }
     }
@@ -456,7 +481,7 @@ impl Queryable<<<MinimalRecordP as Model>::Selection as Expression>::SqlType, Pg
         i16,
         Option<String>,
         RecordStatus,
-        CiString,
+        i32,
         i32,
         CiString,
         bool,
@@ -468,7 +493,6 @@ impl Queryable<<<MinimalRecordP as Model>::Selection as Expression>::SqlType, Pg
             progress: row.1,
             video: row.2,
             status: row.3,
-            // skip index 4, demon name
             player: DatabasePlayer {
                 id: row.5,
                 name: row.6,
