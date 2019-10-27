@@ -1,7 +1,7 @@
 -- Your SQL goes here
 
 -- Create the ID column
-ALTER TABLE demons ADD COLUMN id SERIAL;
+ALTER TABLE demons ADD COLUMN id SERIAL NOT NULL;
 
 -- Fix up the audit logs
 -- demon addition logs
