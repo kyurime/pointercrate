@@ -3,6 +3,9 @@
 -- Create the ID column
 ALTER TABLE demons ADD COLUMN id SERIAL;
 
+ALTER TABLE demons ALTER COLUMN id SET NOT NULL;
+
+
 -- Fix up the audit logs
 -- demon addition logs
 ALTER TABLE demon_additions ADD COLUMN id INTEGER;
