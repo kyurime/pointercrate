@@ -67,6 +67,7 @@ tr:nth-child(even) {
   #rules,
   #discord {
     order: -1;
+    width: 100%
   }
 
   #discord {
@@ -82,7 +83,7 @@ tr:nth-child(even) {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   #editors,
   #submit,
   #stats {
@@ -91,6 +92,14 @@ tr:nth-child(even) {
 
   .video-link {
     display: none;
+  }
+
+  th:nth-last-of-type(2) {
+    border-radius: 0 12px 0 0;
+  }
+
+  tr:last-of-type td:nth-last-of-type(2) {
+    border-radius: 0 0 12px 0;
   }
 
   #stats-viewer-cont {
