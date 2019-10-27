@@ -40,28 +40,23 @@ version = "0.4.4"
 features = ["postgres"]
 
 [dependencies.gdcf]
-path = "../gdcf/gdcf"
-#git = "https://github.com/zmxhawrhbg/gdcf"
+git = "https://github.com/zmxhawrhbg/gdcf"
 
 [dependencies.gdcf_model]
-path = "../gdcf/gdcf_model"
-#git = "https://github.com/zmxhawrhbg/gdcf"
+git = "https://github.com/zmxhawrhbg/gdcf"
 features = ["serde_support"]
 
 [dependencies.gdcf_parse]
-path = "../gdcf/gdcf_parse"
-#git = "https://github.com/zmxhawrhbg/gdcf"
+git = "https://github.com/zmxhawrhbg/gdcf"
 features = ["parallel"]
 
 [dependencies.gdcf_diesel]
-path = "../gdcf/gdcf_diesel"
-#git = "https://github.com/zmxhawrhbg/gdcf"
+git = "https://github.com/zmxhawrhbg/gdcf"
 default-features = false
 features = ["pg"]
 
 [dependencies.gdrs]
-path = "../gdcf/gdrs"
-#git = "https://github.com/zmxhawrhbg/gdcf"
+git = "https://github.com/zmxhawrhbg/gdcf"
 
 [dependencies.diesel]
 version = "1.4.3"
