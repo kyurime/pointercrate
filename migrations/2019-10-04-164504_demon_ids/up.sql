@@ -226,7 +226,7 @@ CREATE OR REPLACE VIEW players_with_score AS
     FROM
     (
         SELECT pseudo_records.player,
-               SUM(record_score(pseudo_records.progress::FLOAT, pseudo_records.position::FLOAT, 100::FLOAT, pseudo_records.requirement)) as total_score
+               SUM(record_score(pseudo_records.progress::FLOAT, pseudo_records.position::FLOAT, 100::FLOAT)) as total_score
         FROM (
             SELECT player,
                    progress,
@@ -288,9 +288,6 @@ CREATE VIEW demons_p AS  -- demons with publisher
     FROM demons
     INNER JOIN players AS publishers
     ON publishers.id = demons.publisher;
-
--- Drop the old audit logs since we migrated the data over to the new ones already. Its a waste of time to update the references into the demons table
-DROP TABLE audit_log;
 
 -- Drop the old column
 ALTER TABLE records DROP COLUMN demon_name;
