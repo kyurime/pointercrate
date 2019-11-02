@@ -380,9 +380,10 @@ input::placeholder {
 
 .dropdown-menu .menu {
   position: absolute;
+  display: none;
 
-  opacity: 0;
-  transition: all 0.3s;
+  /*opacity: 0;
+  transition: all 0.3s;*/
 
   width: calc(100% - 22px);
   max-height: 400px;
@@ -424,8 +425,8 @@ input::placeholder {
   box-shadow: 0px 0px 10px 5px #ccc; */
 }
 
-.dropdown-menu input:focus +.menu {
-  opacity: 0.95;
+.dropdown-menu input:focus + .menu {
+  /*opacity: 0.95;*/
   border-top: none;
   pointer-events: auto;
 }
