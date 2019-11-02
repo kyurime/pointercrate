@@ -703,7 +703,7 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
                                 span style = "font-size: 90%; font-style: italic" { "International" }
                             }
                             @for nation in nations {
-                                li.white.hover data-code = {(nation.country_code)} data-name = {(nation.nation)}{
+                                li.dark-grey.hover data-code = {(nation.country_code)} data-name = {(nation.nation)}{
                                     span class = {"flag-icon flag-icon-" (nation.country_code.to_lowercase())} {}
                                     (PreEscaped("&nbsp;"))
                                     b {(nation.country_code)}
