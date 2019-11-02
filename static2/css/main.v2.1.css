@@ -16,10 +16,20 @@ body {
   background-size: cover;
 }
 
-body,
-input[type="submit"],
-input [type="button"] {
-  font-family: "Noto Sans", sans-serif;
+@media (max-width: 767px) {
+  body {
+    background-image: none;
+  }
+}
+
+body {
+  font-family: "Noto Sans",
+  sans-serif;
+}
+
+/* input elements are weird about their font */
+input {
+  font-family: inherit;
   font-size: inherit;
 }
 
@@ -35,10 +45,7 @@ input [type="button"] {
   color: #111113;
 }
 
-.feature {
-  width: 30%;
-}
-
+/* If element to scroll to is selected by id in URL, add offset to account for nav bar */
 :target:before {
   content: "";
   display: block;

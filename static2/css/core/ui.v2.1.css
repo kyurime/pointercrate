@@ -113,7 +113,6 @@ table {
 
 ul {
   padding: 0;
-  margin: 0;
   list-style: none;
 }
 
@@ -173,6 +172,9 @@ a {
   background: rgba(0, 0, 0, 0.2);
 
   border-radius: 12px;
+
+  flex-grow: 1;
+  overflow: hidden;
 }
 
 /* Roman list */
@@ -390,8 +392,6 @@ input::placeholder {
 
   backdrop-filter: blur(15px);
 
-  /* border: 1px solid #Bbb; */
-
   margin-left: 10px;
   margin-right: 10px;
   margin-top: 2%;
@@ -414,7 +414,7 @@ input::placeholder {
   border: none;
   border-bottom: 1px dotted #555;
   max-width: 250px;
-  font-size: 1.0em;
+  font-size: 1em;
 }
 
 .dropdown-menu > input:focus {
@@ -622,3 +622,33 @@ ul.selection-list li {
 ul.selection-list li:last-of-type {
   border-radius: 0 0 12px 12px;
 }
+/* Tab panel stuff */
+.tab-content:not(.tab-content-active) {
+  display: none;
+}
+
+.tab {
+  cursor: pointer;
+  border-radius: none;
+}
+
+.tab:not(.tab-active) {
+  color: rgb(167, 167, 167);
+}
+
+.tab-active {
+  color: rgb(232, 230, 227);
+}
+
+.tab:first-of-type {
+  border-radius: 0 0 0 12px;
+}
+
+.tab:last-of-type {
+  border-radius: 0 0 12px 0;
+}
+
+.tab:only-of-type {
+  border-radius: 0 0 12px 12px;
+}
+

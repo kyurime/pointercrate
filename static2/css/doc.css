@@ -36,11 +36,6 @@ h1:hover > .link-anchor {
   color: #111116;
 }
 
-code {
-  white-space: pre;
-  font-size: 110%;
-}
-
 .verb {
   padding: 3px 5px;
 }
@@ -81,6 +76,8 @@ tr:last-of-type td:last-of-type {
 
 code {
   background: rgba(0, 0, 0, 0.25);
+  white-space: pre-wrap;
+  font-size: 110%;
   border-radius: 3px;
   padding: 0px 2px;
 }

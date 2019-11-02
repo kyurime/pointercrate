@@ -14,7 +14,7 @@ use diesel::{
     Queryable, RunQueryDsl, Table,
 };
 use joinery::Joinable;
-use log::{debug, warn};
+use log::{debug, info, warn};
 use serde_derive::Serialize;
 use std::hash::{Hash, Hasher};
 
@@ -323,7 +323,7 @@ impl Demon {
         // complains. I actually dont know why, its DEFERRABLE INITIALLY IMMEDIATE (whatever the
         // fuck that means, it made it work in the python version)
         diesel::update(demons::table)
-            .filter(demons::name.eq(&self.name))
+            .filter(demons::id.eq(self.id))
             .set(demons::position.eq(-1))
             .execute(connection)?;
 
@@ -354,9 +354,14 @@ impl Demon {
         debug!("Performing actual move to position {}", to);
 
         diesel::update(demons::table)
-            .filter(demons::name.eq(&self.name))
+            .filter(demons::id.eq(self.id))
             .set(demons::position.eq(to))
             .execute(connection)?;
+
+        info!(
+            "Moved demon {} from {} to {} successfully!",
+            self.name, self.position, to
+        );
 
         self.position = to;
 
