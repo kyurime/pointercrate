@@ -16,15 +16,8 @@ body {
   background-size: cover;
 }
 
-@media (max-width: 767px) {
-  body {
-    background-image: none;
-  }
-}
-
 body {
-  font-family: "Noto Sans",
-  sans-serif;
+  font-family: "Noto Sans", sans-serif;
 }
 
 /* input elements are weird about their font */
