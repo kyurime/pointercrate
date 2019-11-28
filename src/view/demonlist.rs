@@ -695,7 +695,7 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
                     input#nation-filter type="text" value = "International" style = "color: rgb(202, 202, 202); font-weight: bold;";
                     div.menu style = "font-size: 0.55em; font-weight: normal"{
                         ul#nation-list {
-                            li.dark-grey.hover.underlined data-name = "International" {
+                            li.hover.underlined data-name = "International" {
                                 span.em.em-world_map {}
                                 (PreEscaped("&nbsp;"))
                                 b {"WORLD"}
@@ -703,7 +703,7 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
                                 span style = "font-size: 90%; font-style: italic" { "International" }
                             }
                             @for nation in nations {
-                                li.dark-grey.hover data-code = {(nation.country_code)} data-name = {(nation.nation)}{
+                                li.hover data-code = {(nation.country_code)} data-name = {(nation.nation)}{
                                     span class = {"flag-icon flag-icon-" (nation.country_code.to_lowercase())} {}
                                     (PreEscaped("&nbsp;"))
                                     b {(nation.country_code)}
