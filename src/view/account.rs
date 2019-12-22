@@ -47,7 +47,7 @@ impl Page for AccountPage {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/account.js", "js/form.js"]
+        vec!["js/form.js", "js/account.js", "js/dlmanage.js"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -75,11 +75,25 @@ impl Page for AccountPage {
                             i class = "fa fa-users fa-2x" aria-hidden="true" {}
                         }
                     }
+                    @if self.user.has_any(&perms!(ListHelper or ListModerator or ListAdministrator)) {
+                        div.tab.button.white.hover.no-shadow data-tab-id="3" {
+                            b {
+                                "Records"
+                            }
+                            (PreEscaped("&nbsp;"))
+                            i class = "fa fa-trophy fa-2x" aria-hidden="true" {}
+                        }
+                    }
                 }
 
                 div.tab-display {
                     (self.profile_page())
-                    (self.user_page())
+                    @if self.user.has_any(&perms!(Administrator)) {
+                        (self.user_page())
+                    }
+                    @if self.user.has_any(&perms!(ListHelper or ListModerator or ListAdministrator)) {
+                        (self.record_page())
+                    }
                 }
             }
         }
@@ -180,23 +194,9 @@ impl AccountPage {
                         }
                     }
                     div.panel.fade {
-                        h2.underlined.pad {
-                            "User list"
-                        }
-                        p {
-                            "A list of all user accounts on pointercrate"
-                        }
-                        div#user-pagination {
-                            p.info-red.output#load-users-error {}
-                            ul.selection-list#user-list {}
-                            div.flex {
-                                div.button.dark-grey.hover.slightly-round.prev style="margin-right: 20px" { "Previous"}
-                                div.button.dark-grey.hover.slightly-round.next {"Next"} // *clap* next *clap* user
-                            }
-                        }
-                        a.dark-grey.hover.button.slightly-round#load-users {
-                            "Load"
-                        }
+                        h2.underlined.pad { "User list" }
+                        p { "A list of all user accounts on pointercrate" }
+                        (super::paginator("user-pagination", "/users/"))
                     }
                 }
             }

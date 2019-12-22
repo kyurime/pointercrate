@@ -1,172 +1,107 @@
-class StatsViewer {
-  generatePlayer(player) {
-    var li = document.createElement("li");
-    var b = document.createElement("b");
-    var i = document.createElement("i");
+function generatePlayer(player) {
+  var li = document.createElement("li");
+  var b = document.createElement("b");
+  var i = document.createElement("i");
 
-    li.className = "dark-grey hover";
-    li.dataset.id = player.id;
-    li.dataset.rank = player.rank;
+  li.className = "dark-grey hover";
+  li.dataset.id = player.id;
+  li.dataset.rank = player.rank;
 
-    b.appendChild(document.createTextNode("#" + player.rank + " "));
-    i.appendChild(document.createTextNode(player.score.toFixed(2)));
+  b.appendChild(document.createTextNode("#" + player.rank + " "));
+  i.appendChild(document.createTextNode(player.score.toFixed(2)));
 
-    if (player.nationality) {
-      var span = document.createElement("span");
+  if (player.nationality) {
+    var span = document.createElement("span");
 
-      span.className =
-        "flag-icon flag-icon-" + player.nationality.country_code.toLowerCase();
+    span.className =
+      "flag-icon flag-icon-" + player.nationality.country_code.toLowerCase();
 
-      li.appendChild(span);
-      li.appendChild(document.createTextNode(" "));
-    }
-
-    li.appendChild(b);
-    li.appendChild(document.createTextNode(player.name));
-    li.appendChild(i);
-
-    li.addEventListener("click", e => this.updateView(e));
-
-    return li;
+    li.appendChild(span);
+    li.appendChild(document.createTextNode(" "));
   }
 
+  li.appendChild(b);
+  li.appendChild(document.createTextNode(player.name));
+  li.appendChild(i);
+
+  return li;
+}
+
+class StatsViewer extends FilteredPaginator {
   constructor() {
-    this.domElement = $("#statsviewer");
-    this._name = this.domElement.find("#player-name");
-    this._created = this.domElement.find("#created");
-    this._beaten = this.domElement.find("#beaten");
-    this._verified = this.domElement.find("#verified");
-    this._published = this.domElement.find("#published");
-    this._hardest = this.domElement.find("#hardest");
-    this._score = this.domElement.find("#score");
-    this._rank = this.domElement.find("#rank");
-    this._amountBeaten = this.domElement.find("#amount-beaten");
-    this._amountLegacy = this.domElement.find("#amount-legacy");
-    this._current = this.domElement.find("#name");
-    this._error = this.domElement.find("#error-output");
-    this._progress = this.domElement.find("#progress");
-    this._content = this.domElement.find("#stats-data");
-    this._nation = undefined;
-    this._nationName = "International";
+    super("stats-viewer-pagination", generatePlayer, "name_contains");
 
-    this.paginator = undefined;
+    this.html = $("#statsviewer");
+    this._name = this.html.find("#player-name");
+    this._created = this.html.find("#created");
+    this._beaten = this.html.find("#beaten");
+    this._verified = this.html.find("#verified");
+    this._published = this.html.find("#published");
+    this._hardest = this.html.find("#hardest");
+    this._score = this.html.find("#score");
+    this._rank = this.html.find("#rank");
+    this._amountBeaten = this.html.find("#amount-beaten");
+    this._amountLegacy = this.html.find("#amount-legacy");
+    this._current = this.html.find("#name");
+    this._error = this.html.find("#error-output");
+    this._progress = this.html.find("#progress");
+    this._content = this.html.find("#stats-data");
 
-    var filterInput = document.getElementById("pagination-filter");
-    var pagination = document.getElementById("stats-viewer-pagination");
-
-    var setPaginator = () => {
-      if (this.paginator) {
-        this.paginator.stop();
-      }
-
-      let data = {}
-
-      if (this._nation) {
-        data.nation = this._nation;
-      }
-
-      if (filterInput.value) {
-        data.name_contains = filterInput.value;
-      }
-
-      this.paginator = new Paginator(
-        pagination,
-        "/players/ranking/",
-        data,
-        this.generatePlayer.bind(this)
-      );
-    };
+    let nationName = "International";
 
     document
       .getElementById("show-stats-viewer")
-      .addEventListener("click", () => setPaginator());
+      .addEventListener("click", () => this.initialize());
 
-    filterInput.addEventListener("keypress", event => {
-      if (event.keyCode == 13) {
-        setPaginator();
-      }
-    });
-
-    filterInput.addEventListener("change", () => setPaginator());
-
-    var timeout = undefined;
-
-    filterInput.addEventListener("input", () => {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-
-      timeout = setTimeout(() => setPaginator(), 1000);
-    });
-
-    var nationFilter = document.getElementById("nation-filter");
-    nationFilter.value = "International"; // in case some browser randomly decide to store text field values
-
-    nationFilter.addEventListener("focus", () => {
-        this._nationName = nationFilter.value;
-        nationFilter.value = '';
-        nationFilter.dispatchEvent(new Event('change'));
-    });
-
-    nationFilter.addEventListener("focusout", () => {
-        nationFilter.value = this._nationName;
-    });
-
-    for(let li of nationFilter.parentNode.getElementsByTagName('li')) {
-        li.addEventListener('click', () => {
-            this._nationName = li.dataset.name;
-            this._nation = li.dataset.code;
-            nationFilter.value = this._nationName;
-            setPaginator();
-        });
-    }
+    this.dropdown = new Dropdown(
+      this.html[0].getElementsByClassName("dropdown-menu")[0]
+    );
+    this.dropdown.addEventListener(li =>
+      this.updateQueryData("nation", li.dataset.code)
+    );
   }
 
-  updateView(event) {
-    let selected = $(event.currentTarget);
+  onSelect(selected) {
+    makeRequest(
+      "GET",
+      "/players/" + selected.dataset.id + "/",
+      this.errorOutput,
+      jsonData => {
+        this.onReceive(jsonData);
 
-    $.ajax({
-      method: "GET",
-      url: "/api/v1/players/" + selected.data("id") + "/",
-      dataType: "json",
-      error: data => {
-        this._content.hide(100);
-
-        if (data.responseJSON) this._error.text(data.responseJSON.message);
-        else this._error.text("Something went wrong!");
-
-        this._error.show(100);
-      },
-      success: data => {
-        let json = data.data;
-        if (json.nationality == null) {
-          this._name.text(json.name);
-        } else {
-          this._name.html(
-            json.name +
-              "&nbsp;<span class = 'flag-icon flag-icon-" +
-              json.nationality.country_code.toLowerCase() +
-              "' title = '" +
-              json.nationality.nation +
-              "'></span>"
-          );
-        }
-
-        this._current.text(selected.find(".player-name").text());
-        this._rank.text(selected.data("rank"));
-        this._score.text(selected.find("i").text());
-
-        this.setFields(
-          json.created,
-          json.published,
-          json.verified,
-          json.records
-        );
-
-        this._error.hide(100);
-        this._content.show(100);
+        this._rank.text(selected.dataset.rank);
+        this._score.text(selected.getElementsByTagName("i")[0].innerHTML);
       }
-    });
+    );
+  }
+
+  onReceive(response) {
+    var playerData = response.responseJSON.data;
+
+    if (playerData.nationality == null) {
+      this._name.text(playerData.name);
+    } else {
+      this._name.html(
+        playerData.name +
+          "&nbsp;<span class = 'flag-icon flag-icon-" +
+          playerData.nationality.country_code.toLowerCase() +
+          "' title = '" +
+          playerData.nationality.nation +
+          "'></span>"
+      );
+    }
+
+    this._current.text(playerData.name);
+
+    this.setFields(
+      playerData.created,
+      playerData.published,
+      playerData.verified,
+      playerData.records
+    );
+
+    this._error.hide(100);
+    this._content.show(100);
   }
 
   setFields(created, published, verified, records) {
@@ -212,7 +147,6 @@ class StatsViewer {
 
 $(document).ready(function() {
   window.statsViewer = new StatsViewer();
-
   var submissionForm = new Form(document.getElementById("submission-form"));
 
   var demon = submissionForm.input("id_demon");
@@ -228,10 +162,7 @@ $(document).ready(function() {
     "Due to Geometry Dash's limitations I know that no player has such a long name"
   );
 
-  progress.addValidator(
-    valueMissing,
-    "Please specify the record's progress"
-  );
+  progress.addValidator(valueMissing, "Please specify the record's progress");
   progress.addValidator(rangeUnderflow, "Record progress cannot be negative");
   progress.addValidator(
     rangeOverflow,

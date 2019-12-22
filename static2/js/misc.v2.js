@@ -2,12 +2,17 @@ function forall(selector, callback) {
   $(selector).each((i, elem) => callback(i, $(elem)));
 }
 
-$(window).on("load resize", function() {
-  function forceRatio(element, wRatio, hRatio) {
-    var target = $(element);
+function forceRatio(element, wRatio, hRatio) {
+  console.log("Forcing ratio of " + element);
+  var target = $(element);
+  var width = target.width();
+  var calculatedHeight = (width * hRatio) / wRatio;
+  if (Math.abs(target.height() - calculatedHeight) > 20) {
     target.height((target.width() * hRatio) / wRatio);
   }
+}
 
+$(window).on("load resize", function() {
   // back to top things
 
   var scrollers = $(".js-scroll");
@@ -123,9 +128,11 @@ $(window).on("load resize", function() {
 
   $(".ratio-16-9").each(function() {
     forceRatio(this, 16, 9);
+    if (this.tagName == "IFRAME") this.onload = () => forceRatio(this, 16, 9);
   });
   $(".ratio-4-3").each(function() {
     forceRatio(this, 4, 3);
+    if (this.tagName == "IFRAME") this.onload = () => forceRatio(this, 4, 3);
   });
 
   $(".js-delay-css").each((i, elem) => {
@@ -133,7 +140,7 @@ $(window).on("load resize", function() {
     var attr = elem.data("property");
     var value = elem.data("property-value");
 
-    elem.css(attr, value);
+    if (elem.css(attr) != value) elem.css(attr, value);
   });
 
   $(".js-delay-attr").each((i, elem) => {
@@ -141,11 +148,6 @@ $(window).on("load resize", function() {
     var attr = elem.data("attr");
     var value = elem.data("attr-value");
 
-    elem.attr(attr, value);
+    if (elem.attr(attr) != value) elem.attr(attr, value);
   });
-
-  // Fix for the dropdown in the stats viewer
-  // FIXME: really bad hotfix
-  $(".dropdown-menu input[type='text']").focus(() => $(".dropdown-menu .menu").fadeTo(300, 0.95));
-  $(".dropdown-menu input[type='text']").focusout(() => $(".dropdown-menu .menu").fadeOut(300));
 });

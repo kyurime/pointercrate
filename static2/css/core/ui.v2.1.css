@@ -323,7 +323,6 @@ form input[type="password"]:invalid {
 /* Search UI Element */
 
 .search {
-  margin: 10px;
   padding: 0px 4px;
 
   border: 1px solid #525252e6;
@@ -382,9 +381,6 @@ input::placeholder {
   position: absolute;
   display: none;
 
-  /*opacity: 0;
-  transition: all 0.3s;*/
-
   width: calc(100% - 22px);
   max-height: 400px;
   overflow-y: scroll;
@@ -397,7 +393,7 @@ input::placeholder {
   margin-right: 10px;
   margin-top: 2%;
 
-  z-index: 10000;
+  z-index: 100;
 
   border-radius: 12px;
 
@@ -610,6 +606,7 @@ form .output {
 }
 
 ul.selection-list {
+  overflow-y: scroll;
   font-size: 80%;
   margin: 10px 0px;
 }

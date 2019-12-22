@@ -23,6 +23,8 @@ use joinery::Joinable;
 use maud::{html, Markup, PreEscaped};
 use tokio::prelude::{Future, IntoFuture};
 
+mod manage;
+
 struct ListSection {
     name: &'static str,
     description: &'static str,
@@ -79,7 +81,7 @@ impl Page for DemonlistOverview {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/demonlist.v2.1.js", "js/form.js"]
+        vec!["js/form.js", "js/demonlist.v2.1.js"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -249,7 +251,7 @@ impl Page for Demonlist {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/demonlist.v2.1.js", "js/form.js"]
+        vec!["js/form.js", "js/demonlist.v2.1.js"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -308,8 +310,8 @@ impl Page for Demonlist {
                                 }
                             }
                         }
-                        @if let Some(ref video) = self.data.demon.video {
-                            iframe."ratio-16-9"."js-delay-attr" style="border-radius: 12px; width:90%; margin: 15px 5%" data-attr = "src" data-attr-value = (video::embed(video)) {"Verification Video"}
+                        @if let Some(ref embedded_video) = self.data.demon.video.as_ref().and_then(video::embed) {
+                            iframe."ratio-16-9"."js-delay-attr" style="border-radius: 12px; width:90%; margin: 15px 5%" allowfullscreen="" data-attr = "src" data-attr-value = (embedded_video) {"Verification Video"}
                         }
                         div.pad.flex.wrap#level-info {
                             @match self.server_level {
@@ -323,7 +325,7 @@ impl Page for Demonlist {
                                         "The data from the Geometry Dash servers has not yet been cached. Please wait a bit and refresh the page."
                                     }
                                 },
-                                Some(CacheEntry::DeducedAbsent) | Some(CacheEntry::MarkedAbsent(_)) => {
+                                Some(CacheEntry::MarkedAbsent(_)) => {
                                     p.info-red {
                                         "This demon has not been found on the Geometry Dash servers. Its name was most likely misspelled when entered into the database. Please contact a list moderator to fix this."
                                     }
@@ -483,7 +485,7 @@ impl Page for Demonlist {
         vec![
             html! {
                 (PreEscaped(format!(r#"
-                    <link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
+                    <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.4.3/css/flag-icon.min.css" rel="stylesheet">
                     <script type="application/ld+json">
                     {{
                         "@context": "http://schema.org",
@@ -598,7 +600,7 @@ fn dropdown(
             }
 
             div.see-through.fade.dropdown#(section.id) {
-                div.search.js-search.seperated {
+                div.search.js-search.seperated style = "margin: 10px" {
                     input placeholder = "Filter..." type = "text" {}
                 }
                 p style = "margin: 10px" {
@@ -691,46 +693,31 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
             span.plus.cross.hover {}
             h2.underlined.pad {
                 "Stats Viewer"
-                div.dropdown-menu.js-search {
-                    input#nation-filter type="text" value = "International" style = "color: rgb(202, 202, 202); font-weight: bold;";
-                    div.menu style = "font-size: 0.55em; font-weight: normal"{
-                        ul#nation-list {
-                            li.hover.underlined data-name = "International" {
-                                span.em.em-world_map {}
-                                (PreEscaped("&nbsp;"))
-                                b {"WORLD"}
-                                br;
-                                span style = "font-size: 90%; font-style: italic" { "International" }
-                            }
-                            @for nation in nations {
-                                li.hover data-code = {(nation.country_code)} data-name = {(nation.nation)}{
-                                    span class = {"flag-icon flag-icon-" (nation.country_code.to_lowercase())} {}
-                                    (PreEscaped("&nbsp;"))
-                                    b {(nation.country_code)}
-                                    br;
-                                    span style = "font-size: 90%; font-style: italic" {(nation.nation)}
-                                }
-                            }
+                (super::dropdown("International",
+                    html! {
+                        li.dark-grey.hover.underlined data-value = "International" {
+                            span.em.em-world_map {}
+                            (PreEscaped("&nbsp;"))
+                            b {"WORLD"}
+                            br;
+                            span style = "font-size: 90%; font-style: italic" { "International" }
                         }
-                    }
-                }
+                    },
+                    nations.iter().map(|nation| html! {
+                        li.dark-grey.hover data-code = {(nation.country_code)} data-value = {(nation.nation)} {
+                            span class = {"flag-icon flag-icon-" (nation.country_code.to_lowercase())} {}
+                            (PreEscaped("&nbsp;"))
+                            b {(nation.country_code)}
+                            br;
+                            span style = "font-size: 90%; font-style: italic" {(nation.nation)}
+                        }
+                    })
+                ))
             }
             div.flex#stats-viewer-cont {
-                div.flex.no-stretch#stats-viewer-pagination style="flex-direction: column"{
-                    div.search.js-search.seperated style = "margin-bottom: 0px"{
-                        input#pagination-filter placeholder = "Enter to search..." type = "text" style = "height: 1em";
-                    }
-                    p.info-red.output style = "margin: 10px 10px 0px"{}
-                    div style="position:relative; margin: 0px 10px; min-height: 400px; flex-grow:1" {
-                        ul.selection-list style = "position: absolute; top: 0px; bottom:0px; left: 0px; right:0px; border-radius: 12px" {}
-                    }
-                    div.flex style = "font-variant: small-caps; font-weight: bolder"{
-                        div.button.small.prev { "Previous" }
-                        div.button.small.next {"Next"}
-                    }
-                }
+                (super::filtered_paginator("stats-viewer-pagination", "/players/ranking/"))
                 div {
-                    p#error-output style = "text-align: center" {
+                    p#error-output style = "text-align: center; margin: 10px 0 0 0" {
                         "Click on a player's name on the left to get started!"
                     }
                     div#stats-data style = "display:none" {

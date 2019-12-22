@@ -107,6 +107,11 @@ tr:nth-child(even) {
   }
 }
 
+#statsviewer .dropdown-menu ul {
+  font-size: 0.55em;
+  font-weight: normal;
+}
+
 .dropdown {
   background: rgb(34, 36, 37);
   text-align: center;
@@ -167,11 +172,7 @@ tr:nth-child(even) {
   margin: 5px 6px;
 }
 
-#statsviewer ul {
-  overflow: auto;
-}
-
-#statsviewer li i {
+#stats-viewer-pagination li i {
   padding-left: 5px;
 
   color: #ccc;
