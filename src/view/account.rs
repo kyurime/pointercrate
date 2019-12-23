@@ -76,7 +76,7 @@ impl Page for AccountPage {
                         }
                     }
                     @if self.user.has_any(&perms!(ListHelper or ListModerator or ListAdministrator)) {
-                        div.tab.button.white.hover.no-shadow data-tab-id="3" {
+                        div.tab.button.dark-grey.hover.no-shadow data-tab-id="3" {
                             b {
                                 "Records"
                             }

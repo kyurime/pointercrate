@@ -3,7 +3,7 @@ function generateRecord(record) {
   var recordId = document.createElement("b");
   var submitter = document.createElement("i");
 
-  li.className = "white hover";
+  li.className = "dark-grey hover";
   li.dataset.id = record.id;
 
   switch (record.status) {

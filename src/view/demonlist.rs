@@ -16,7 +16,7 @@ use crate::{
 use actix_web::{AsyncResponder, FromRequest, HttpRequest, Path, Responder};
 use gdcf::cache::CacheEntry;
 use gdcf_model::{
-    level::{ data::LevelInformationSource, Password, Level},
+    level::{ data::LevelInformationSource, Level},
     user::Creator,
 };
 use joinery::Joinable;
@@ -704,7 +704,7 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
                         }
                     },
                     nations.iter().map(|nation| html! {
-                        li.dark-grey.hover data-code = {(nation.country_code)} data-value = {(nation.nation)} {
+                        li.hover data-code = {(nation.country_code)} data-value = {(nation.nation)} {
                             span class = {"flag-icon flag-icon-" (nation.country_code.to_lowercase())} {}
                             (PreEscaped("&nbsp;"))
                             b {(nation.country_code)}

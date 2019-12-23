@@ -224,7 +224,7 @@ pub fn dropdown(
 ) -> Markup {
     html! {
         div.dropdown-menu.js-search {
-            input type="text" value = (default_text) data-default=(default_text) style = "color: #444446; font-weight: bold;";
+            input type="text" value = (default_text) data-default=(default_text) style = "color: inherit; font-weight: bold;";
             div.menu {
                 ul {
                     (default_item)
