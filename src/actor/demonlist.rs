@@ -83,7 +83,7 @@ impl Handler<PostProcessRecord> for HttpActor {
                     {
                         "type": "rich",
                         "title": format!("{}% on {}", record.progress, record.demon.name),
-                        "description": format!("{} just got {}% on {}! Go add his record!", record.player.name, record.progress, record.demon.name),
+                        "description": format!("{} just got {}% on {}! Go add their record!", record.player.name, record.progress, record.demon.name),
                         "footer": {
                             "text": format!("This record has been submitted by submitter #{}", record.submitter.unwrap_or(1))
                         },
