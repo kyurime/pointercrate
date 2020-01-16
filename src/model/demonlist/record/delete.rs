@@ -9,7 +9,7 @@ use log::info;
 impl Delete for Record {
     fn delete(self, ctx: RequestContext) -> Result<()> {
         ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
-        ctx.check_if_match(&self)?;
+        //ctx.check_if_match(&self)?;
 
         delete_by_id(self.id, ctx.connection())
     }
@@ -18,7 +18,7 @@ impl Delete for Record {
 impl Delete for DatabaseRecord {
     fn delete(self, ctx: RequestContext) -> Result<()> {
         ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
-        ctx.check_if_match(&self)?;
+        //ctx.check_if_match(&self)?;
 
         delete_by_id(self.id, ctx.connection())
     }
