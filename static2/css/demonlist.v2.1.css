@@ -197,6 +197,12 @@ tr:nth-child(even) {
 
 .stats-container b {
   font-size: 110%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 24ch;
+  vertical-align: bottom;
+  display: inline-block;
 }
 
 .stats-container :not(b) {
