@@ -127,6 +127,11 @@ tr:nth-child(even) {
   flex-grow: 1;
   background-color: transparent;
   border-radius: 12px;
+
+  /* long level names */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dropdown li:hover {
@@ -196,6 +201,16 @@ tr:nth-child(even) {
 
 .stats-container :not(b) {
   font-size: 90%;
+}
+
+/* long level support */
+.stats-container a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 24ch;
+  vertical-align: bottom;
+  display: inline-block;
 }
 
 /* Submission form styles */
