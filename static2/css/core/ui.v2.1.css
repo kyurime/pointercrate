@@ -519,6 +519,8 @@ input::placeholder {
 
 .leftlined.pad {
   padding-left: 10px;
+  overflow: auto;
+  white-space: nowrap;
 }
 
 .rightlined {
@@ -625,6 +627,11 @@ ul.selection-list li:first-of-type {
 ul.selection-list li:last-of-type {
   border-radius: 0 0 12px 12px;
 }
+
+ul.selection-list li:only-of-type {
+  border-radius: 12px 12px 12px 12px;
+}
+
 /* Tab panel stuff */
 .tab-content:not(.tab-content-active) {
   display: none;
@@ -643,6 +650,10 @@ ul.selection-list li:last-of-type {
   color: rgb(232, 230, 227);
 }
 
+.tab:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
 .tab:first-of-type {
   border-radius: 0 0 0 12px;
 }
@@ -654,4 +665,3 @@ ul.selection-list li:last-of-type {
 .tab:only-of-type {
   border-radius: 0 0 12px 12px;
 }
-
