@@ -1,108 +1,79 @@
-//! Module containing all the actix request handlers for the `/api/v1/auth/` endpoints
+//! Handlers for all endpoints under the `/api/v1/auth` prefix
 
-use super::PCResponder;
 use crate::{
-    actor::database::{DeleteMessage, Invalidate, PatchMessage, PostMessage},
-    context::RequestData,
-    middleware::{
-        auth::{Basic, Me, Token},
-        cond::HttpResponseBuilderExt,
+    extractor::{
+        auth::{BasicAuth, TokenAuth},
+        if_match::IfMatch,
+        ip::Ip,
     },
-    model::user::{PatchMe, Registration, User},
+    model::user::{AuthenticatedUser, Authorization, PatchMe, Registration},
+    ratelimit::RatelimitScope,
     state::PointercrateState,
+    util::HttpResponseBuilderExt,
+    ApiResult,
 };
-use actix_web::{AsyncResponder, HttpMessage, HttpRequest, HttpResponse};
-use log::info;
+use actix_web::{web::Json, HttpResponse};
+use actix_web_codegen::{delete, get, patch, post};
 use serde_json::json;
-use tokio::prelude::future::Future;
 
-/// `POST /api/v1/auth/register/` handler
-pub fn register(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("POST /api/v1/auth/register/");
+#[post("/register/")]
+pub async fn register(Ip(ip): Ip, body: Json<Registration>, state: PointercrateState) -> ApiResult<HttpResponse> {
+    let mut connection = state.connection().await?;
+    let user = AuthenticatedUser::register(body.into_inner(), &mut connection, Some(state.ratelimits.prepare(ip))).await?;
 
-    let state = req.state().clone();
-    let request_data = RequestData::from_request(req);
-
-    req.json()
-        .from_err()
-        .and_then(move |registration: Registration| {
-            state.database(PostMessage::new(registration, request_data))
-        })
-        .map(|user: User| {
-            HttpResponse::Created()
-                .header("Location", "/api/v1/auth/me/")
-                .json_with_etag(user)
-        })
-        .responder()
+    Ok(HttpResponse::Created()
+        .header("Location", "/api/v1/auth/me/")
+        .json_with_etag(user.inner()))
 }
 
-/// `POST /api/v1/auth/` handler
-pub fn login(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("POST /api/v1/auth/");
+#[post("/")]
+pub async fn login(Ip(ip): Ip, user: BasicAuth, state: PointercrateState) -> ApiResult<HttpResponse> {
+    state.ratelimits.check(RatelimitScope::Login, ip)?;
 
-    req.state()
-        .auth::<Basic>(req.extensions_mut().remove().unwrap())
-        .map(|user| {
-            HttpResponse::Ok().etag(&user).json(json!({
-                "data": user,
-                "token": user.0.generate_token()
-            }))
-        })
-        .responder()
+    Ok(HttpResponse::Ok().etag(user.0.inner()).json(json! {{
+        "data": user.0.inner(),
+        "token": user.0.generate_token(&state.secret)
+    }}))
 }
 
-/// `POST /api/v1/auth/invalidate/` handler
-pub fn invalidate(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("POST /api/v1/auth/invalidate/");
+#[post("/invalidate/")]
+pub async fn invalidate(authorization: Authorization, state: PointercrateState) -> ApiResult<HttpResponse> {
+    AuthenticatedUser::invalidate_all_tokens(authorization, &mut *state.connection().await?).await?;
 
-    req.state()
-        .database(Invalidate(req.extensions_mut().remove().unwrap()))
-        .map(|_| HttpResponse::NoContent().finish())
-        .responder()
+    Ok(HttpResponse::NoContent().finish())
 }
 
-/// `GET /api/v1/auth/me/` handler
-pub fn me(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("GET /api/v1/auth/me/");
-
-    req.state()
-        .auth::<Token>(req.extensions_mut().remove().unwrap())
-        .map(|user| HttpResponse::Ok().json_with_etag(user))
-        .responder()
+#[get("/me/")]
+pub async fn get_me(user: TokenAuth) -> ApiResult<HttpResponse> {
+    Ok(HttpResponse::Ok().json_with_etag(user.0.inner()))
 }
 
-/// `PATCH /api/v1/auth/me/` handler
-pub fn patch_me(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("PATCH /api/v1/auth/me/");
+// FIXME: Prevent "Lost Update" by using SELECT ... FOR UPDATE
+#[patch("/me/")]
+pub async fn patch_me(
+    if_match: IfMatch, BasicAuth(user): BasicAuth, state: PointercrateState, patch: Json<PatchMe>,
+) -> ApiResult<HttpResponse> {
+    let mut connection = state.audited_transaction(&user).await?;
 
-    let req = req.clone();
-    let auth = req.extensions_mut().remove().unwrap();
+    if_match.require_etag_match(user.inner())?;
 
-    req.json()
-        .from_err()
-        .and_then(move |patch: PatchMe| {
-            req.state().auth::<Basic>(auth).and_then(move |user| {
-                req.state().database(PatchMessage::<Me, Me, _>::new(
-                    user,
-                    patch,
-                    RequestData::from_request(&req),
-                ))
-            })
-        })
-        .map(|user| HttpResponse::Ok().json_with_etag(user))
-        .responder()
+    let updated_user = user.apply_patch(patch.into_inner(), &mut connection).await?;
+
+    connection.commit().await?;
+
+    Ok(HttpResponse::Ok().json_with_etag(updated_user.inner()))
 }
 
-/// `DELETE /api/v1/auth/me/` handler
-pub fn delete_me(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("DELETE /api/v1/auth/me/");
+// FIXME: Prevent "Lost Update" by using SELECT ... FOR UPDATE
+#[delete("/me/")]
+pub async fn delete_me(if_match: IfMatch, BasicAuth(user): BasicAuth, state: PointercrateState) -> ApiResult<HttpResponse> {
+    let mut connection = state.audited_transaction(&user).await?;
 
-    let state = req.state().clone();
-    let request_data = RequestData::from_request(req);
+    if_match.require_etag_match(user.inner())?;
 
-    state
-        .auth::<Basic>(req.extensions_mut().remove().unwrap())
-        .and_then(move |me| state.database(DeleteMessage::<Me, Me>::new(me, request_data)))
-        .map(|_| HttpResponse::NoContent().finish())
-        .responder()
+    user.delete(&mut connection).await?;
+
+    connection.commit().await?;
+
+    Ok(HttpResponse::NoContent().finish())
 }

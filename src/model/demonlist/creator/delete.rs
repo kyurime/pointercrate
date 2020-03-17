@@ -1,24 +1,17 @@
 use super::Creator;
-use crate::{
-    context::RequestContext, error::PointercrateError, operation::Delete, schema::creators, Result,
-};
-use diesel::{delete, ExpressionMethods, RunQueryDsl};
+use crate::Result;
 use log::info;
+use sqlx::PgConnection;
 
-impl Delete for Creator {
-    fn delete(self, ctx: RequestContext) -> Result<()> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
+impl Creator {
+    pub async fn delete(self, connection: &mut PgConnection) -> Result<()> {
+        info!("Removing creator {} from demon {}", self.creator, self.demon);
 
-        info!(
-            "Removing creator {} from demon {}",
-            self.creator, self.demon
-        );
-
-        delete(creators::table)
-            .filter(creators::demon.eq(self.demon))
-            .filter(creators::creator.eq(self.creator))
-            .execute(ctx.connection())
-            .map(|_| ())
-            .map_err(PointercrateError::database)
+        Ok(
+            sqlx::query!("DELETE FROM creators WHERE creator = $1 AND demon = $2", self.creator, self.demon)
+                .execute(connection)
+                .await
+                .map(|how_many| info!("Deletion of effected {} rows", how_many))?,
+        )
     }
 }

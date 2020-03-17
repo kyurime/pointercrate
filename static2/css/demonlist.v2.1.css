@@ -156,7 +156,12 @@ tr:nth-child(even) {
 }
 
 /* Stats viewer styles */
+#level-info span {
+  margin: 5px 10px;
+}
 
+/* Stats viewer styles */
+/*
 @media (min-width: 768px) {
   #stats-viewer-pagination {
     max-width: 40%;
@@ -175,7 +180,7 @@ tr:nth-child(even) {
 
 #level-info span {
   margin: 5px 6px;
-}
+}*/
 
 #stats-viewer-pagination li i {
   padding-left: 5px;
@@ -185,7 +190,7 @@ tr:nth-child(even) {
   font-size: 70%;
   font-variant: small-caps;
 }
-
+/*
 .stats-container {
   margin: 5px 0%;
   flex-wrap: wrap;
@@ -207,7 +212,7 @@ tr:nth-child(even) {
 
 .stats-container :not(b) {
   font-size: 90%;
-}
+}*/
 
 /* long level support */
 .stats-container a {
@@ -221,9 +226,9 @@ tr:nth-child(even) {
 
 /* Submission form styles */
 
-#submitter input:not([type="submit"]):not([type="checkbox"]) {
+/*#submitter input:not([type="submit"]):not([type="checkbox"]) {
   width: 98%;
-}
+}*/
 
 #submission-form h3 {
   margin: 20px 0px 10px 0px;

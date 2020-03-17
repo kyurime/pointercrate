@@ -1,16 +1,4 @@
-use lazy_static::lazy_static;
 use std::{fmt::Debug, fs::File, io::Read, str::FromStr};
-
-lazy_static! {
-    pub static ref LIST_SIZE: i16 = from_env_or_default("LIST_SIZE", 75);
-    pub static ref EXTENDED_LIST_SIZE: i16 = from_env_or_default("EXTENDED_LIST_SIZE", 75);
-    pub static ref SECRET: Vec<u8> = {
-        let path: String = from_env_or_default("SECRET_FILE", ".secret".into());
-        let file = File::open(path).unwrap();
-        file.bytes().collect::<Result<Vec<u8>, _>>().unwrap()
-    };
-    pub static ref PORT: u16 = from_env_or_default("PORT", 8088);
-}
 
 fn from_env_or_default<T: FromStr>(key: &str, default: T) -> T
 where
@@ -20,4 +8,26 @@ where
         Ok(value) => value.parse().unwrap(),
         Err(_) => default,
     }
+}
+
+pub fn list_size() -> i16 {
+    from_env_or_default("LIST_SIZE", 75)
+}
+
+pub fn extended_list_size() -> i16 {
+    from_env_or_default("EXTENDED_LIST_SIZE", 75)
+}
+
+pub fn secret() -> Vec<u8> {
+    let path: String = from_env_or_default("SECRET_FILE", ".secret".into());
+    let file = File::open(path).expect("Unable to open secret file");
+    file.bytes().collect::<Result<Vec<u8>, _>>().unwrap()
+}
+
+pub fn port() -> u16 {
+    from_env_or_default("PORT", 8088)
+}
+
+pub fn database_url() -> String {
+    std::env::var("DATABASE_URL").expect("DATABASE_URL is not set")
 }

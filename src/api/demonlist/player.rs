@@ -1,68 +1,79 @@
 use crate::{
-    api::PCResponder,
-    error::PointercrateError,
-    middleware::{auth::Token, cond::HttpResponseBuilderExt},
-    model::demonlist::player::{
-        FullPlayer, PatchPlayer, Player, PlayerPagination, RankedPlayer, RankingPagination,
-    },
+    extractor::{auth::TokenAuth, if_match::IfMatch},
+    model::demonlist::player::{PatchPlayer, Player, PlayerPagination, RankedPlayer, RankingPagination},
+    permissions::Permissions,
     state::PointercrateState,
+    util::HttpResponseBuilderExt,
+    ApiResult,
 };
-use actix_web::{AsyncResponder, FromRequest, HttpMessage, HttpRequest, HttpResponse, Path};
-use log::info;
-use tokio::prelude::future::{Future, IntoFuture};
+use actix_web::{
+    web::{Json, Path, Query},
+    HttpResponse,
+};
+use actix_web_codegen::{get, patch};
 
-/// `GET /api/v1/players/` handler
-pub fn paginate(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("GET /api/v1/players/");
+#[get("/")]
+pub async fn paginate(
+    TokenAuth(user): TokenAuth, state: PointercrateState, mut pagination: Query<PlayerPagination>,
+) -> ApiResult<HttpResponse> {
+    user.inner().require_permissions(Permissions::ExtendedAccess)?;
+    let mut connection = state.connection().await?;
 
-    let query_string = req.query_string();
-    let pagination = serde_urlencoded::from_str(query_string)
-        .map_err(|err| PointercrateError::bad_request(&err.to_string()));
+    let mut demons = pagination.page(&mut connection).await?;
+    let (min_id, max_id) = Player::extremal_player_ids(&mut connection).await?;
 
-    let req = req.clone();
-
-    pagination
-        .into_future()
-        .and_then(move |pagination: PlayerPagination| {
-            req.state().paginate::<Token, Player, _>(
-                &req,
-                pagination,
-                "/api/v1/players/".to_string(),
-            )
-        })
-        .map(|(players, links)| HttpResponse::Ok().header("Links", links).json(players))
-        .responder()
+    pagination_response!("/api/v1/players/", demons, pagination, min_id, max_id, before_id, after_id, base.id)
 }
 
-/// `GET /api/v1/players/ranking` handler
-pub fn ranking(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("GET /api/v1/players/ranking/");
+#[get("/ranking/")]
+pub async fn ranking(state: PointercrateState, mut pagination: Query<RankingPagination>) -> ApiResult<HttpResponse> {
+    let mut connection = state.connection().await?;
 
-    let query_string = req.query_string();
-    let pagination = serde_urlencoded::from_str(query_string)
-        .map_err(|err| PointercrateError::bad_request(&err.to_string()));
+    let mut demons = pagination.page(&mut connection).await?;
+    let max_index = RankedPlayer::max_index(&mut connection).await?;
 
-    let req = req.clone();
-
-    pagination
-        .into_future()
-        .and_then(move |pagination: RankingPagination| {
-            req.state().paginate::<Token, RankedPlayer, _>(
-                &req,
-                pagination,
-                "/api/v1/players/ranking/".to_string(),
-            )
-        })
-        .map(|(players, links)| HttpResponse::Ok().header("Links", links).json(players))
-        .responder()
+    pagination_response!(
+        "/api/v1/players/ranking/",
+        demons,
+        pagination,
+        1,
+        max_index,
+        before_index,
+        after_index,
+        index
+    )
 }
 
-get_handler!("/api/v1/players/[id]/", i32, "Player ID", FullPlayer);
+#[get("/{player_id}/")]
+pub async fn get(state: PointercrateState, path: Path<i32>) -> ApiResult<HttpResponse> {
+    let mut connection = state.connection().await?;
 
-patch_handler!(
-    "/api/v1/players/[id]/",
-    i32,
-    "Player ID",
-    PatchPlayer,
-    FullPlayer
-);
+    let player = Player::by_id(path.into_inner(), &mut connection)
+        .await?
+        .upgrade(&mut connection)
+        .await?;
+
+    Ok(HttpResponse::Ok().json_with_etag(&player))
+}
+
+#[patch("/{player_id}/")]
+pub async fn patch(
+    TokenAuth(user): TokenAuth, if_match: IfMatch, state: PointercrateState, data: Json<PatchPlayer>, path: Path<i32>,
+) -> ApiResult<HttpResponse> {
+    user.inner().require_permissions(Permissions::ListModerator)?;
+
+    let mut connection = state.audited_transaction(&user).await?;
+
+    let player = Player::by_id(path.into_inner(), &mut connection)
+        .await?
+        .upgrade(&mut connection)
+        .await?;
+
+    if_match.require_etag_match(&player)?;
+
+    let player = player.apply_patch(data.into_inner(), &mut connection).await?;
+
+    connection.commit().await?;
+
+    Ok(HttpResponse::Ok().json_with_etag(&player))
+}

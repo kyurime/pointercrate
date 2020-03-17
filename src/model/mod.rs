@@ -16,53 +16,6 @@
 //! Only the `Database` representation always exists. The others are occasionally not necessary
 //! distinct from each other
 
-#[macro_use]
-pub mod user;
 pub mod demonlist;
 pub mod nationality;
-
-pub use self::user::User;
-
-use diesel::{
-    dsl::{Eq, Filter, Select},
-    expression::{AsExpression, Expression},
-    helper_types::IntoBoxed,
-    pg::Pg,
-    query_dsl::{boxed_dsl::BoxedDsl, filter_dsl::FilterDsl, select_dsl::SelectDsl},
-    ExpressionMethods,
-};
-
-pub type All<M> = Select<<M as Model>::From, <M as Model>::Selection>;
-
-pub trait Model {
-    type From: SelectDsl<Self::Selection>;
-    type Selection: Expression;
-
-    fn from() -> Self::From;
-
-    fn selection() -> Self::Selection;
-
-    fn all() -> Select<Self::From, Self::Selection> {
-        SelectDsl::select(Self::from(), Self::selection())
-    }
-
-    fn boxed_all() -> IntoBoxed<'static, All<Self>, Pg>
-    where
-        All<Self>: BoxedDsl<'static, Pg>,
-    {
-        Self::all().internal_into_boxed()
-    }
-}
-
-trait By<T, U>: Model
-where
-    T: Default + ExpressionMethods,
-    U: AsExpression<T::SqlType>,
-{
-    fn by(u: U) -> Filter<All<Self>, Eq<T, U>>
-    where
-        All<Self>: FilterDsl<Eq<T, U>>,
-    {
-        Self::all().filter(T::default().eq(u))
-    }
-}
+pub mod user;

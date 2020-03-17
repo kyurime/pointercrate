@@ -1,29 +1,15 @@
-use super::Page;
+pub use self::{
+    demon_page::page,
+    overview::{index, overview_demons, OverviewDemon},
+};
 use crate::{
-    actor::{database::GetMessage, demonlist::GetDemonlistOverview, http::GetDemon},
-    api::PCResponder,
-    config::{EXTENDED_LIST_SIZE, LIST_SIZE},
-    context::RequestData,
-    error::PointercrateError,
-    model::{
-        demonlist::demon::{Demon, FullDemon, MinimalDemonP},
-        nationality::Nationality,
-        user::User,
-    },
-    state::PointercrateState,
-    video,
+    config,
+    model::{demonlist::demon::Demon, nationality::Nationality},
 };
-use actix_web::{AsyncResponder, FromRequest, HttpRequest, Path, Responder};
-use gdcf::cache::CacheEntry;
-use gdcf_model::{
-    level::{ data::LevelInformationSource, Level},
-    user::Creator,
-};
-use joinery::Joinable;
 use maud::{html, Markup, PreEscaped};
-use tokio::prelude::{Future, IntoFuture};
 
-mod manage;
+mod demon_page;
+mod overview;
 
 struct ListSection {
     name: &'static str,
@@ -34,559 +20,72 @@ struct ListSection {
 
 static MAIN_SECTION: ListSection = ListSection {
     name: "Main List",
-    description: "The main section of the Demonlist. These demons are the hardest rated levels in the game. Records are accepted above a given threshold and award a large amount of points!",
+    description: "The main section of the Demonlist. These demons are the hardest rated levels in the game. Records are accepted above a \
+                  given threshold and award a large amount of points!",
     id: "mainlist",
     numbered: true,
 };
 /*
 static EXTENDED_SECTION: ListSection = ListSection {
     name: "Extended List",
-    description: "These are demons that dont qualify for the main section of the list, but are still of high relevance. Only 100% records are accepted for these demons! Note that non-100% that were submitted/approved before a demon fell off the main list will be retained",
+    description: "These are demons that dont qualify for the main section of the list, but are still of high relevance. Only 100% records \
+                  are accepted for these demons! Note that non-100% that were submitted/approved before a demon fell off the main list \
+                  will be retained",
     id: "extended",
-    numbered: true
+    numbered: true,
 };
 */
-static LEGACY_SECTION: ListSection  = ListSection{
+static LEGACY_SECTION: ListSection = ListSection {
     name: "Legacy List",
-    description: "These are demons that used to be on the list, but got pushed off as new demons were added. They are here for nostalgic reasons. This list is in no order whatsoever and will not be maintained any longer at all. This means no new records will be added for these demons.",
+    description: "These are demons that used to be on the list, but got pushed off as new demons were added. They are here for nostalgic \
+                  reasons. This list is in no order whatsoever and will not be maintained any longer at all. This means no new records \
+                  will be added for these demons.",
     id: "legacy",
     numbered: false,
 };
 
-#[derive(Debug)]
-pub struct DemonlistOverview {
-    pub demon_overview: Vec<MinimalDemonP>,
-    pub admins: Vec<User>,
-    pub mods: Vec<User>,
-    pub helpers: Vec<User>,
-    pub nations: Vec<Nationality>,
-}
-
-pub fn overview_handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    let req_clone = req.clone();
-
-    req.state()
-        .database(GetDemonlistOverview)
-        .map(move |overview| overview.render(&req_clone).respond_to(&req_clone).unwrap())  // We can unwrap here since respond_to in the Responder implementation for PreEscaped<String> always returns an Ok value.
-        .responder()
-}
-
-impl Page for DemonlistOverview {
-    fn title(&self) -> String {
-        "Geometry Dash 1.9 Demonlist".to_string()
-    }
-
-    fn description(&self) -> String {
-        "The official Geometry Dash 1.9 Private Server Demonlist on a rehosted pointercrate!".to_string()
-    }
-
-    fn scripts(&self) -> Vec<&str> {
-        vec!["js/form.js", "js/demonlist.v2.1.js"]
-    }
-
-    fn stylesheets(&self) -> Vec<&str> {
-        vec!["css/demonlist.v2.1.css", "css/sidebar.css"]
-    }
-
-    fn body(&self, req: &HttpRequest<PointercrateState>) -> Markup {
-        let dropdowns = dropdowns(req, &self.demon_overview, None);
-
-        html! {
-            (dropdowns)
-
-            div.flex.m-center.container {
-                div.left {
-                    (submission_panel())
-                    (stats_viewer(&self.nations))
-                    @for demon in &self.demon_overview {
-                        @if demon.position <= *EXTENDED_LIST_SIZE {
-                            div.panel.fade style="overflow:hidden" {
-                                div.underlined.flex style = "align-items: center" {
-                                    @if let Some(ref video) = demon.video {
-                                        div.thumb."ratio-16-9"."js-delay-css" style = "position: relative" data-property = "background-image" data-property-value = {"url('" (video::thumbnail(video)) "')"} {
-                                            a.play href = (video) {}
-                                        }
-                                        div.leftlined.pad {
-                                            h2 style = "text-align: left; margin-bottom: 0px" {
-                                                a href = {"/demonlist/" (demon.position)} {
-                                                    "#" (demon.position) " - " (demon.name)
-                                                }
-                                            }
-                                            h3 style = "text-align: left" {
-                                                i {
-                                                    "by " (demon.publisher.name)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    @else {
-                                        h2 {
-                                            a href = {"/demonlist/" (demon.position)} {
-                                                "#" (demon.position) " - " (demon.name) " by " (demon.publisher.name)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                div.right {
-                    (team_panel(&self.admins, &self.mods, &self.helpers))
-                    (submit_panel())
-                    (stats_viewer_panel())
-                    (rules_panel())
-                    (discord_panel())
-                }
-            }
-
-        }
-    }
-
-    fn head(&self, _: &HttpRequest<PointercrateState>) -> Vec<Markup> {
-        vec![
-            html! {
-            (PreEscaped(r#"
-                <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.4.3/css/flag-icon.min.css" rel="stylesheet">
-                <script type="application/ld+json">
-                {{
-                    "@context": "http://schema.org",
-                    "@type": "WebPage",
-                    "breadcrumb": {{
-                        "@type": "BreadcrumbList",
-                        "itemListElement": [{{
-                                "@type": "ListItem",
-                                "position": 1,
-                                "item": {{
-                                    "@id": "https://pointercrate.xyze.dev/demonlist/",
-                                    "name": "pointercrate"
-                                }}
-                            }},{{
-                                "@type": "ListItem",
-                                "position": 2,
-                                "item": {{
-                                    "@id": "https://pointercrate.xyze.dev/demonlist/",
-                                    "name": "demonlist"
-                                }}
-                            }}
-                        ]
-                    }},
-                    "name": "Geometry Dash 1.9 Demonlist",
-                    "description": "The Geometry Dash 1.9 Demonlist on pointercrate rehost!!!",
-                    "url": "https://pointercrate.xyze.dev/demonlist/"
-                }}
-                </script>
-            "#))
-            },
-            html! {
-                (PreEscaped(format!("
-                    <script>
-                        window.list_length = {0};
-                        window.extended_list_length = {1}
-                    </script>", *LIST_SIZE, *EXTENDED_LIST_SIZE)
-                ))
-            },
-        ]
-    }
-}
-
-#[derive(Debug)]
-pub struct Demonlist {
-    overview: DemonlistOverview,
-    data: FullDemon,
-    server_level: Option<CacheEntry<Level<Option<u64>, Option<Creator>>, gdcf_diesel::Entry>>,
-}
-
-pub fn handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    let req_clone = req.clone();
-    let state = req.state().clone();
-    let request_data = RequestData::from_request(req);
-
-    Path::<i16>::extract(req)
-        .map_err(|_| PointercrateError::bad_request("Demon position must be integer"))
-        .into_future()
-        .and_then(move |position| {
-            state
-                .database(GetMessage::new(position.into_inner(), request_data))
-                .and_then(move |data: FullDemon| {
-                    state
-                        .database(GetDemonlistOverview)
-                        .and_then(move |overview| {
-                            state
-                                .gdcf
-                                .send(GetDemon(data.demon.name.to_string()))
-                                .map_err(PointercrateError::internal)
-                                .map(move |entry| {
-                                    Demonlist {
-                                        overview,
-                                        data,
-                                        server_level: entry,
-                                    }
-                                    .render(&req_clone)
-                                    .respond_to(&req_clone)
-                                    .unwrap()
-                                })
-                        })
-                })
-        })
-        .responder()
-}
-
-impl Page for Demonlist {
-    fn title(&self) -> String {
-        format!(
-            "#{} - {} - Geometry Dash Demonlist",
-            self.data.demon.position, self.data.demon.name
-        )
-    }
-
-    fn description(&self) -> String {
-        if let Some(CacheEntry::Cached(ref level, _)) = self.server_level {
-            if let Some(ref description) = level.base.description {
-                return format!("{}: {}", self.title(), description)
-            }
-        }
-        format!("{}: <No Description Provided>", self.title())
-    }
-
-    fn scripts(&self) -> Vec<&str> {
-        vec!["js/form.js", "js/demonlist.v2.1.js"]
-    }
-
-    fn stylesheets(&self) -> Vec<&str> {
-        vec!["css/demonlist.v2.1.css", "css/sidebar.css"]
-    }
-
-    fn body(&self, req: &HttpRequest<PointercrateState>) -> Markup {
-        let dropdowns = dropdowns(req, &self.overview.demon_overview, Some(&self.data.demon));
-        let score100 = self.data.demon.score(100);
-        let score_requirement = self.data.demon.score(self.data.demon.requirement);
-
-        html! {
-            (dropdowns)
-
-            div.flex.m-center.container {
-                div.left {
-                    (submission_panel())
-                    (stats_viewer(&self.overview.nations))
-                    div.panel.fade.js-scroll-anim data-anim = "fade" {
-                        div.underlined {
-                            h1 style = "overflow: hidden"{
-                                @if self.data.demon.position != 1 {
-                                    a href=(format!("/demonlist/{:?}", self.data.demon.position - 1)) {
-                                        i class="fa fa-chevron-left" style="padding-right: 5%" {}
-                                    }
-                                }
-                                (self.data.demon.name)
-                                @if self.data.demon.position as usize != self.overview.demon_overview.len() {
-                                    a href=(format!("/demonlist/{:?}", self.data.demon.position + 1)) {
-                                        i class="fa fa-chevron-right" style="padding-left: 5%" {}
-                                    }
-                                }
-                            }
-                            h3 {
-                                @if self.data.creators.0.len() > 3 {
-                                    "by " (self.data.creators.0[0].name) " and "
-                                    div.tooltip {
-                                        "more"
-                                        div.tooltiptext.fade {
-                                            (self.data.creators.0.iter().map(|player| &player.name).join_with(", ").to_string())
-                                        }
-                                    }
-                                    ", " (self.data.short_headline())
-                                }
-                                @else {
-                                    (self.data.headline())
-                                }
-                            }
-                        }
-                        @if let Some(CacheEntry::Cached(ref level, _)) = self.server_level {
-                            @if let Some(ref description) = level.base.description {
-                                div.underlined.pad {
-                                    q {
-                                        (description)
-                                    }
-                                }
-                            }
-                        }
-                        @if let Some(ref embedded_video) = self.data.demon.video.as_ref().and_then(video::embed) {
-                            iframe."ratio-16-9"."js-delay-attr" style="border-radius: 12px; width:90%; margin: 15px 5%" allowfullscreen="" data-attr = "src" data-attr-value = (embedded_video) {"Verification Video"}
-                        }
-                        div.pad.flex.wrap#level-info {
-                            @match self.server_level {
-                                None => {
-                                    p.info-red {
-                                        "An internal error occured while trying to access the GDCF database, or while processing Geometry Dash data. This is a bug."
-                                    }
-                                }
-                                Some(CacheEntry::Missing) => {
-                                    p.info-yellow {
-                                        "The data from the Geometry Dash servers has not yet been cached. Please wait a bit and refresh the page."
-                                    }
-                                },
-                                Some(CacheEntry::MarkedAbsent(_)) => {
-                                    p.info-red {
-                                        "This demon has not been found on the Geometry Dash servers. Its name was most likely misspelled when entered into the database. Please contact a list moderator to fix this."
-                                    }
-                                },
-                                Some(CacheEntry::Cached(ref level, ref meta)) => {
-                                    @let level_data = level.decompress_data().ok();
-                                    @let level_data = level_data.as_ref().and_then(|data| gdcf_parse::level::data::parse_lazy_parallel(data).ok());
-                                    @let stats = level_data.map(LevelInformationSource::stats);
-                                    /*
-                                    span {
-                                        b {
-                                            "Level Password: "
-                                        }
-                                        br;
-                                        @match level.password {
-                                            Password::NoCopy => "Not copyable",
-                                            Password::FreeCopy => "Free to copy",
-                                            Password::PasswordCopy(ref pw) => (pw)
-                                        }
-                                    }
-                                    */
-                                    span {
-                                        b {
-                                            "ID: "
-                                        }
-                                        br;
-                                        (level.base.level_id)
-                                    }
-                                    span {
-                                        b {
-                                            "Length: "
-                                        }
-                                        br;
-                                        @match stats {
-                                            Some(ref stats) => (format!("{}:{:02}", stats.duration.as_secs() / 60, stats.duration.as_secs() % 60)),
-                                            _ => (level.base.length.to_string())
-                                        }
-                                    }
-                                    span {
-                                        b {
-                                            "Objects: "
-                                        }
-                                        br;
-                                        @match stats {
-                                            Some(ref stats) => (stats.object_count),
-                                            _ => (level.base.object_amount.unwrap_or(0))
-                                        }
-                                    }
-                                }
-                            }
-                            @if self.data.demon.position <= *EXTENDED_LIST_SIZE {
-                                span {
-                                    b {
-                                        "List score (100%): "
-                                    }
-                                    br;
-                                        (format!("{:.2}", score100))
-                                }
-                            }
-                            @if self.data.demon.position <= *LIST_SIZE {
-                                span {
-                                    b {
-                                        "List score (" (self.data.demon.requirement) "%): "
-                                    }
-                                    br;
-                                    (format!("{:.2}", score_requirement))
-                                }
-                            }
-                        }
-                    }
-                    @if !self.data.records.is_empty() || self.data.demon.position <= *EXTENDED_LIST_SIZE {
-                        div.records.panel.fade.js-scroll-anim data-anim = "fade" {
-                            div.pad {
-                                h2 {
-                                    "Records"
-                                }
-                                @if self.data.demon.position <= *LIST_SIZE {
-                                    h3 {
-                                        (self.data.demon.requirement) "% or better required to qualify"
-                                    }
-                                }
-                                @else if self.data.demon.position <= *EXTENDED_LIST_SIZE {
-                                    h3 {
-                                        "100% required to qualify"
-                                    }
-                                }
-                                @if !self.data.records.is_empty() {
-                                    h4 {
-                                        @let records_registered_100_count = self.data.records.iter().filter(|record| record.progress == 100).count();
-                                        (self.data.records.len())
-                                        " records registered, out of which "
-                                        (records_registered_100_count)
-                                        @if records_registered_100_count == 1 { " is" } @else { " are" }
-                                        " 100%"
-                                    }
-                                }
-                            }
-                            @if self.data.records.is_empty() {
-                                h3 {
-                                    @if self.data.demon.position > *EXTENDED_LIST_SIZE {
-                                        "No records!"
-                                    }
-                                    @else {
-                                        "No records yet! Be the first to achieve one!"
-                                    }
-                                }
-                            }
-                            @else {
-                                table {
-                                    tbody {
-                                        tr {
-                                            th.dark-grey {
-                                                "Record Holder"
-                                            }
-                                            th.dark-grey {
-                                                "Progress"
-                                            }
-                                            th.video-link.dark-grey {
-                                                "Video Proof"
-                                            }
-                                        }
-                                        @for record in &self.data.records {
-                                            tr style = { @if record.progress == 100 {"font-weight: bold"} @else {""} } {
-                                                td {
-                                                    (record.player.name)
-                                                }
-                                                td {
-                                                    (record.progress) "%"
-                                                }
-                                                td.video-link {
-                                                    @if let Some(ref video) = record.video {
-                                                         a.link href = (video) target = "_blank"{
-                                                             (video::host(video))
-                                                         }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                div.right {
-                    (team_panel(&self.overview.admins, &self.overview.mods, &self.overview.helpers))
-                    (submit_panel())
-                    (stats_viewer_panel())
-                    (rules_panel())
-                    (discord_panel())
-                }
-            }
-        }
-    }
-
-    fn head(&self, _: &HttpRequest<PointercrateState>) -> Vec<Markup> {
-        vec![
-            html! {
-                (PreEscaped(format!(r#"
-                    <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.4.3/css/flag-icon.min.css" rel="stylesheet">
-                    <script type="application/ld+json">
-                    {{
-                        "@context": "http://schema.org",
-                        "@type": "WebPage",
-                        "breadcrumb": {{
-                            "@type": "BreadcrumbList",
-                            "itemListElement": [{{
-                                    "@type": "ListItem",
-                                    "position": 1,
-                                    "item": {{
-                                        "@id": "https://pointercrate.xyze.dev/",
-                                        "name": "pointercrate"
-                                    }}
-                                }},{{
-                                    "@type": "ListItem",
-                                    "position": 2,
-                                    "item": {{
-                                        "@id": "https://pointercrate.xyze.dev/demonlist/",
-                                        "name": "demonlist"
-                                    }}
-                                }},{{
-                                    "@type": "ListItem",
-                                    "position": 3,
-                                    "item": {{
-                                        "@id": "https://pointercrate.xyze.dev/demonlist/{0}/",
-                                        "name": "{1}"
-                                    }}
-                                }}
-                            ]
-                        }},
-                        "name": "\#{0} - {1}",
-                        "description": {2},
-                        "url": "https://pointercrate.xyze.dev/demonlist/{0}/"
-                    }}
-                    </script>
-                "#, self.data.demon.position, self.data.demon.name, self.description())))
-            },
-            html! {
-                (PreEscaped(format!("
-                    <script>
-                        window.list_length = {0};
-                        window.extended_list_length = {1}
-                    </script>", *LIST_SIZE, *EXTENDED_LIST_SIZE
-                )))
-            },
-        ]
-    }
-}
-
-fn dropdowns(
-    req: &HttpRequest<PointercrateState>,
-    all_demons: &[MinimalDemonP],
-    current: Option<&Demon>,
-) -> Markup {
-    let (main, extended, legacy) = if all_demons.len() < *LIST_SIZE as usize {
+fn dropdowns(all_demons: &[OverviewDemon], current: Option<&Demon>) -> Markup {
+    let (main, extended, legacy) = if all_demons.len() < config::list_size() as usize {
         (&all_demons[..], Default::default(), Default::default())
     } else {
-        let (extended, legacy) = if all_demons.len() < *EXTENDED_LIST_SIZE as usize {
-            (&all_demons[*LIST_SIZE as usize..], Default::default())
+        let (extended, legacy) = if all_demons.len() < config::extended_list_size() as usize {
+            (&all_demons[config::list_size() as usize..], Default::default())
         } else {
             (
-                &all_demons[*LIST_SIZE as usize..*EXTENDED_LIST_SIZE as usize],
-                &all_demons[*EXTENDED_LIST_SIZE as usize..],
+                &all_demons[config::list_size() as usize..config::extended_list_size() as usize],
+                &all_demons[config::extended_list_size() as usize..],
             )
         };
 
-        (&all_demons[..*LIST_SIZE as usize], extended, legacy)
+        (&all_demons[..config::list_size() as usize], extended, legacy)
     };
 
     html! {
-        div.flex.wrap.m-center.fade#lists style="text-align: center;" {
+        nav.flex.wrap.m-center.fade#lists style="text-align: center;" {
             // The drop down for the main list:
-            (dropdown(req, &MAIN_SECTION, main, current))
-            // The drop down for the extended list:
+            (dropdown(&MAIN_SECTION, main, current))
             // The drop down for the legacy list:
-            (dropdown(req, &LEGACY_SECTION, legacy, current))
+            (dropdown(&LEGACY_SECTION, legacy, current))
         }
     }
 }
 
-fn dropdown(
-    req: &HttpRequest<PointercrateState>,
-    section: &ListSection,
-    demons: &[MinimalDemonP],
-    current: Option<&Demon>,
-) -> Markup {
-    let format = |demon: &MinimalDemonP| -> Markup {
+fn dropdown(section: &ListSection, demons: &[OverviewDemon], current: Option<&Demon>) -> Markup {
+    let format = |demon: &OverviewDemon| -> Markup {
         html! {
             a href = {"/demonlist/" (demon.position)} {
                 @if section.numbered {
                     {"#" (demon.position) " - " (demon.name)}
                     br ;
                     i {
-                        (demon.publisher.name)
+                        (demon.publisher)
                     }
                 }
                 @else {
                     {(demon.name)}
                     br ;
                     i {
-                        (demon.publisher.name)
+                        (demon.publisher)
                     }
                 }
             }
@@ -609,7 +108,7 @@ fn dropdown(
                 ul.flex.wrap.space {
                     @for demon in demons {
                         @match current {
-                            Some(current) if current.position == demon.position =>
+                            Some(current) if current.base.position == demon.position =>
                                 li.hover.dark-grey.active title={"#" (demon.position) " - " (demon.name)} {
                                     (format(demon))
                                 },
@@ -627,7 +126,7 @@ fn dropdown(
 
 fn submission_panel() -> Markup {
     html! {
-        div.panel.fade.closable#submitter style = "display: none" {
+        section.panel.fade.closable#submitter style = "display: none" {
             span.plus.cross.hover {}
             div.flex {
                 form#submission-form novalidate = "" {
@@ -640,7 +139,7 @@ fn submission_panel() -> Markup {
                         "Demon:"
                     }
                     p {
-                        "The demon the record was made on. Only demons in the top " (EXTENDED_LIST_SIZE) " are accepted. This excludes legacy demons!"
+                        "The demon the record was made on. Only demons in the top " (config::extended_list_size()) " are accepted. This excludes legacy demons!"
                     }
                     span.form-input.flex.col#id_demon {
                         input type = "text" name = "demon" required="" placeholder = "e. g. 'Bloodbath', 'Yatagarasu'" ;
@@ -680,7 +179,18 @@ fn submission_panel() -> Markup {
                         input type = "url" name = "video" required = "" placeholder = "e.g. 'https://youtu.be/cHEGAqOgddA'" ;
                         p.error {}
                     }
-                    input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Submit record";
+                    h3 {
+                        "Notes or comments: "
+                    }
+                    p {
+                        "Provide any additional notes you'd like to pass on to the list moderator receiving your submission."
+
+                    }
+                    span.form-input.flex.col#submit-note {
+                        textarea name = "note" placeholder = "Your dreams and hopes for this records... or something like that" {}
+                        p.error {}
+                    }
+                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Submit record";
                 }
             }
         }
@@ -689,7 +199,7 @@ fn submission_panel() -> Markup {
 
 fn stats_viewer(nations: &[Nationality]) -> Markup {
     html! {
-        div.panel.fade.closable#statsviewer style = "display:none" {
+        section.panel.fade.closable#statsviewer style = "display:none" {
             span.plus.cross.hover {}
             h2.underlined.pad {
                 "Stats Viewer"
@@ -704,23 +214,23 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
                         }
                     },
                     nations.iter().map(|nation| html! {
-                        li.hover data-code = {(nation.country_code)} data-value = {(nation.nation)} {
-                            span class = {"flag-icon flag-icon-" (nation.country_code.to_lowercase())} {}
+                        li.hover data-code = {(nation.iso_country_code)} data-value = {(nation.nation)} {
+                            span class = {"flag-icon flag-icon-" (nation.iso_country_code.to_lowercase())} {}
                             (PreEscaped("&nbsp;"))
-                            b {(nation.country_code)}
+                            b {(nation.iso_country_code)}
                             br;
                             span style = "font-size: 90%; font-style: italic" {(nation.nation)}
                         }
                     })
                 ))
             }
-            div.flex#stats-viewer-cont {
-                (super::filtered_paginator("stats-viewer-pagination", "/players/ranking/"))
-                div {
-                    p#error-output style = "text-align: center; margin: 10px 0 0 0" {
-                        "Click on a player's name on the left to get started!"
-                    }
-                    div#stats-data style = "display:none" {
+            div.flex.viewer {
+                (super::filtered_paginator("stats-viewer-pagination", "/api/v1/players/ranking/"))
+                p.viewer-welcome {
+                    "Click on a player's name on the left to get started!"
+                }
+                div.viewer-content {
+                    div {
                         div.flex.col {
                             h3#player-name style = "font-size:1.4em; overflow: hidden" {}
                             div.stats-container.flex.space {
@@ -811,60 +321,9 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
     }
 }
 
-fn team_panel(admins: &[User], mods: &[User], helpers: &[User]) -> Markup {
-    let maybe_link = |user: &User| -> Markup {
-        html! {
-            li {
-                @match user.youtube_channel {
-                    Some(ref channel) => a target = "_blank" href = (channel) {
-                        (user.name())
-                    },
-                    None => (user.name())
-                }
-            }
-        }
-    };
-
-    html! {
-        div.panel.fade.js-scroll-anim#editors data-anim = "fade" {
-            div.underlined {
-                h2 {
-                    "List Editors:"
-                }
-            }
-            p {
-                "Contact any of these people if you have problems with the list."
-            }
-            ul style = "line-height: 30px" {
-                @for admin in admins {
-                    b {
-                        (maybe_link(admin))
-                    }
-                }
-                @for moderator in mods {
-                    (maybe_link(moderator))
-                }
-            }
-            div.underlined {
-                h2 {
-                    "List Helpers"
-                }
-            }
-            p {
-                "Contact these people if you have any questions about why a specific record was rejected. Do not bug them about checking submissions though!"
-            }
-            ul style = "line-height: 30px" {
-                @for helper in helpers {
-                    (maybe_link(helper))
-                }
-            }
-        }
-    }
-}
-
 fn rules_panel() -> Markup {
     html! {
-        div#rules.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
+        section#rules.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
             h2.underlined.pad.clickable {
                 "Rules:"
                 span.arrow.hover {}
@@ -893,7 +352,7 @@ fn rules_panel() -> Markup {
                 }
                 li {
                     span {
-                        " Anyone posting illegitimate recordings and passing them off as legit will have their records removed from the list. Illegitimate records include, but aren't limited to, speedhacks, noclip, auto, nerfs, macros, fps bypass, etc."
+                        " Anyone posting illegitimate recordings and passing them off as legit will have their records removed from the list. Illegitimate records include, but aren't limited to, speedhacks, noclip, auto, nerfs, macros, etc."
                     }
                 }
                 li {
@@ -939,7 +398,7 @@ fn rules_panel() -> Markup {
 
 fn submit_panel() -> Markup {
     html! {
-        div#submit.panel.fade.js-scroll-anim data-anim = "fade" {
+        section#submit.panel.fade.js-scroll-anim data-anim = "fade" {
             div.underlined {
                 h2 {
                     "Submit Records:"
@@ -948,7 +407,7 @@ fn submit_panel() -> Markup {
             p {
                 "Note: Please do not submit nonsense, it will get you banned... The form checks for duplicate submissions."
             }
-            a.dark-grey.hover.button.slightly-rounded.js-scroll data-destination = "submitter" data-reveal = "true" {
+            a.dark-grey.hover.button.js-scroll data-destination = "submitter" data-reveal = "true" {
                 "Submit a record!"
             }
         }
@@ -957,7 +416,7 @@ fn submit_panel() -> Markup {
 
 fn stats_viewer_panel() -> Markup {
     html! {
-        div#stats.panel.fade.js-scroll-anim data-anim = "fade" {
+        section#stats.panel.fade.js-scroll-anim data-anim = "fade" {
             div.underlined {
                 h2 {
                     "Stats Viewer"
@@ -966,7 +425,7 @@ fn stats_viewer_panel() -> Markup {
             p {
                 "Get an overview of all the players on the list, or just stare at the point leaderboards."
             }
-            a.dark-grey.hover.button.slightly-rounded.js-scroll#show-stats-viewer data-destination = "statsviewer" data-reveal = "true" {
+            a.dark-grey.hover.button.js-scroll#show-stats-viewer data-destination = "statsviewer" data-reveal = "true" {
                 "Open the stats viewer!"
             }
         }
@@ -975,7 +434,7 @@ fn stats_viewer_panel() -> Markup {
 
 fn discord_panel() -> Markup {
     html! {
-        div.panel.fade.js-scroll-anim#discord data-anim = "fade" {
+        section.panel.fade.js-scroll-anim#discord data-anim = "fade" {
             iframe.js-delay-attr style = "width: 100%; height: 400px;" allowtransparency="true" frameborder = "0" data-attr = "src" data-attr-value = "https://canary.discordapp.com/widget?id=328307969882062848" {}
             p {
                 "Join the official 1.9 GDPS discord server, where you can get in touch with the team!"

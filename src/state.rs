@@ -1,185 +1,113 @@
 use crate::{
-    actor::{
-        database::{
-            Auth, DatabaseActor, DeleteMessage, GetMessage, PaginateMessage, PatchMessage,
-            PostMessage,
-        },
-        http::HttpActor,
-    },
-    context::RequestData,
-    error::PointercrateError,
-    middleware::auth::{Authorization, Me, TAuthType},
-    operation::{Delete, Get, Paginate, Paginator, Patch, Post},
+    config, documentation,
+    model::user::{AuthenticatedUser, User},
+    ratelimit::Ratelimits,
     Result,
 };
-use actix::{Addr, Handler, Message};
-use actix_web::HttpRequest;
-use std::{collections::HashMap, hash::Hash, marker::PhantomData, sync::Arc};
-use tokio::prelude::{future::Either, Future};
+use gdcf::Gdcf;
+use gdcf_diesel::Cache;
+use gdrs::BoomlingsClient;
+use log::trace;
+use reqwest::Client;
+use sqlx::{
+    pool::{Builder, PoolConnection},
+    PgConnection, Pool,
+};
+use sqlx_core::Transaction;
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 #[derive(Clone)]
-#[allow(missing_debug_implementations)]
 pub struct PointercrateState {
-    pub database: Addr<DatabaseActor>,
-    pub gdcf: Addr<HttpActor>,
-
     pub documentation_toc: Arc<String>,
     pub documentation_topics: Arc<HashMap<String, String>>,
+    pub secret: Arc<Vec<u8>>,
+    pub connection_pool: Pool<PgConnection>,
+    pub ratelimits: Ratelimits,
+
+    pub http_client: Client,
+    pub webhook_url: Option<Arc<String>>,
+
+    pub gdcf: Gdcf<BoomlingsClient, Cache>,
 }
 
 impl PointercrateState {
-    pub fn database<Msg, T>(&self, msg: Msg) -> impl Future<Item = T, Error = PointercrateError>
-    where
-        T: Send + 'static,
-        Msg: Message<Result = Result<T>> + Send + 'static,
-        DatabaseActor: Handler<Msg>,
-    {
-        self.database
-            .send(msg)
-            .map_err(PointercrateError::internal)
-            .flatten()
-    }
+    /// Initializes the global pointercrate application state
+    ///
+    /// Loads in the API documentation files and values from config files. Also establishes database
+    /// connections
+    pub async fn initialize() -> PointercrateState {
+        let documentation_toc = Arc::new(documentation::read_table_of_contents().unwrap());
+        let documentation_topics = Arc::new(documentation::read_documentation_topics().unwrap());
 
-    pub fn http<Msg, T>(&self, msg: Msg) -> impl Future<Item = T, Error = PointercrateError>
-    where
-        T: Send + 'static,
-        Msg: Message<Result = T> + Send + 'static,
-        HttpActor: Handler<Msg>,
-    {
-        self.gdcf.send(msg).map_err(PointercrateError::internal)
-    }
+        let connection_pool = Builder::default()
+            .max_size(8)
+            .max_lifetime(Some(Duration::from_secs(60 * 60 * 24)))
+            .build(&config::database_url())
+            .await
+            .expect("Failed to connect to pointercrate database");
 
-    pub fn auth<T: TAuthType>(
-        &self,
-        auth: Authorization,
-    ) -> impl Future<Item = Me, Error = PointercrateError> {
-        self.database(Auth::<T>(auth, PhantomData))
-    }
+        let gdcf_url = std::env::var("GDCF_DATABASE_URL").expect("GDCF_DATABASE_URL is not set");
 
-    pub fn get<T, Key, G>(
-        &self,
-        req: &HttpRequest<Self>,
-        key: Key,
-    ) -> impl Future<Item = G, Error = PointercrateError>
-    where
-        T: TAuthType,
-        G: Get<Key> + Send + 'static,
-        Key: Send + 'static,
-    {
-        let auth = req.extensions_mut().remove().unwrap();
-        let data = RequestData::from_request(req);
-        let clone = self.clone();
+        let cache = Cache::postgres(gdcf_url).expect("GDCF database connection failed");
+        let client = BoomlingsClient::new();
 
-        match auth {
-            Authorization::Unauthorized =>
-                Either::A(self.database(GetMessage(key, data, PhantomData))),
-            auth =>
-                Either::B(self.database(Auth::<T>::new(auth)).and_then(move |user| {
-                    clone.database(GetMessage(key, data.with_user(user), PhantomData))
-                })),
+        cache.initialize().unwrap();
+
+        PointercrateState {
+            documentation_toc,
+            documentation_topics,
+            connection_pool,
+            secret: Arc::new(config::secret()),
+            ratelimits: Ratelimits::initialize(),
+            http_client: Client::builder().build().expect("Failed to create reqwest client"),
+            webhook_url: std::env::var("DISCORD_WEBHOOK").ok().map(Arc::new),
+            gdcf: Gdcf::new(client, cache),
         }
     }
 
-    pub fn post<A, T, P>(
-        &self,
-        req: &HttpRequest<Self>,
-        t: T,
-    ) -> impl Future<Item = P, Error = PointercrateError>
-    where
-        A: TAuthType,
-        T: Send + 'static,
-        P: Post<T> + Send + 'static,
-    {
-        let auth = req.extensions_mut().remove().unwrap();
-        let data = RequestData::from_request(req);
-        let clone = self.clone();
-
-        match auth {
-            Authorization::Unauthorized => Either::A(self.database(PostMessage::new(t, data))),
-            auth =>
-                Either::B(self.database(Auth::<A>::new(auth)).and_then(move |user| {
-                    clone.database(PostMessage::new(t, data.with_user(user)))
-                })),
-        }
+    /// Gets a connection from the connection pool
+    pub async fn connection(&self) -> Result<PoolConnection<PgConnection>> {
+        Ok(self.connection_pool.acquire().await?)
     }
 
-    pub fn delete<T, Key, D>(
-        &self,
-        req: &HttpRequest<Self>,
-        key: Key,
-    ) -> impl Future<Item = (), Error = PointercrateError>
-    where
-        T: TAuthType,
-        Key: Send + 'static,
-        D: Get<Key> + Delete + Hash + Send + 'static,
-    {
-        let auth = req.extensions_mut().remove().unwrap();
-        let data = RequestData::from_request(req);
-        let clone = self.clone();
-
-        match auth {
-            Authorization::Unauthorized =>
-                Either::A(self.database(DeleteMessage::<Key, D>::new(key, data))),
-            auth =>
-                Either::B(self.database(Auth::<T>::new(auth)).and_then(move |user| {
-                    clone.database(DeleteMessage::<Key, D>::new(key, data.with_user(user)))
-                })),
-        }
+    pub async fn transaction(&self) -> Result<Transaction<PoolConnection<PgConnection>>> {
+        Ok(self.connection_pool.begin().await?)
     }
 
-    pub fn patch<T, Key, P, H>(
-        &self,
-        req: &HttpRequest<Self>,
-        key: Key,
-        fix: H,
-    ) -> impl Future<Item = P, Error = PointercrateError>
-    where
-        T: TAuthType,
-        Key: Send + 'static,
-        H: Send + 'static,
-        P: Get<Key> + Patch<H> + Send + Hash + 'static,
-    {
-        let auth = req.extensions_mut().remove().unwrap();
-        let data = RequestData::from_request(req);
-        let clone = self.clone();
+    /// Prepares this connection such that all audit log entries generated while using it are
+    /// attributed to the givne authenticated user
+    pub async fn audited_connection(&self, user: &AuthenticatedUser) -> Result<PoolConnection<PgConnection>> {
+        let mut connection = self.connection().await?;
 
-        match auth {
-            Authorization::Unauthorized =>
-                Either::A(self.database(PatchMessage::new(key, fix, data))),
-            auth =>
-                Either::B(self.database(Auth::<T>::new(auth)).and_then(move |user| {
-                    clone.database(PatchMessage::new(key, fix, data.with_user(user)))
-                })),
-        }
+        audit_connection(&mut connection, user.inner()).await?;
+
+        Ok(connection)
     }
 
-    pub fn paginate<T, P, D>(
-        &self,
-        req: &HttpRequest<Self>,
-        data: D,
-        uri: String,
-    ) -> impl Future<Item = (Vec<P>, String), Error = PointercrateError>
-    where
-        T: TAuthType,
-        D: Paginator + Send + 'static,
-        P: Paginate<D> + Send + 'static,
-    {
-        let req_data = RequestData::from_request(req);
-        let auth = req.extensions_mut().remove().unwrap();
-        let clone = self.clone();
+    /// Prepares this transaction connection such that all audit log entries generated while using
+    /// it are attributed to the givne authenticated user
+    pub async fn audited_transaction(&self, user: &AuthenticatedUser) -> Result<Transaction<PoolConnection<PgConnection>>> {
+        let mut connection = self.transaction().await?;
 
-        match auth {
-            Authorization::Unauthorized =>
-                Either::A(self.database(PaginateMessage(data, uri, req_data, PhantomData))),
-            auth =>
-                Either::B(self.database(Auth::<T>::new(auth)).and_then(move |user| {
-                    clone.database(PaginateMessage(
-                        data,
-                        uri,
-                        req_data.with_user(user),
-                        PhantomData,
-                    ))
-                })),
-        }
+        audit_connection(&mut connection, user.inner()).await?;
+
+        Ok(connection)
     }
+}
+
+pub async fn audit_connection(connection: &mut PgConnection, user: &User) -> Result<()> {
+    trace!(
+        "Creating connection of which usage will be attributed to user {} in audit logs",
+        user.id
+    );
+
+    sqlx::query!("CREATE TEMPORARY TABLE IF NOT EXISTS active_user (id INTEGER)")
+        .execute(connection)
+        .await?;
+    sqlx::query!("DELETE FROM active_user").execute(connection).await?;
+    sqlx::query!("INSERT INTO active_user (id) VALUES ($1)", user.id)
+        .execute(connection)
+        .await?;
+
+    Ok(())
 }

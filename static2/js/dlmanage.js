@@ -1,7 +1,6 @@
 function generateRecord(record) {
   var li = document.createElement("li");
   var recordId = document.createElement("b");
-  var submitter = document.createElement("i");
 
   li.className = "dark-grey hover";
   li.dataset.id = record.id;
@@ -16,15 +15,14 @@ function generateRecord(record) {
     case "submitted":
       li.style.backgroundColor = "rgba(255, 255, 161, .3)";
       break;
+    case "under consideration":
+      li.style.backgroundColor = "rgba(142, 230, 230, .3)";
+      break;
     default:
       break;
   }
 
   recordId.appendChild(document.createTextNode("Record #" + record.id));
-
-  submitter.appendChild(
-    document.createTextNode("Submitter ID: " + record.submitter)
-  );
 
   li.appendChild(recordId);
   li.appendChild(document.createElement("br"));
@@ -36,7 +34,6 @@ function generateRecord(record) {
     document.createTextNode(record.progress + "% on " + record.demon.name)
   );
   li.appendChild(document.createElement("br"));
-  li.appendChild(submitter);
 
   return li;
 }
@@ -81,6 +78,14 @@ class RecordManager extends Paginator {
         .getElementById("status-filter-panel")
         .getElementsByClassName("dropdown-menu")[0]
     );
+
+    new Dropdown(
+      manager.getElementsByClassName("dropdown-menu")[0]
+    ).addEventListener(li => {
+      if (li.innerHTML === "All Demons")
+        this.updateQueryData("demon_id", undefined);
+      else this.updateQueryData("demon_id", li.dataset.value);
+    });
     this.dropdown.addEventListener(li => {
       if (li.innerHTML === "All") this.updateQueryData("status", undefined);
       else this.updateQueryData("status", li.innerHTML);
@@ -102,8 +107,10 @@ class RecordManager extends Paginator {
     this._video_link.href = recordData.video;
     this._video_link.innerHTML = recordData.video;
     this._id.innerHTML = recordData.id;
-    this._demon.innerHTML = recordData.demon.name;
-    this._holder.innerHTML = recordData.player.name;
+    this._demon.innerHTML =
+      recordData.demon.name + " (" + recordData.demon.id + ")";
+    this._holder.innerHTML =
+      recordData.player.name + " (" + recordData.player.id + ")";
     this._status.innerHTML = recordData.status;
     this._progress.innerHTML = recordData.progress;
     this._submitter.innerHTML = recordData.submitter.id;
@@ -151,7 +158,7 @@ function setupRecordFilterPlayerNameForm() {
   recordFilterPlayerNameForm.onSubmit(function(event) {
     makeRequest(
       "GET",
-      "/players/?name=" + playerName.value,
+      "/api/v1/players/?name=" + playerName.value,
       recordFilterPlayerNameForm.errorOutput,
       data => {
         let json = data.responseJSON;

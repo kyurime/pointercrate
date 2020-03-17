@@ -1,6 +1,5 @@
 use super::Page;
-use crate::{error::PointercrateError, state::PointercrateState};
-use actix_web::HttpRequest;
+use crate::error::PointercrateError;
 use maud::{html, Markup, PreEscaped};
 
 #[derive(Debug)]
@@ -18,11 +17,7 @@ impl Page for ErrorPage<'_> {
     fn title(&self) -> String {
         let status = self.error.status_code();
 
-        format!(
-            "{} - {}",
-            status.as_u16(),
-            status.canonical_reason().unwrap_or("What the fuck?")
-        )
+        format!("{} - {}", status.as_u16(), status.canonical_reason().unwrap_or("What the fuck?"))
     }
 
     fn description(&self) -> String {
@@ -37,7 +32,7 @@ impl Page for ErrorPage<'_> {
         vec![]
     }
 
-    fn body(&self, req: &HttpRequest<PointercrateState>) -> Markup {
+    fn body(&self) -> Markup {
         html! {
             div.m-center.flex.col.cen.no-stretch#error style = "height: calc(100% - 60px)"{
                 div.flex.cen style="width: 100%" {
@@ -72,7 +67,7 @@ impl Page for ErrorPage<'_> {
         }
     }
 
-    fn head(&self, _: &HttpRequest<PointercrateState>) -> Vec<Markup> {
+    fn head(&self) -> Vec<Markup> {
         vec![html! {
             (PreEscaped(r#"
 <style>

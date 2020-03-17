@@ -1,134 +1,149 @@
 use crate::{
-    citext::{CiStr, CiString, CiText},
-    context::RequestContext,
+    cistring::CiString,
     model::{
-        demonlist::player::{players_n, players_with_score, Player, RankedPlayer},
-        Model,
+        demonlist::player::{DatabasePlayer, Player, RankedPlayer},
+        nationality::Nationality,
     },
-    operation::{Paginate, Paginator, PaginatorQuery, TablePaginator},
+    util::{non_nullable, nullable},
     Result,
 };
-use diesel::{dsl::sql, BoolExpressionMethods, ExpressionMethods, QueryDsl};
-use serde_derive::{Deserialize, Serialize};
+use futures::StreamExt;
+use serde::{Deserialize, Serialize};
+use sqlx::{postgres::PgConnection, Row};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlayerPagination {
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "before")]
-    before_id: Option<i32>,
+    pub before_id: Option<i32>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "after")]
-    after_id: Option<i32>,
+    pub after_id: Option<i32>,
 
-    limit: Option<u8>,
+    #[serde(default, deserialize_with = "non_nullable")]
+    pub limit: Option<u8>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     name: Option<CiString>,
+    #[serde(default, deserialize_with = "non_nullable")]
     banned: Option<bool>,
 
-    nation: Option<String>,
+    #[serde(default, deserialize_with = "nullable")]
+    nation: Option<Option<String>>,
 }
 
-impl TablePaginator for PlayerPagination {
-    type ColumnType = i32;
-    type PaginationColumn = players_n::id;
-    type Table = players_n::table;
+impl PlayerPagination {
+    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<Player>> {
+        let order = if self.after_id.is_none() && self.before_id.is_some() {
+            "DESC"
+        } else {
+            "ASC"
+        };
 
-    fn query(&self, _: RequestContext) -> PaginatorQuery<players_n::table> {
-        let mut query = Player::boxed_all();
+        let query = format!(include_str!("../../../../sql/paginate_players_by_id.sql"), order);
 
-        filter!(query[
-            players_n::name = self.name,
-            players_n::banned = self.banned
-        ]);
+        // FIXME(sqlx) once CITEXT is supported
+        let mut stream = sqlx::query(&query)
+            .bind(self.before_id)
+            .bind(self.after_id)
+            .bind(self.name.as_ref().map(|s| s.as_str()))
+            .bind(self.banned)
+            .bind(&self.nation)
+            .bind(self.nation == Some(None))
+            .bind(self.limit.unwrap_or(50) as i32)
+            .fetch(connection);
 
-        if let Some(ref nation) = self.nation {
-            query = query.filter(
-                players_n::iso_country_code
-                    .eq(nation.to_uppercase())
-                    .or(players_n::nation.eq(Some(CiStr::from_str(nation)))), // okay?
-            );
+        let mut players = Vec::new();
+
+        while let Some(row) = stream.next().await {
+            let row = row?;
+
+            let nationality = match (row.get("nation"), row.get("iso_country_code")) {
+                (Some(nation), Some(country_code)) =>
+                    Some(Nationality {
+                        iso_country_code: country_code,
+                        nation: CiString(nation),
+                    }),
+                _ => None,
+            };
+
+            players.push(Player {
+                base: DatabasePlayer {
+                    id: row.get("id"),
+                    name: CiString(row.get("name")),
+                    banned: row.get("banned"),
+                },
+                nationality,
+            })
         }
 
-        query
-    }
-}
-
-delegate_to_table_paginator!(PlayerPagination);
-
-impl Paginate<PlayerPagination> for Player {
-    fn load(pagination: &PlayerPagination, ctx: RequestContext) -> Result<Vec<Self>> {
-        ctx.check_permissions(
-            perms!(ExtendedAccess or ListHelper or ListModerator or ListAdministrator),
-        )?;
-
-        let mut query = pagination.query(ctx);
-
-        filter!(query[
-            players_n::id > pagination.after_id,
-            players_n::id < pagination.before_id
-        ]);
-
-        pagination_result!(query, pagination, players_n::id, ctx.connection())
+        Ok(players)
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RankingPagination {
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "before")]
-    before_id: Option<i64>,
+    pub before_index: Option<i64>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "after")]
-    after_id: Option<i64>,
+    pub after_index: Option<i64>,
 
-    limit: Option<u8>,
+    #[serde(default, deserialize_with = "non_nullable")]
+    pub limit: Option<u8>,
 
-    nation: Option<String>,
+    #[serde(default, deserialize_with = "nullable")]
+    nation: Option<Option<String>>,
+    #[serde(default, deserialize_with = "non_nullable")]
     name_contains: Option<CiString>,
 }
 
-impl TablePaginator for RankingPagination {
-    type ColumnType = i64;
-    type PaginationColumn = players_with_score::index;
-    type Table = players_with_score::table;
+impl RankingPagination {
+    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<RankedPlayer>> {
+        let order = if self.before_index.is_some() && self.after_index.is_none() {
+            "DESC"
+        } else {
+            "ASC"
+        };
 
-    fn query(&self, _: RequestContext) -> PaginatorQuery<players_with_score::table> {
-        let mut query = RankedPlayer::boxed_all();
+        let query = format!(include_str!("../../../../sql/paginate_player_ranking.sql"), order);
 
-        if let Some(ref nation) = self.nation {
-            query = query.filter(
-                players_with_score::iso_country_code
-                    .eq(nation.to_uppercase())
-                    .or(players_with_score::nation.eq(Some(CiStr::from_str(nation)))), // okay?
-            );
+        let mut stream = sqlx::query(&query)
+            .bind(self.before_index)
+            .bind(self.after_index)
+            .bind(self.name_contains.as_ref().map(|s| s.as_str()))
+            .bind(&self.nation)
+            .bind(self.nation == Some(None))
+            .bind(self.limit.unwrap_or(50) as i32 + 1)
+            .fetch(connection);
+
+        let mut players = Vec::new();
+
+        while let Some(row) = stream.next().await {
+            let row = row?;
+
+            let nationality = match (row.get("nation"), row.get("iso_country_code")) {
+                (Some(nation), Some(country_code)) =>
+                    Some(Nationality {
+                        iso_country_code: country_code,
+                        nation: CiString(nation),
+                    }),
+                _ => None,
+            };
+
+            players.push(RankedPlayer {
+                id: row.get("id"),
+                name: CiString(row.get("name")),
+                rank: row.get("rank"),
+                nationality,
+                score: row.get("score"),
+                index: row.get("index"),
+            })
         }
 
-        if let Some(ref like_name) = self.name_contains {
-            query = query.filter(
-                sql("STRPOS(name, ")
-                    .bind::<CiText, _>(like_name)
-                    .sql(") > 0"),
-            );
-        }
-
-        query
-    }
-}
-
-delegate_to_table_paginator!(RankingPagination);
-
-impl Paginate<RankingPagination> for RankedPlayer {
-    fn load(pagination: &RankingPagination, ctx: RequestContext) -> Result<Vec<Self>> {
-        let mut query = pagination.query(ctx);
-
-        filter!(query[
-            players_with_score::index > pagination.after_id,
-            players_with_score::index < pagination.before_id
-        ]);
-
-        pagination_result!(
-            query,
-            pagination,
-            players_with_score::index,
-            ctx.connection()
-        )
+        Ok(players)
     }
 }

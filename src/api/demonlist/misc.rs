@@ -1,15 +1,14 @@
-use crate::{
-    config::{EXTENDED_LIST_SIZE, LIST_SIZE},
-    state::PointercrateState,
-};
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use crate::config;
+use actix_web::HttpResponse;
+use actix_web_codegen::get;
 use serde_json::json;
 
-pub fn list_information(_: &HttpRequest<PointercrateState>) -> impl Responder {
+#[get("/list_information")]
+pub fn list_information() -> HttpResponse {
     HttpResponse::Ok().json(json! {
         {
-            "list_size": (*LIST_SIZE),
-            "extended_list_size": (*EXTENDED_LIST_SIZE)
+            "list_size": config::list_size(),
+            "extended_list_size": config::extended_list_size()
         }
     })
 }

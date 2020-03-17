@@ -1,97 +1,194 @@
-use super::{EmbeddedRecordPD, MinimalRecordD, MinimalRecordP, Record};
 use crate::{
-    context::RequestContext,
+    cistring::CiString,
     error::PointercrateError,
-    model::{
-        demonlist::{
-            demon::Demon,
-            record::{records_d, records_p, records_pd, FullRecord, RecordStatus},
-            submitter::Submitter,
-        },
-        By, Model,
+    model::demonlist::{
+        demon::MinimalDemon,
+        player::DatabasePlayer,
+        record::{note::notes_on, FullRecord, MinimalRecordD, MinimalRecordP, MinimalRecordPD, RecordStatus},
+        submitter::Submitter,
     },
-    operation::Get,
     Result,
 };
-use diesel::{result::Error, ExpressionMethods, QueryDsl, RunQueryDsl};
+use futures::stream::StreamExt;
+use sqlx::{Error, PgConnection};
 
-impl Get<i32> for FullRecord {
-    fn get(id: i32, ctx: RequestContext) -> Result<Self> {
-        let mut record: FullRecord = match FullRecord::by(id).first(ctx.connection()) {
-            Ok(record) => record,
+// Required until https://github.com/launchbadge/sqlx/pull/108 is merged
+struct FetchedRecord {
+    progress: i16,
+    video: Option<String>,
+    status: String,
+    player_id: i32,
+    player_name: String,
+    player_banned: bool,
+    demon_id: i32,
+    demon_name: String,
+    position: i16,
+    submitter_id: i32,
+    submitter_banned: bool,
+}
+
+impl FullRecord {
+    pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<FullRecord> {
+        let result = sqlx::query_file_as!(FetchedRecord, "sql/record_by_id.sql", id)
+            .fetch_one(connection)
+            .await;
+
+        match result {
+            Ok(row) =>
+                Ok(FullRecord {
+                    id,
+                    progress: row.progress,
+                    video: row.video,
+                    status: RecordStatus::from_sql(&row.status),
+                    player: DatabasePlayer {
+                        id: row.player_id,
+                        name: CiString(row.player_name),
+                        banned: row.player_banned,
+                    },
+                    demon: MinimalDemon {
+                        id: row.demon_id,
+                        position: row.position,
+                        name: CiString(row.demon_name),
+                    },
+                    submitter: Some(Submitter {
+                        id: row.submitter_id,
+                        banned: row.submitter_banned,
+                    }),
+                    notes: notes_on(id, connection).await?,
+                }),
+
             Err(Error::NotFound) =>
                 Err(PointercrateError::ModelNotFound {
                     model: "Record",
                     identified_by: id.to_string(),
-                })?,
-            Err(err) => Err(PointercrateError::database(err))?,
-        };
-
-        if !ctx.is_list_mod() {
-            record.submitter = None;
-            record.notes = None;
+                }),
+            Err(err) => Err(err.into()),
         }
-
-        if record.status != RecordStatus::Approved {
-            ctx.check_permissions(perms!(ListHelper or ListModerator or ListAdministrator))?;
-        }
-
-        Ok(record)
     }
 }
 
-impl Get<i32> for Record {
-    fn get(id: i32, ctx: RequestContext) -> Result<Self> {
-        let mut record: Record = match Record::by(id).first(ctx.connection()) {
-            Ok(record) => record,
-            Err(Error::NotFound) =>
-                Err(PointercrateError::ModelNotFound {
-                    model: "Record",
-                    identified_by: id.to_string(),
-                })?,
-            Err(err) => Err(PointercrateError::database(err))?,
-        };
-
-        if !ctx.is_list_mod() {
-            record.submitter = None;
-        }
-
-        if record.status != RecordStatus::Approved {
-            ctx.check_permissions(perms!(ListHelper or ListModerator or ListAdministrator))?;
-        }
-
-        Ok(record)
+pub async fn approved_records_by(player: &DatabasePlayer, connection: &mut PgConnection) -> Result<Vec<MinimalRecordD>> {
+    struct Fetched {
+        id: i32,
+        progress: i16,
+        video: Option<String>,
+        demon_id: i32,
+        name: String,
+        position: i16,
     }
+
+    let mut stream = sqlx::query_as!(
+        Fetched,
+        "SELECT records.id, progress, records.video::text, demons.id AS demon_id, demons.name::text, demons.position FROM records INNER \
+         JOIN demons ON records.demon = demons.id WHERE status_ = 'APPROVED' AND records.player = $1",
+        player.id
+    )
+    .fetch(connection);
+
+    let mut records = Vec::new();
+
+    while let Some(row) = stream.next().await {
+        let row = row?;
+
+        records.push(MinimalRecordD {
+            id: row.id,
+            progress: row.progress,
+            video: row.video,
+            status: RecordStatus::Approved,
+            demon: MinimalDemon {
+                id: row.demon_id,
+                position: row.position,
+                name: CiString(row.name),
+            },
+        })
+    }
+
+    Ok(records)
 }
 
-impl Get<i32> for Vec<MinimalRecordD> {
-    fn get(id: i32, ctx: RequestContext) -> Result<Self> {
-        MinimalRecordD::all()
-            .filter(records_d::player.eq(id))
-            .filter(records_d::status_.eq(RecordStatus::Approved))
-            .order_by(records_d::demon_name)
-            .load(ctx.connection())
-            .map_err(Into::into)
+pub async fn approved_records_on(demon: &MinimalDemon, connection: &mut PgConnection) -> Result<Vec<MinimalRecordP>> {
+    struct Fetched {
+        id: i32,
+        progress: i16,
+        video: Option<String>,
+        player_id: i32,
+        name: String,
+        banned: bool,
     }
+
+    let mut stream = sqlx::query_as!(
+        Fetched,
+        "SELECT records.id, progress, video::text, players.id AS player_id, players.name::text, players.banned FROM records INNER JOIN \
+         players ON records.player = players.id WHERE status_ = 'APPROVED' AND records.demon = $1 ORDER BY progress DESC",
+        demon.id
+    )
+    .fetch(connection);
+
+    let mut records = Vec::new();
+
+    while let Some(row) = stream.next().await {
+        let row = row?;
+
+        records.push(MinimalRecordP {
+            id: row.id,
+            progress: row.progress,
+            video: row.video,
+            status: RecordStatus::Approved,
+            player: DatabasePlayer {
+                id: row.player_id,
+                name: CiString(row.name),
+                banned: row.banned,
+            },
+        })
+    }
+
+    Ok(records)
 }
 
-impl<'a> Get<&'a Demon> for Vec<MinimalRecordP> {
-    fn get(demon: &'a Demon, ctx: RequestContext) -> Result<Self> {
-        MinimalRecordP::all()
-            .filter(records_p::demon.eq(demon.id))
-            .filter(records_p::status_.eq(RecordStatus::Approved))
-            .order_by((records_p::progress.desc(), records_p::id))
-            .load(ctx.connection())
-            .map_err(Into::into)
+pub async fn submitted_by(submitter: &Submitter, connection: &mut PgConnection) -> Result<Vec<MinimalRecordPD>> {
+    struct Fetched {
+        id: i32,
+        progress: i16,
+        video: Option<String>,
+        player_id: i32,
+        player_name: String,
+        banned: bool,
+        demon_id: i32,
+        demon_name: String,
+        position: i16,
     }
-}
 
-impl<'a> Get<&'a Submitter> for Vec<EmbeddedRecordPD> {
-    fn get(submitter: &'a Submitter, ctx: RequestContext) -> Result<Self> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
+    let mut stream = sqlx::query_as!(
+        Fetched,
+        "SELECT records.id, progress, records.video::text, players.id AS player_id, players.name::text as player_name, players.banned, \
+         demons.id AS demon_id, demons.name::text as demon_name, demons.position FROM records INNER JOIN players ON records.player = \
+         players.id INNER JOIN demons ON demons.id = records.demon WHERE records.submitter = $1",
+        submitter.id
+    )
+    .fetch(connection);
 
-        Ok(EmbeddedRecordPD::all()
-            .filter(records_pd::submitter_id.eq(&submitter.id))
-            .load(ctx.connection())?)
+    let mut records = Vec::new();
+
+    while let Some(row) = stream.next().await {
+        let row = row?;
+
+        records.push(MinimalRecordPD {
+            id: row.id,
+            progress: row.progress,
+            video: row.video,
+            status: RecordStatus::Approved,
+            player: DatabasePlayer {
+                id: row.player_id,
+                name: CiString(row.player_name),
+                banned: row.banned,
+            },
+            demon: MinimalDemon {
+                id: row.demon_id,
+                position: row.position,
+                name: CiString(row.demon_name),
+            },
+        })
     }
+
+    Ok(records)
 }

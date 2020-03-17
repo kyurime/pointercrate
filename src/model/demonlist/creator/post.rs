@@ -1,72 +1,33 @@
 use super::Creator;
 use crate::{
-    citext::{CiStr, CiString},
-    context::RequestContext,
+    cistring::CiString,
     error::PointercrateError,
-    model::demonlist::{DatabasePlayer, Demon},
-    operation::{Get, Post},
-    schema::creators,
+    model::demonlist::{demon::MinimalDemon, player::DatabasePlayer},
     Result,
 };
-use diesel::{insert_into, Connection, RunQueryDsl};
-use log::info;
-use serde_derive::Deserialize;
+use serde::Deserialize;
+use sqlx::PgConnection;
 
 #[derive(Debug, Deserialize)]
 pub struct PostCreator {
     pub creator: CiString,
 }
 
-#[derive(Debug, Insertable)]
-#[table_name = "creators"]
-struct NewCreator {
-    demon: i32,
-    creator: i32,
-}
+impl Creator {
+    pub async fn insert(demon: &MinimalDemon, player: &DatabasePlayer, connection: &mut PgConnection) -> Result<Creator> {
+        match Creator::get(demon, player, connection).await {
+            Ok(creator) => return Ok(creator),
+            Err(PointercrateError::ModelNotFound { .. }) => (),
+            Err(err) => return Err(err),
+        }
 
-impl<'a> Post<(&'a CiStr, &'a CiStr)> for Creator {
-    fn create_from(
-        (demon, player): (&'a CiStr, &'a CiStr),
-        ctx: RequestContext,
-    ) -> Result<Creator> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
+        let _ = sqlx::query!("INSERT INTO creators (creator, demon) VALUES ($1, $2)", player.id, demon.id)
+            .execute(connection)
+            .await?;
 
-        info!("Adding '{}' as creator of demon '{}'", player, demon);
-
-        let connection = ctx.connection();
-
-        connection.transaction(|| {
-            let demon = Demon::get(demon, ctx)?;
-            let player = DatabasePlayer::get(player, ctx)?;
-
-            insert_into(creators::table)
-                .values(&NewCreator {
-                    demon: demon.id,
-                    creator: player.id,
-                })
-                .get_result(connection)
-                .map_err(PointercrateError::database)
+        Ok(Creator {
+            demon: demon.id,
+            creator: player.id,
         })
-    }
-}
-
-impl Post<(CiString, CiString)> for Creator {
-    fn create_from((demon, player): (CiString, CiString), ctx: RequestContext) -> Result<Creator> {
-        Creator::create_from((demon.as_ref(), player.as_ref()), ctx)
-    }
-}
-
-// FIXME: this impl is stuuuupid
-impl<'a> Post<(i16, &'a CiStr)> for Creator {
-    fn create_from((position, player): (i16, &'a CiStr), ctx: RequestContext) -> Result<Self> {
-        let demon = Demon::get(position, ctx)?;
-
-        Creator::create_from((demon.name.as_ref(), player), ctx)
-    }
-}
-
-impl Post<(i16, CiString)> for Creator {
-    fn create_from((position, player): (i16, CiString), ctx: RequestContext) -> Result<Self> {
-        Creator::create_from((position, player.as_ref()), ctx)
     }
 }

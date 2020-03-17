@@ -1,56 +1,54 @@
 use super::Page;
 use crate::{
-    api::PCResponder,
-    middleware::auth::{Basic, Token},
+    error::{HtmlError, JsonError},
+    extractor::auth::{BasicAuth, TokenAuth},
     state::PointercrateState,
+    ApiResult, ViewResult,
 };
-use actix_web::{http::Cookie, AsyncResponder, HttpRequest, HttpResponse, Responder};
-use cookie::SameSite;
+use actix_web::{cookie::SameSite, http::Cookie, HttpResponse};
+use actix_web_codegen::{get, post};
 use log::info;
 use maud::{html, Markup};
-use tokio::prelude::Future;
 
 #[derive(Debug, Copy, Clone)]
 pub struct LoginPage;
 
-pub fn handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("GET /login/");
-
-    let req_clone = req.clone();
-
-    req.state()
-        .auth::<Token>(req.extensions_mut().remove().unwrap())
-        .map(move |_| {
-            actix_web::HttpResponse::Found()
-                .header(actix_web::http::header::LOCATION, "/account/")
-                .finish()
-        })
-        .or_else(move |_| Ok(LoginPage.render(&req_clone).respond_to(&req_clone).unwrap()))
-        .responder()
+#[get("/login/")]
+pub fn index(user: ApiResult<TokenAuth>) -> HttpResponse {
+    match user {
+        Ok(user) => HttpResponse::Found().header("Location", "/account/").finish(),
+        _ =>
+            HttpResponse::Ok()
+                .content_type("text/html; charset=utf-8")
+                .body(LoginPage.render().0),
+    }
 }
 
 /// Alternate login handler for the web interface. Unlike the one in the api, it doesn't return your
 /// token, but puts it into a secure, http-only cookie
-pub fn login(req: &HttpRequest<PointercrateState>) -> PCResponder {
+#[post("/login/")]
+pub async fn post(auth: ApiResult<BasicAuth>, state: PointercrateState) -> ViewResult<HttpResponse> {
+    // we have to explicitly take the Result here and transform it into a ViewResult so that we get a
+    // Html error page >.>
+    let user = match auth {
+        Ok(BasicAuth(user)) => user,
+        Err(JsonError(error)) => return Err(HtmlError(error)),
+    };
+
     info!("POST /login/");
 
-    req.state()
-        .auth::<Basic>(req.extensions_mut().remove().unwrap())
-        .map(|user| {
-            let mut cookie = Cookie::build("access_token", user.0.generate_token())
-                .http_only(true)
-                .same_site(SameSite::Strict)
-                .path("/");
+    let mut cookie = Cookie::build("access_token", user.generate_token(&state.secret))
+        .http_only(true)
+        .same_site(SameSite::Strict)
+        .path("/");
 
-            // allow cookies of HTTP if we're in a debug build, because I dont have a ssl cert for
-            // 127.0.0.1 on my laptop smh
-            if !cfg!(debug_assertions) {
-                cookie = cookie.secure(true)
-            }
+    // allow cookies of HTTP if we're in a debug build, because I don't have a ssl cert for
+    // 127.0.0.1 on my laptop smh
+    if !cfg!(debug_assertions) {
+        cookie = cookie.secure(true)
+    }
 
-            HttpResponse::NoContent().cookie(cookie.finish()).finish()
-        })
-        .responder()
+    Ok(HttpResponse::NoContent().cookie(cookie.finish()).finish())
 }
 
 impl Page for LoginPage {
@@ -70,7 +68,7 @@ impl Page for LoginPage {
         vec!["css/login.css"]
     }
 
-    fn body(&self, req: &HttpRequest<PointercrateState>) -> Markup {
+    fn body(&self) -> Markup {
         html! {
             div.m-center.flex.panel.fade.col.wrap style = "margin: 100px 0px;"{
                 h1.underlined.pad {
@@ -98,7 +96,7 @@ impl Page for LoginPage {
                                 p.error {}
                             }
                             div.grow {}
-                            input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value="Log in";
+                            input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Log in";
                         }
                     }
                     div.flex.col {
@@ -124,7 +122,7 @@ impl Page for LoginPage {
                                 p.error {}
                             }
                             div.grow {}
-                            input.button.blue.hover.slightly-round type = "submit" style = "margin: 15px auto 0px;" value = "Register";
+                            input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Register";
                         }
                     }
                 }
@@ -132,7 +130,7 @@ impl Page for LoginPage {
         }
     }
 
-    fn head(&self, _: &HttpRequest<PointercrateState>) -> Vec<Markup> {
+    fn head(&self) -> Vec<Markup> {
         vec![]
     }
 }

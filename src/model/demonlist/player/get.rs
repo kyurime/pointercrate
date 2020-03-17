@@ -1,91 +1,144 @@
-use super::{DatabasePlayer, FullPlayer};
 use crate::{
-    citext::CiStr,
-    context::RequestContext,
+    cistring::{CiStr, CiString},
     error::PointercrateError,
     model::{
-        demonlist::{creator::created_by, demon::MinimalDemon, player::Player},
-        By, Model,
+        demonlist::{
+            creator::created_by,
+            demon::{published_by, verified_by},
+            player::{DatabasePlayer, FullPlayer, Player},
+            record::approved_records_by,
+        },
+        nationality::Nationality,
     },
-    operation::Get,
-    schema::{demons, players},
     Result,
 };
-use diesel::{insert_into, result::Error, ExpressionMethods, QueryDsl, RunQueryDsl};
-use log::info;
+use sqlx::{Error, PgConnection};
 
-#[derive(Insertable, Debug)]
-#[table_name = "players"]
-struct NewPlayer<'a> {
-    name: &'a CiStr,
+// Reequired until https://github.com/launchbadge/sqlx/pull/108 is merged
+struct FetchedPlayer {
+    id: i32,
+    name: String,
+    banned: bool,
+    nation: Option<String>,
+    iso_country_code: Option<String>,
 }
 
-impl<'a> Get<&'a CiStr> for DatabasePlayer {
-    fn get(name: &'a CiStr, ctx: RequestContext) -> Result<Self> {
-        let name = CiStr::from_str(name.trim());
-
-        match DatabasePlayer::by(name).first(ctx.connection()) {
-            Ok(player) => Ok(player),
-            Err(Error::NotFound) => {
-                info!("Creating new player with name {}", name);
-
-                insert_into(players::table)
-                    .values(&NewPlayer { name })
-                    .returning(DatabasePlayer::selection())
-                    .get_result(ctx.connection())
-                    .map_err(PointercrateError::database)
-            },
-            Err(err) => Err(PointercrateError::database(err)),
-        }
-    }
-}
-
-impl Get<i32> for DatabasePlayer {
-    fn get(id: i32, ctx: RequestContext) -> Result<Self> {
-        match DatabasePlayer::by(id).first(ctx.connection()) {
-            Ok(player) => Ok(player),
-            Err(Error::NotFound) =>
-                Err(PointercrateError::ModelNotFound {
-                    model: "Player",
-                    identified_by: id.to_string(),
-                }),
-            Err(err) => Err(PointercrateError::database(err)),
-        }
-    }
-}
-
-impl Get<i32> for Player {
-    fn get(id: i32, ctx: RequestContext) -> Result<Self> {
-        match Player::by(id).first(ctx.connection()) {
-            Ok(player) => Ok(player),
-            Err(Error::NotFound) =>
-                Err(PointercrateError::ModelNotFound {
-                    model: "Player",
-                    identified_by: id.to_string(),
-                }),
-            Err(err) => Err(PointercrateError::database(err)),
-        }
-    }
-}
-
-impl<T> Get<T> for FullPlayer
-where
-    Player: Get<T>,
-{
-    fn get(t: T, ctx: RequestContext) -> Result<Self> {
-        let player = Player::get(t, ctx)?;
-        let pid = player.inner.id;
+impl Player {
+    pub async fn upgrade(self, connection: &mut PgConnection) -> Result<FullPlayer> {
+        let records = approved_records_by(&self.base, connection).await?;
+        let published = published_by(&self.base, connection).await?;
+        let verified = verified_by(&self.base, connection).await?;
+        let created = created_by(self.base.id, connection).await?;
 
         Ok(FullPlayer {
-            records: Get::get(pid, ctx)?,
-            created: created_by(pid).load(ctx.connection())?,
-            verified: MinimalDemon::all()
-                .filter(demons::verifier.eq(&pid))
-                .load(ctx.connection())?,
-            published: MinimalDemon::all()
-                .filter(demons::publisher.eq(&pid))
-                .load(ctx.connection())?,
-            player,
+            player: self,
+            records,
+            created,
+            verified,
+            published,
         })
+    }
+
+    pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<Player> {
+        let result = sqlx::query_as!(
+            FetchedPlayer,
+            "SELECT id, name::text, banned, nation::text, iso_country_code::text FROM players LEFT OUTER JOIN nationalities ON \
+             players.nationality = nationalities.iso_country_code WHERE id = $1",
+            id
+        )
+        .fetch_one(connection)
+        .await;
+
+        match result {
+            Ok(row) => {
+                let nationality = if let (Some(nation), Some(iso_country_code)) = (row.nation, row.iso_country_code) {
+                    Some(Nationality {
+                        iso_country_code,
+                        nation: CiString(nation),
+                    })
+                } else {
+                    None
+                };
+                Ok(Player {
+                    base: DatabasePlayer {
+                        id: row.id,
+                        name: CiString(row.name),
+                        banned: row.banned,
+                    },
+                    nationality,
+                })
+            },
+            Err(Error::NotFound) =>
+                Err(PointercrateError::ModelNotFound {
+                    model: "Player",
+                    identified_by: id.to_string(),
+                }),
+            Err(err) => Err(err.into()),
+        }
+    }
+}
+
+impl DatabasePlayer {
+    pub async fn by_name(name: &CiStr, connection: &mut PgConnection) -> Result<DatabasePlayer> {
+        let result = sqlx::query!(
+            "SELECT id, name::text, banned FROM players WHERE name = cast($1::text as citext)",
+            name.to_string()
+        ) // FIXME(sqlx) once CITEXT is supported
+        .fetch_one(connection)
+        .await;
+
+        match result {
+            Ok(row) =>
+                Ok(DatabasePlayer {
+                    id: row.id,
+                    name: CiString(row.name),
+                    banned: row.banned,
+                }),
+            Err(Error::NotFound) =>
+                Err(PointercrateError::ModelNotFound {
+                    model: "Player",
+                    identified_by: name.to_string(),
+                }),
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<DatabasePlayer> {
+        let result = sqlx::query!("SELECT id, name::text, banned FROM players WHERE id = $1", id)
+            .fetch_one(connection)
+            .await;
+
+        match result {
+            Ok(row) =>
+                Ok(DatabasePlayer {
+                    id: row.id,
+                    name: CiString(row.name),
+                    banned: row.banned,
+                }),
+            Err(Error::NotFound) =>
+                Err(PointercrateError::ModelNotFound {
+                    model: "Player",
+                    identified_by: id.to_string(),
+                }),
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    pub async fn by_name_or_create(name: &CiStr, connection: &mut PgConnection) -> Result<DatabasePlayer> {
+        match Self::by_name(name, connection).await {
+            Err(PointercrateError::ModelNotFound { .. }) => {
+                let id = sqlx::query!("INSERT INTO players (name) VALUES ($1::text) RETURNING id", name.to_string())
+                    .fetch_one(connection)
+                    .await?
+                    .id;
+
+                Ok(DatabasePlayer {
+                    id,
+                    name: name.to_owned(),
+                    banned: false,
+                })
+            },
+            result => result,
+        }
     }
 }

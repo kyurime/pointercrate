@@ -32,16 +32,6 @@ pub fn read_documentation_topics() -> io::Result<HashMap<String, String>> {
                 Ok(path) => path.extension().and_then(OsStr::to_str) == Some("html"),
             }
         })
-        .map(|result| {
-            result.and_then(|path| {
-                Ok((
-                    path.file_stem()
-                        .and_then(OsStr::to_str)
-                        .unwrap()
-                        .to_string(),
-                    read_to_string(path)?,
-                ))
-            })
-        })
+        .map(|result| result.and_then(|path| Ok((path.file_stem().and_then(OsStr::to_str).unwrap().to_string(), read_to_string(path)?))))
         .collect()
 }

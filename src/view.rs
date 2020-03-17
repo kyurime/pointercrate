@@ -1,11 +1,7 @@
 #![allow(unused_variables)]
 // currently, all the request parameters are unused, but they will be required in the future
 
-use crate::{
-    config::{EXTENDED_LIST_SIZE, LIST_SIZE},
-    state::PointercrateState,
-};
-use actix_web::HttpRequest;
+use crate::config;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 
 pub mod account;
@@ -27,11 +23,11 @@ pub trait Page {
     fn scripts(&self) -> Vec<&str>;
     fn stylesheets(&self) -> Vec<&str>;
 
-    fn body(&self, req: &HttpRequest<PointercrateState>) -> Markup;
+    fn body(&self) -> Markup;
 
-    fn head(&self, req: &HttpRequest<PointercrateState>) -> Vec<Markup>;
+    fn head(&self) -> Vec<Markup>;
 
-    fn render(&self, req: &HttpRequest<PointercrateState>) -> Markup {
+    fn render(&self) -> Markup {
         html! {
             (DOCTYPE)
             html lang="en" prefix="og: http://opg.me/ns#" {
@@ -46,7 +42,7 @@ pub trait Page {
                     meta property="og:description" content = (self.description());
 
                     meta name ="viewport" content="initial-scale=1, maximum-scale=1";
-                    meta name="author" content = "stadust, onetweet";
+                    meta name="author" content = "stadust, zmx";
                     meta name="keywords" content ="geometry,dash,hardest,insane,demon,list,demonlist,hardest,levels,gmd,gd,game,top,1.9,gdps";
                     meta name="description" content = (self.description());
                     meta http-equiv="Content-Type" content = "text/html; charset=utf-8";
@@ -54,7 +50,7 @@ pub trait Page {
 
                     link rel="icon" type="image/png" href={(STATIC) "images/19diamond.png"};
 
-                    @for markup in self.head(req) {
+                    @for markup in self.head() {
                         {(markup)}
                     }
 
@@ -83,58 +79,59 @@ pub trait Page {
                     }
                 }
                 body {
-                    (nav_bar(req))
-                    div {}
-                    (self.body(req))
-                    (footer(req))
+                    (nav_bar())
+                    (self.body())
+                    (footer())
                 }
             }
         }
     }
 }
 
-pub fn nav_bar(req: &HttpRequest<PointercrateState>) -> Markup {
+pub fn nav_bar() -> Markup {
     html! {
-
-        div.nav.center.collapse.see-through {
-            div.nav-icon {
-                a href = "/" {
-                    img src = {(STATIC) "images/19diamond.png"} style="height:55px";
-                }
-            }
-            div.nav-group-right.nav-group {
-                a.nav-item.hover.dark-grey href = "/demonlist/" title = "Geometry Dash 1.9 Demonlist" {
-                    span style ="display:flex; flex-direction:column;" {
-                        span style ="font-size: 50%" {"Geometry Dash"}
-                        span {"1.9 DEMONLIST"}
+        header {
+            nav.center.collapse.underlined.see-through {
+                div.nav-icon {
+                    a href = "/" {
+                        img src = {(STATIC) "images/19diamond.png"} style="height:55px";
                     }
                 }
-                div.nav-item.collapse-button {
-                    div.hamburger.hover {
-                        input type="checkbox"{}
-                        span{}
-                        span{}
-                        span{}
+                div.nav-group-right.nav-group {
+                    a.nav-item.hover.dark-grey href = "/demonlist/" title = "Geometry Dash 1.9 Demonlist" {
+                        span style ="display:flex; flex-direction:column;" {
+                            span style ="font-size: 50%" {"Geometry Dash 1.9"}
+                            span {"DEMONLIST"}
+                        }
+                    }
+                    div.nav-item.collapse-button {
+                        div.hamburger.hover {
+                            input type="checkbox"{}
+                            span{}
+                            span{}
+                            span{}
+                        }
                     }
                 }
             }
+            div {} // artificial spacing
         }
     }
 }
 
-pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
-    let first_extended = *LIST_SIZE + 1;
-    let first_legacy = *EXTENDED_LIST_SIZE + 1;
+pub fn footer() -> Markup {
+    let first_extended = config::list_size() + 1;
+    let first_legacy = config::extended_list_size() + 1;
 
     html! {
-        div.footer.center.fade {
+        footer.center {
             span.overline.pad style="text-align:center" {
                 "pointercrate.com and the (1.9) Demonlist are in no way affiliated with RobTopGamesAB ®"
                 br;
                 "The 1.9 Demonlist is not affiliated with the official GD Demonlist"
             }
             div.flex.no-stretch {
-                div {
+                nav {
                     h2 { "pointercrate:" }
                     a.link.js-scroll {
                         "Back to top"
@@ -156,7 +153,7 @@ pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
                     h2 { "Terms of Use:" }
                     "All content on pointercrate.com is provided free of charge. However, you may not redistribute, in any way, any original content found here without the creator's explicit permission."
                 }
-                div {
+                nav {
                     h2 {
                         "Demonlist:"
                     }
@@ -176,6 +173,10 @@ pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
                     "Developer"
                 }
                 (PreEscaped("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"))
+                a href = "https://twitter.com/_zmxmx" target = "_black" style = "color: #666" {
+                    "Fork Developer"
+                }
+                (PreEscaped("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"))
                 a href = "https://twitter.com/official19gdps" target = "_black" style = "color: #666" {
                     "1.9 GDPS"
                 }
@@ -186,9 +187,9 @@ pub fn footer(req: &HttpRequest<PointercrateState>) -> Markup {
 
 pub fn paginator(id: &str, endpoint: &str) -> Markup {
     html! {
-        div.flex.col.no-stretch#(id) data-endpoint = (endpoint) {
+        div.flex.col.no-stretch.paginator#(id) data-endpoint = (endpoint) {
             p.info-red.output {}
-            div style="min-height: 300px; position:relative; flex-grow:1" {
+            div style="min-height: 450px; position:relative; flex-grow:1" {
                 ul.selection-list style = "position: absolute; top: 0px; bottom:0px; left: 0px; right:0px" {}
             }
             div.flex style = "font-variant: small-caps; font-weight: bolder"{
@@ -201,7 +202,7 @@ pub fn paginator(id: &str, endpoint: &str) -> Markup {
 
 pub fn filtered_paginator(id: &str, endpoint: &str) -> Markup {
     html! {
-        div.flex.col.no-stretch#(id) style="margin: 10px" data-endpoint=(endpoint) {
+        div.flex.col.no-stretch.paginator#(id) style="margin: 10px" data-endpoint=(endpoint) {
             div.search.seperated {
                 input placeholder = "Enter to search..." type = "text" style = "height: 1em";
             }
@@ -217,11 +218,7 @@ pub fn filtered_paginator(id: &str, endpoint: &str) -> Markup {
     }
 }
 
-pub fn dropdown(
-    default_text: &str,
-    default_item: Markup,
-    filter_items: impl Iterator<Item = Markup>,
-) -> Markup {
+pub fn dropdown(default_text: &str, default_item: Markup, filter_items: impl Iterator<Item = Markup>) -> Markup {
     html! {
         div.dropdown-menu.js-search {
             input type="text" value = (default_text) data-default=(default_text) style = "color: inherit; font-weight: bold;";

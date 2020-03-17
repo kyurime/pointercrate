@@ -1,66 +1,64 @@
 use super::Submitter;
-use crate::{
-    context::RequestContext,
-    operation::{Paginate, Paginator, PaginatorQuery, TablePaginator},
-    schema::submitters,
-    Result,
-};
-use diesel::{ExpressionMethods, QueryDsl};
-use serde_derive::{Deserialize, Serialize};
+use crate::{error::PointercrateError, util::non_nullable, Result};
+use futures::StreamExt;
+use serde::{Deserialize, Serialize};
+use sqlx::{PgConnection, Row};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Debug, Clone, Serialize)]
 pub struct SubmitterPagination {
-    #[serde(rename = "before")]
-    before_id: Option<i32>,
+    #[serde(rename = "before", default, deserialize_with = "non_nullable")]
+    pub before_id: Option<i32>,
 
-    #[serde(rename = "after")]
-    after_id: Option<i32>,
+    #[serde(rename = "after", default, deserialize_with = "non_nullable")]
+    pub after_id: Option<i32>,
 
-    limit: Option<u8>,
+    #[serde(default, deserialize_with = "non_nullable")]
+    pub limit: Option<u8>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     banned: Option<bool>,
 }
 
-impl TablePaginator for SubmitterPagination {
-    type ColumnType = i32;
-    type PaginationColumn = submitters::submitter_id;
-    type Table = submitters::table;
-
-    fn query(&self, _: RequestContext) -> PaginatorQuery<submitters::table> {
-        let mut query = submitters::table
-            .select(submitters::all_columns)
-            .into_boxed();
-
-        if let Some(banned) = self.banned {
-            query = query.filter(submitters::banned.eq(banned));
+impl SubmitterPagination {
+    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<Submitter>> {
+        if let Some(limit) = self.limit {
+            if limit < 1 || limit > 100 {
+                return Err(PointercrateError::InvalidPaginationLimit)
+            }
         }
 
-        // FIXME: figure it out
-        query
-    }
-}
+        if let (Some(after), Some(before)) = (self.before_id, self.after_id) {
+            if after < before {
+                return Err(PointercrateError::AfterSmallerBefore)
+            }
+        }
 
-delegate_to_table_paginator!(SubmitterPagination);
+        let query = if self.before_id.is_some() && self.after_id.is_none() {
+            "SELECT submitter_id, banned FROM submitters WHERE (submitter_id < $1 OR $1 IS NULL) AND (submitter_id > $2 OR $2 IS NULL) AND \
+             (banned = $3 OR $3 IS NULL) LIMIT $4 ORDER BY submitter_id DESC"
+        } else {
+            "SELECT submitter_id, banned FROM submitters WHERE (submitter_id < $1 OR $1 IS NULL) AND (submitter_id > $2 OR $2 IS NULL) AND \
+             (banned = $3 OR $3 IS NULL) LIMIT $4 ORDER BY submitter_id ASC"
+        };
 
-impl Paginate<SubmitterPagination> for Submitter {
-    fn load(pagination: &SubmitterPagination, ctx: RequestContext) -> Result<Vec<Self>> {
-        ctx.check_permissions(perms!(ListAdministrator))?;
+        let mut stream = sqlx::query(query)
+            .bind(self.before_id)
+            .bind(self.after_id)
+            .bind(self.banned)
+            .bind(self.limit.unwrap_or(50) as i32 + 1)
+            .fetch(connection);
 
-        let mut query = pagination
-            .query(ctx)
-            .select((submitters::submitter_id, submitters::banned));
+        let mut submitters = Vec::new();
 
-        filter!(query[
-            submitters::submitter_id > pagination.after_id,
-            submitters::submitter_id < pagination.before_id
-        ]);
+        while let Some(row) = stream.next().await {
+            let row = row?;
 
-        pagination_result!(
-            query,
-            pagination,
-            submitters::submitter_id,
-            ctx.connection()
-        )
-        //unimplemented!()
+            submitters.push(Submitter {
+                id: row.get("submitter_id"),
+                banned: row.get("banned"),
+            })
+        }
+
+        Ok(submitters)
     }
 }

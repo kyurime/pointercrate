@@ -1,49 +1,67 @@
-//! Module containing all the actix request handlers for the `/api/v1/submitters/` endpoints
-
 use crate::{
-    api::PCResponder,
-    error::PointercrateError,
-    middleware::{auth::Token, cond::HttpResponseBuilderExt},
+    extractor::{auth::TokenAuth, if_match::IfMatch},
     model::demonlist::submitter::{FullSubmitter, PatchSubmitter, Submitter, SubmitterPagination},
+    permissions::Permissions,
     state::PointercrateState,
+    util::HttpResponseBuilderExt,
+    ApiResult,
 };
-use actix_web::{AsyncResponder, FromRequest, HttpMessage, HttpRequest, HttpResponse, Path};
-use log::info;
-use tokio::prelude::future::{Future, IntoFuture};
+use actix_web::{
+    web::{Json, Path, Query},
+    HttpResponse,
+};
+use actix_web_codegen::{get, patch};
 
-/// `GET /api/v1/users/` handler
-pub fn paginate(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    info!("GET /api/v1/submitters/");
+#[get("/")]
+pub async fn paginate(
+    TokenAuth(user): TokenAuth, state: PointercrateState, mut pagination: Query<SubmitterPagination>,
+) -> ApiResult<HttpResponse> {
+    user.inner().require_permissions(Permissions::ListAdministrator)?;
 
-    let query_string = req.query_string();
-    let pagination = serde_urlencoded::from_str(query_string)
-        .map_err(|err| PointercrateError::bad_request(&err.to_string()));
+    let mut connection = state.connection().await?;
 
-    let req = req.clone();
+    let mut submitters = pagination.page(&mut connection).await?;
 
-    pagination
-        .into_future()
-        .and_then(move |pagination: SubmitterPagination| {
-            req.state().paginate::<Token, Submitter, _>(
-                &req,
-                pagination,
-                "/api/v1/submitters/".to_owned(),
-            )
-        })
-        .map(|(users, links)| HttpResponse::Ok().header("Links", links).json(users))
-        .responder()
+    let (max_id, min_id) = Submitter::extremal_submitter_ids(&mut connection).await?;
+
+    pagination_response!(
+        "/api/v1/submitters/",
+        submitters,
+        pagination,
+        min_id,
+        max_id,
+        before_id,
+        after_id,
+        id
+    )
 }
 
-get_handler!(
-    "/api/v1/submitters/[id]",
-    i32,
-    "Submitter ID",
-    FullSubmitter
-);
-patch_handler!(
-    "/api/v1/submitters/[id]/",
-    i32,
-    "Submitter ID",
-    PatchSubmitter,
-    FullSubmitter
-);
+#[get("/{submitter_id}/")]
+pub async fn get(TokenAuth(user): TokenAuth, state: PointercrateState, submitter_id: Path<i32>) -> ApiResult<HttpResponse> {
+    user.inner().require_permissions(Permissions::ListModerator)?;
+
+    let mut connection = state.connection().await?;
+
+    let submitter = FullSubmitter::by_id(submitter_id.into_inner(), &mut connection).await?;
+
+    Ok(HttpResponse::Ok().json_with_etag(&submitter))
+}
+
+#[patch("/{submitter_id}/")]
+pub async fn patch(
+    if_match: IfMatch, TokenAuth(user): TokenAuth, state: PointercrateState, submitter_id: Path<i32>, patch: Json<PatchSubmitter>,
+) -> ApiResult<HttpResponse> {
+    user.inner().require_permissions(Permissions::ListModerator)?;
+
+    let mut connection = state.audited_transaction(&user).await?;
+
+    let submitter = FullSubmitter::by_id(submitter_id.into_inner(), &mut connection).await?;
+
+    if_match.require_etag_match(&submitter)?;
+
+    let submitter = submitter.apply_patch(patch.into_inner(), &mut connection).await?;
+
+    connection.commit().await?;
+
+    Ok(HttpResponse::Ok().json_with_etag(&submitter))
+}

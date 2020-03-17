@@ -1,21 +1,19 @@
+pub use self::{
+    get::{published_by, verified_by},
+    paginate::{DemonIdPagination, DemonPositionPagination},
+    patch::PatchDemon,
+    post::PostDemon,
+};
 use crate::{
+    cistring::{CiStr, CiString},
     error::PointercrateError,
-    model::{
-        demonlist::{creator::Creators, player::DatabasePlayer, record::MinimalRecordP},
-        Model,
-    },
-    operation::Get,
-    schema::demons,
+    model::demonlist::{player::DatabasePlayer, record::MinimalRecordP},
     Result,
 };
 use derive_more::Display;
-use diesel::{
-    dsl::max, pg::Pg, Expression, ExpressionMethods, PgConnection, QueryDsl, QueryResult,
-    Queryable, RunQueryDsl, Table,
-};
-use joinery::Joinable;
-use log::{debug, info, warn};
-use serde_derive::Serialize;
+use log::{debug, info};
+use serde::Serialize;
+use sqlx::PgConnection;
 use std::hash::{Hash, Hasher};
 
 mod get;
@@ -23,46 +21,12 @@ mod paginate;
 mod patch;
 mod post;
 
-pub use self::{paginate::DemonPagination, patch::PatchDemon, post::PostDemon};
-use crate::{
-    citext::{CiStr, CiString},
-    context::RequestContext,
-    model::By,
-};
-
-table! {
-    use crate::citext::CiText;
-    use diesel::sql_types::*;
-
-    demons_pv (name) {
-        id -> Int4,
-        name -> CiText,
-        position -> Int2,
-        requirement -> Int2,
-        video -> Nullable<Varchar>,
-        publisher_id -> Int4,
-        publisher_name -> CiText,
-        publisher_banned -> Bool,
-        verifier_id -> Int4,
-        verifier_name -> CiText,
-        verifier_banned -> Bool,
-    }
-}
-
 /// Struct modelling a demon. These objects are returned from the paginating `/demons/` endpoint
 #[derive(Debug, Serialize, Hash, Display, Eq, PartialEq)]
-#[display(fmt = "{} (at {})", name, position)]
+#[display(fmt = "{}", base)]
 pub struct Demon {
-    /// The [`Demon`]'s internal pointercrate ID
-    pub id: i32,
-
-    /// The [`Demon`]'s Geometry Dash level name
-    pub name: CiString,
-
-    /// The [`Demon`]'s position on the demonlist
-    ///
-    /// Positions for consecutive demons are always consecutive positive integers
-    pub position: i16,
+    #[serde(flatten)]
+    pub base: MinimalDemon,
 
     /// The minimal progress a [`Player`] must achieve on this [`Demon`] to have their record
     /// accepted
@@ -70,156 +34,52 @@ pub struct Demon {
 
     pub video: Option<String>,
 
-    /// The player-ID of this [`Demon`]'s publisher
+    /// This [`Demon`]'s publisher
     pub publisher: DatabasePlayer,
 
-    /// The player-ID of this [`Demon`]'s verifier
+    /// This [`Demon`]'s verifier
     pub verifier: DatabasePlayer,
 }
-
-table! {
-    use crate::citext::CiText;
-    use diesel::sql_types::*;
-
-    demons_p (name) {
-        id -> Int4,
-        name -> CiText,
-        position -> Int2,
-        video -> Nullable<Varchar>,
-        publisher_id -> Int4,
-        publisher_name -> CiText,
-        publisher_banned -> Bool,
-    }
-}
-
+/*
 /// Temporary solution. In the future this will become `ListedDemon` and contain
 /// id, name, position, video and publisher name of all demons that have a non-null position
 #[derive(Debug, Hash, Eq, PartialEq, Serialize, Display)]
-#[display(fmt = "{} (at {})", name, position)]
+#[display(fmt = "{}", base)]
 pub struct MinimalDemonP {
-    pub id: i32,
-    pub name: CiString,
-    pub position: i16,
+    #[serde(flatten)]
+    pub base: MinimalDemon,
     pub video: Option<String>,
     pub publisher: DatabasePlayer,
 }
-
-// doesn't need its own view
-
+*/
 /// Absolutely minimal representation of a demon to be sent when a demon is part of another object
-#[derive(Debug, Hash, Serialize, Queryable, Display)]
+#[derive(Debug, Hash, Serialize, Display, PartialEq, Eq, Clone)]
 #[display(fmt = "{} (at {})", name, position)]
 pub struct MinimalDemon {
+    /// The [`Demon`]'s unique internal pointercrate ID
     pub id: i32,
+
+    /// The [`Demon`]'s position on the demonlist
+    ///
+    /// Positions for consecutive demons are always consecutive positive integers
     pub position: i16,
+
+    /// The [`Demon`]'s Geometry Dash level name
+    ///
+    /// Note that the name doesn't need to be unique!
     pub name: CiString,
-}
-
-impl Model for Demon {
-    #[allow(clippy::type_complexity)]
-    type From = demons_pv::table;
-    type Selection = <demons_pv::table as Table>::AllColumns;
-
-    fn from() -> Self::From {
-        demons_pv::table
-    }
-
-    fn selection() -> Self::Selection {
-        demons_pv::all_columns
-    }
-}
-
-impl Queryable<<<Demon as Model>::Selection as Expression>::SqlType, Pg> for Demon {
-    #[allow(clippy::type_complexity)]
-    type Row = (
-        i32,
-        CiString,
-        i16,
-        i16,
-        Option<String>,
-        i32,
-        CiString,
-        bool,
-        i32,
-        CiString,
-        bool,
-    );
-
-    fn build(row: Self::Row) -> Self {
-        Demon {
-            id: row.0,
-            name: row.1,
-            position: row.2,
-            requirement: row.3,
-            video: row.4,
-            publisher: DatabasePlayer {
-                id: row.5,
-                name: row.6,
-                banned: row.7,
-            },
-            verifier: DatabasePlayer {
-                id: row.8,
-                name: row.9,
-                banned: row.10,
-            },
-        }
-    }
-}
-
-impl Model for MinimalDemonP {
-    type From = demons_p::table;
-    type Selection = <demons_p::table as Table>::AllColumns;
-
-    fn from() -> Self::From {
-        demons_p::table
-    }
-
-    fn selection() -> Self::Selection {
-        demons_p::all_columns
-    }
-}
-
-impl Queryable<<<MinimalDemonP as Model>::Selection as Expression>::SqlType, Pg> for MinimalDemonP {
-    type Row = (i32, CiString, i16, Option<String>, i32, CiString, bool);
-
-    fn build(row: Self::Row) -> Self {
-        MinimalDemonP {
-            id: row.0,
-            name: row.1,
-            position: row.2,
-            video: row.3,
-            publisher: DatabasePlayer {
-                id: row.4,
-                name: row.5,
-                banned: row.6,
-            },
-        }
-    }
-}
-
-impl Model for MinimalDemon {
-    type From = demons::table;
-    type Selection = (demons::id, demons::position, demons::name);
-
-    fn from() -> Self::From {
-        demons::table
-    }
-
-    fn selection() -> Self::Selection {
-        Self::Selection::default()
-    }
 }
 
 /// Struct modelling the "full" version of a demon.
 ///
 /// In addition to containing publisher/verifier information it also contains a list of the demon's
 /// creators and a list of accepted records
-#[derive(Debug, Serialize, Display)]
+#[derive(Debug, Serialize, Display, PartialEq, Eq)]
 #[display(fmt = "{}", demon)]
 pub struct FullDemon {
     #[serde(flatten)]
     pub demon: Demon,
-    pub creators: Creators,
+    pub creators: Vec<DatabasePlayer>,
     pub records: Vec<MinimalRecordP>,
 }
 
@@ -232,12 +92,31 @@ impl Hash for FullDemon {
     }
 }
 
+impl MinimalDemon {
+    /// Queries the record requirement for this demon from the database without collecting any of
+    /// the other data
+    pub async fn requirement(&self, connection: &mut PgConnection) -> Result<i16> {
+        Ok(sqlx::query!("SELECT requirement FROM demons WHERE id = $1", self.id)
+            .fetch_one(connection)
+            .await?
+            .requirement)
+    }
+}
+
 impl FullDemon {
+    pub fn position(&self) -> i16 {
+        self.demon.base.position
+    }
+
+    pub fn name(&self) -> &CiStr {
+        self.demon.base.name.as_ref()
+    }
+
     pub fn headline(&self) -> String {
         let publisher = &self.demon.publisher.name;
         let verifier = &self.demon.verifier.name;
 
-        let creator = match &self.creators.0[..] {
+        let creator = match &self.creators[..] {
             [] => "Unknown".to_string(),
             [creator] => creator.name.to_string(),
             many => {
@@ -246,7 +125,7 @@ impl FullDemon {
 
                 format!(
                     "{} and {}",
-                    iter.map(|player| &player.name).join_with(", ").to_string(),
+                    iter.map(|player| player.name.to_string()).collect::<Vec<_>>().join(", "),
                     fst.name
                 )
             },
@@ -260,10 +139,7 @@ impl FullDemon {
         } else if creator != verifier && verifier == publisher {
             format!("by {}, verified and published by {}", creator, verifier)
         } else if creator != verifier && creator != publisher && publisher != verifier {
-            format!(
-                "by {}, verified by {}, published by {}",
-                creator, verifier, publisher
-            )
+            format!("by {}, verified by {}, published by {}", creator, verifier, publisher)
         } else if creator == verifier && creator != publisher {
             format!("by {}, published by {}", creator, publisher)
         } else if creator == publisher && creator != verifier {
@@ -279,149 +155,80 @@ impl FullDemon {
         if demon.publisher == demon.verifier {
             format!("verified and published by {}", demon.verifier.name)
         } else {
-            format!(
-                "published by {}, verified by {}",
-                demon.publisher.name, demon.verifier.name
-            )
+            format!("published by {}, verified by {}", demon.publisher.name, demon.verifier.name)
         }
     }
 }
 
-impl By<demons_pv::id, i32> for Demon {}
-impl By<demons_pv::position, i16> for Demon {}
-impl By<demons_pv::name, &CiStr> for Demon {}
-
 impl Demon {
-    /// Increments the position of all demons with positions equal to or greater than the given one,
-    /// by one.
-    pub fn shift_down(starting_at: i16, connection: &PgConnection) -> QueryResult<()> {
-        diesel::update(demons::table)
-            .filter(demons::position.ge(starting_at))
-            .set(demons::position.eq(demons::position + 1))
-            .execute(connection)
-            .map(|_| ())
-    }
-
-    /// Decrements the position of all demons with positions equal to or smaller than the given one,
-    /// by one.
-    pub fn shift_up(until: i16, connection: &PgConnection) -> QueryResult<()> {
-        diesel::update(demons::table)
-            .filter(demons::position.le(until))
-            .set(demons::position.eq(demons::position - 1))
-            .execute(connection)
-            .map(|_| ())
-    }
-
-    pub fn mv(&mut self, to: i16, connection: &PgConnection) -> QueryResult<()> {
-        if to == self.position {
-            warn!("No-op move of demon {}", self.name);
-
-            return Ok(())
-        }
-
-        // FIXME: Temporarily move the demon somewhere else because otherwise the unique constraints
-        // complains. I actually dont know why, its DEFERRABLE INITIALLY IMMEDIATE (whatever the
-        // fuck that means, it made it work in the python version)
-        diesel::update(demons::table)
-            .filter(demons::id.eq(self.id))
-            .set(demons::position.eq(-1))
-            .execute(connection)?;
-
-        if to > self.position {
-            debug!(
-                "Target position {} is greater than current position {}, shifting demons towards lower position",
-                to, self.position
-            );
-
-            diesel::update(demons::table)
-                .filter(demons::position.gt(self.position))
-                .filter(demons::position.le(to))
-                .set(demons::position.eq(demons::position - 1))
-                .execute(connection)?;
-        } else if to < self.position {
-            debug!(
-                "Target position {} is lesser than current position {}, shifting demons towards higher position",
-                to, self.position
-            );
-
-            diesel::update(demons::table)
-                .filter(demons::position.ge(to))
-                .filter(demons::position.lt(self.position))
-                .set(demons::position.eq(demons::position + 1))
-                .execute(connection)?;
-        }
-
-        debug!("Performing actual move to position {}", to);
-
-        diesel::update(demons::table)
-            .filter(demons::id.eq(self.id))
-            .set(demons::position.eq(to))
-            .execute(connection)?;
-
-        info!(
-            "Moved demon {} from {} to {} successfully!",
-            self.name, self.position, to
-        );
-
-        self.position = to;
-
-        Ok(())
-    }
-
-    pub fn max_position(connection: &PgConnection) -> Result<i16> {
-        let option = demons::table
-            .select(max(demons::position))
-            .get_result::<Option<i16>>(connection)?;
-
-        Ok(option.unwrap_or(0))
-    }
-
-    pub fn validate_requirement(requirement: &mut i16) -> Result<()> {
-        if *requirement < 0 || *requirement > 100 {
+    pub fn validate_requirement(requirement: i16) -> Result<()> {
+        if requirement < 0 || requirement > 100 {
             return Err(PointercrateError::InvalidRequirement)
         }
 
         Ok(())
     }
 
-    pub fn validate_name(name: &mut CiString, connection: &PgConnection) -> Result<()> {
-        *name = CiString(name.trim().to_string());
+    pub async fn validate_position(position: i16, connection: &mut PgConnection) -> Result<()> {
+        let maximal_position = Demon::max_position(connection).await?;
 
-        match Demon::get(name.as_ref(), RequestContext::Internal(connection)) {
-            Ok(demon) =>
-                Err(PointercrateError::DemonExists {
-                    position: demon.position,
-                }),
-            Err(PointercrateError::ModelNotFound { .. }) => Ok(()),
-            Err(err) => Err(err),
-        }
-    }
-
-    pub fn validate_position(position: &mut i16, connection: &PgConnection) -> Result<()> {
-        let maximal = Demon::max_position(connection)? + 1;
-
-        if *position < 1 || *position > maximal {
-            return Err(PointercrateError::InvalidPosition { maximal })
+        if position > maximal_position || position < 1 {
+            return Err(PointercrateError::InvalidPosition { maximal: maximal_position })
         }
 
         Ok(())
     }
 
-    pub fn validate_video(video: &mut String) -> Result<()> {
-        *video = crate::video::validate(video)?;
+    /// Increments the position of all demons with positions equal to or greater than the given one,
+    /// by one.
+    async fn shift_down(starting_at: i16, connection: &mut PgConnection) -> Result<()> {
+        info!("Shifting down all demons, starting at {}", starting_at);
 
-        Ok(())
+        Ok(
+            sqlx::query!("UPDATE demons SET position = position + 1 WHERE position >= $1", starting_at)
+                .execute(connection)
+                .await
+                .map(|how_many| debug!("Shifting affects {} demons", how_many))?,
+        )
+    }
+
+    /// Decrements the position of all demons with positions equal to or smaller than the given one,
+    /// by one.
+    async fn shift_up(until: i16, connection: &mut PgConnection) -> Result<()> {
+        info!("Shifting up all demons until {}", until);
+
+        Ok(
+            sqlx::query!("UPDATE demons SET position = position - 1 WHERE position <= $1", until)
+                .execute(connection)
+                .await
+                .map(|how_many| debug!("Shifting affects {} demons", how_many))?,
+        )
+    }
+
+    /// Gets the current max position a demon has
+    pub async fn max_position(connection: &mut PgConnection) -> Result<i16> {
+        sqlx::query!("SELECT MAX(position) as max_position FROM demons")
+            .fetch_one(connection)
+            .await
+            .map(|row| row.max_position)
+            .map_err(|err| err.into())
+    }
+
+    /// Gets the maximal and minimal submitter id currently in use
+    ///
+    /// The returned tuple is of the form (max, min)
+    pub async fn extremal_demon_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
+        let row = sqlx::query!("SELECT MAX(id) AS max_id, MIN(id) AS min_id FROM demons")
+            .fetch_one(connection)
+            .await?; // FIXME: crashes on empty table
+        Ok((row.max_id, row.min_id))
     }
 
     pub fn score(&self, progress: i16) -> f64 {
-        let mut score =
-            100f64 * f64::exp((1f64 - f64::from(self.position)) * (1f64 / 30f64).ln() / (-99f64));
+        let mut score = 100f64 * f64::exp((1f64 - f64::from(self.base.position)) * (1f64 / 30f64).ln() / (-99f64));
 
         if progress != 100 {
-            score *= 0.25f64
-                + (f64::from(progress) - f64::from(self.requirement))
-                    / (100f64 - f64::from(self.requirement))
-                    * 0.25f64
+            score *= 0.25f64 + (f64::from(progress) - f64::from(self.requirement)) / (100f64 - f64::from(self.requirement)) * 0.25f64
         }
 
         score

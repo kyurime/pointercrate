@@ -1,35 +1,60 @@
-use super::Record;
-use crate::{
-    context::RequestContext, error::PointercrateError, model::demonlist::record::DatabaseRecord,
-    operation::Delete, schema::records, Result,
-};
-use diesel::{delete, ExpressionMethods, PgConnection, RunQueryDsl};
+use crate::{model::demonlist::record::FullRecord, Result};
 use log::info;
+use sqlx::PgConnection;
 
-impl Delete for Record {
-    fn delete(self, ctx: RequestContext) -> Result<()> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
-        //ctx.check_if_match(&self)?;
+impl FullRecord {
+    pub async fn delete(self, connection: &mut PgConnection) -> Result<()> {
+        info!("Deleting record {}", self);
 
-        delete_by_id(self.id, ctx.connection())
+        // Associated notes get deleted due to the ON DELETE CASCADE on record_notes.record
+
+        sqlx::query!("DELETE FROM records WHERE id = $1", self.id)
+            .execute(connection)
+            .await?;
+
+        Ok(())
     }
 }
 
-impl Delete for DatabaseRecord {
-    fn delete(self, ctx: RequestContext) -> Result<()> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
-        //ctx.check_if_match(&self)?;
+#[cfg(test)]
+mod tests {
+    use crate::model::demonlist::record::FullRecord;
 
-        delete_by_id(self.id, ctx.connection())
+    #[actix_rt::test]
+    async fn test_delete_record() {
+        let mut connection = crate::test::test_setup().await;
+
+        // Get the first demon of the test set
+        let id = sqlx::query!("SELECT id FROM records WHERE status_ = 'SUBMITTED'")
+            .fetch_one(&mut connection)
+            .await
+            .unwrap()
+            .id;
+
+        let record = FullRecord::by_id(id, &mut connection).await.unwrap();
+
+        let result = record.delete(&mut connection).await;
+
+        assert!(result.is_ok(), "{:?}", result.unwrap_err());
+        assert!(FullRecord::by_id(id, &mut connection).await.is_err());
     }
-}
 
-fn delete_by_id(id: i32, connection: &PgConnection) -> Result<()> {
-    info!("Deleting record with id {}", id);
+    #[actix_rt::test]
+    async fn test_delete_record_with_notes() {
+        let mut connection = crate::test::test_setup().await;
 
-    delete(records::table)
-        .filter(records::id.eq(id))
-        .execute(connection)
-        .map(|_| ())
-        .map_err(PointercrateError::database)
+        // Get the second demon of the test set
+        let id = sqlx::query!("SELECT id FROM records WHERE status_='REJECTED'")
+            .fetch_one(&mut connection)
+            .await
+            .unwrap()
+            .id;
+
+        let record = FullRecord::by_id(id, &mut connection).await.unwrap();
+
+        let result = record.delete(&mut connection).await;
+
+        assert!(result.is_ok(), "{:?}", result.unwrap_err());
+        assert!(FullRecord::by_id(id, &mut connection).await.is_err());
+    }
 }

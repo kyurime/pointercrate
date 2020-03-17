@@ -1,84 +1,227 @@
 use crate::{
-    citext::CiString,
-    context::RequestContext,
-    model::{
-        demonlist::{demon::demons_pv, Demon},
-        Model,
+    cistring::CiString,
+    error::PointercrateError,
+    model::demonlist::{
+        demon::{Demon, MinimalDemon},
+        player::DatabasePlayer,
     },
-    operation::{Paginate, Paginator, PaginatorQuery, TablePaginator},
+    util::non_nullable,
     Result,
 };
-use diesel::QueryDsl;
-use serde_derive::{Deserialize, Serialize};
+use futures::stream::StreamExt;
+use serde::{Deserialize, Serialize};
+use sqlx::{row::Row, PgConnection};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct DemonPagination {
+pub struct DemonIdPagination {
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "before")]
-    before_position: Option<i16>,
+    pub before_id: Option<i32>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "after")]
-    after_position: Option<i16>,
+    pub after_id: Option<i32>,
 
-    limit: Option<u8>,
+    #[serde(default, deserialize_with = "non_nullable")]
+    pub limit: Option<u8>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     name: Option<CiString>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     requirement: Option<i16>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     verifier_id: Option<i32>,
+    #[serde(default, deserialize_with = "non_nullable")]
     publisher_id: Option<i32>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     verifier_name: Option<CiString>,
+    #[serde(default, deserialize_with = "non_nullable")]
     publisher_name: Option<CiString>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "requirement__gt")]
     requirement_gt: Option<i16>,
 
+    #[serde(default, deserialize_with = "non_nullable")]
     #[serde(rename = "requirement__lt")]
     requirement_lt: Option<i16>,
 }
 
-impl TablePaginator for DemonPagination {
-    type ColumnType = i16;
-    type PaginationColumn = demons_pv::position;
-    type Table = demons_pv::table;
+impl DemonIdPagination {
+    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<Demon>> {
+        if let Some(limit) = self.limit {
+            if limit < 1 || limit > 100 {
+                return Err(PointercrateError::InvalidPaginationLimit)
+            }
+        }
 
-    fn query(&self, _: RequestContext) -> PaginatorQuery<demons_pv::table> {
-        let mut query = Demon::boxed_all();
+        if let (Some(after), Some(before)) = (self.before_id, self.after_id) {
+            if after < before {
+                return Err(PointercrateError::AfterSmallerBefore)
+            }
+        }
 
-        filter!(query[
-            demons_pv::name = self.name,
-            demons_pv::requirement = self.requirement,
-            demons_pv::requirement < self.requirement_lt,
-            demons_pv::requirement > self.requirement_gt,
-            demons_pv::verifier_id = self.verifier_id,
-            demons_pv::publisher_id = self.publisher_id,
-            demons_pv::verifier_name = self.verifier_name,
-            demons_pv::publisher_name = self.publisher_name
-        ]);
+        let order = if self.after_id.is_none() && self.before_id.is_some() {
+            "DESC"
+        } else {
+            "ASC"
+        };
 
-        query
+        let query = format!(include_str!("../../../../sql/paginate_demons_by_id.sql"), order);
+
+        // FIXME(sqlx) once CITEXT is supported
+        let mut stream = sqlx::query(&query)
+            .bind(self.before_id)
+            .bind(self.after_id)
+            .bind(self.name.as_ref().map(|s| s.as_str()))
+            .bind(self.requirement)
+            .bind(self.requirement_lt)
+            .bind(self.requirement_gt)
+            .bind(self.verifier_id)
+            .bind(self.verifier_name.as_ref().map(|s| s.as_str()))
+            .bind(self.publisher_id)
+            .bind(self.publisher_name.as_ref().map(|s| s.as_str()))
+            .bind(self.limit.unwrap_or(50) as i32 + 1)
+            .fetch(connection);
+
+        let mut demons = Vec::new();
+
+        while let Some(row) = stream.next().await {
+            let row = row?;
+
+            let video: Option<String> = row.get("video");
+
+            demons.push(Demon {
+                base: MinimalDemon {
+                    id: row.get("demon_id"),
+                    name: CiString(row.get("demon_name")),
+                    position: row.get("position"),
+                },
+                requirement: row.get("requirement"),
+                video,
+                publisher: DatabasePlayer {
+                    id: row.get("publisher_id"),
+                    name: CiString(row.get("publisher_name")),
+                    banned: row.get("publisher_banned"),
+                },
+                verifier: DatabasePlayer {
+                    id: row.get("verifier_id"),
+                    name: CiString(row.get("verifier_name")),
+                    banned: row.get("verifier_banned"),
+                },
+            })
+        }
+
+        Ok(demons)
     }
 }
 
-delegate_to_table_paginator!(DemonPagination, limit, before_position, after_position);
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DemonPositionPagination {
+    #[serde(default, deserialize_with = "non_nullable")]
+    #[serde(rename = "before")]
+    pub before_position: Option<i16>,
 
-impl Paginate<DemonPagination> for Demon {
-    fn load(pagination: &DemonPagination, ctx: RequestContext) -> Result<Vec<Self>> {
-        let mut query = pagination.query(ctx);
+    #[serde(default, deserialize_with = "non_nullable")]
+    #[serde(rename = "after")]
+    pub after_position: Option<i16>,
 
-        filter!(query[
-            demons_pv::position > pagination.after_position,
-            demons_pv::position < pagination.before_position
-        ]);
+    #[serde(default, deserialize_with = "non_nullable")]
+    pub limit: Option<u8>,
 
-        pagination_result!(
-            query,
-            pagination,
-            before_position,
-            after_position,
-            demons_pv::position,
-            ctx.connection()
-        )
+    #[serde(default, deserialize_with = "non_nullable")]
+    name: Option<CiString>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    requirement: Option<i16>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    verifier_id: Option<i32>,
+    #[serde(default, deserialize_with = "non_nullable")]
+    publisher_id: Option<i32>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    verifier_name: Option<CiString>,
+    #[serde(default, deserialize_with = "non_nullable")]
+    publisher_name: Option<CiString>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    #[serde(rename = "requirement__gt")]
+    requirement_gt: Option<i16>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    #[serde(rename = "requirement__lt")]
+    requirement_lt: Option<i16>,
+}
+
+impl DemonPositionPagination {
+    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<Demon>> {
+        if let Some(limit) = self.limit {
+            if limit < 1 || limit > 100 {
+                return Err(PointercrateError::InvalidPaginationLimit)
+            }
+        }
+
+        if let (Some(after), Some(before)) = (self.before_position, self.after_position) {
+            if after < before {
+                return Err(PointercrateError::AfterSmallerBefore)
+            }
+        }
+
+        let order = if self.after_position.is_none() && self.before_position.is_some() {
+            "DESC"
+        } else {
+            "ASC"
+        };
+
+        let query = format!(include_str!("../../../../sql/paginate_demons_by_position.sql"), order);
+
+        // FIXME(sqlx) once CITEXT is supported
+        let mut stream = sqlx::query(&query)
+            .bind(self.before_position)
+            .bind(self.after_position)
+            .bind(self.name.as_ref().map(|s| s.as_str()))
+            .bind(self.requirement)
+            .bind(self.requirement_lt)
+            .bind(self.requirement_gt)
+            .bind(self.verifier_id)
+            .bind(self.verifier_name.as_ref().map(|s| s.as_str()))
+            .bind(self.publisher_id)
+            .bind(self.publisher_name.as_ref().map(|s| s.as_str()))
+            .bind(self.limit.unwrap_or(50) as i32)
+            .fetch(connection);
+
+        let mut demons = Vec::new();
+
+        while let Some(row) = stream.next().await {
+            let row = row?;
+
+            let video: Option<String> = row.get("video");
+
+            demons.push(Demon {
+                base: MinimalDemon {
+                    id: row.get("demon_id"),
+                    name: CiString(row.get("demon_name")),
+                    position: row.get("position"),
+                },
+                requirement: row.get("requirement"),
+                video,
+                publisher: DatabasePlayer {
+                    id: row.get("publisher_id"),
+                    name: CiString(row.get("publisher_name")),
+                    banned: row.get("publisher_banned"),
+                },
+                verifier: DatabasePlayer {
+                    id: row.get("verifier_id"),
+                    name: CiString(row.get("verifier_name")),
+                    banned: row.get("verifier_banned"),
+                },
+            })
+        }
+
+        Ok(demons)
     }
 }

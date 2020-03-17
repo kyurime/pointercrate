@@ -1,102 +1,111 @@
-use super::{Permissions, PermissionsSet, User};
+use super::{Permissions, User};
 use crate::{
-    context::RequestContext,
-    error::PointercrateError,
-    middleware::auth::Me,
-    operation::{deserialize_non_optional, deserialize_optional, Patch},
-    schema::members,
+    util::{non_nullable, nullable},
     Result,
 };
-use diesel::{ExpressionMethods, RunQueryDsl};
 use log::info;
-use serde_derive::Deserialize;
+use serde::Deserialize;
+use sqlx::PgConnection;
 
-make_patch! {
-    struct PatchMe {
-        password: String,
-        display_name: Option<String>,
-        youtube_channel: Option<String>,
-    }
+#[derive(Debug, Deserialize)]
+pub struct PatchUser {
+    #[serde(default, deserialize_with = "nullable")]
+    pub display_name: Option<Option<String>>,
+
+    #[serde(default, deserialize_with = "nullable")]
+    #[allow(clippy::option_option)]
+    pub youtube_channel: Option<Option<String>>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    #[allow(clippy::option_option)]
+    pub permissions: Option<Permissions>,
 }
 
-make_patch! {
-    struct PatchUser {
-        display_name: Option<String>,
-        permissions: Permissions,
-    }
-}
+impl User {
+    /// Must run inside a transaction
+    pub async fn apply_patch(mut self, patch: PatchUser, connection: &mut PgConnection) -> Result<Self> {
+        info!("Applying patch {:?} to {}", patch, self);
 
-impl Patch<PatchMe> for Me {
-    fn patch(mut self, mut patch: PatchMe, ctx: RequestContext) -> Result<Self> {
-        ctx.check_if_match(&self)?;
-
-        validate!(patch: User::validate_password[password], User::validate_channel[youtube_channel]);
-
-        patch!(self.0, patch: display_name, youtube_channel);
-        patch_with!(self.0, patch: set_password(&password));
-
-        diesel::update(&self.0)
-            .set((
-                members::password_hash.eq(&self.0.password_hash),
-                members::display_name.eq(&self.0.display_name),
-                members::youtube_channel.eq(&self.0.youtube_channel),
-            ))
-            .execute(ctx.connection())?;
-
-        Ok(self)
-    }
-}
-
-impl Patch<PatchUser> for User {
-    fn patch(mut self, mut patch: PatchUser, ctx: RequestContext) -> Result<Self> {
-        match patch {
-            PatchUser {
-                display_name: None,
-                permissions: None,
-            } => ctx.check_permissions(perms!(Administrator))?,
-
-            PatchUser {
-                display_name: Some(_),
-                permissions: None,
-            } => ctx.check_permissions(perms!(Moderator))?,
-
-            PatchUser {
-                display_name: None,
-                permissions: Some(ref perms),
-            } => ctx.check_permissions((*perms ^ self.permissions()).assignable_from())?,
-
-            PatchUser {
-                display_name: Some(_),
-                permissions: Some(ref perms),
-            } =>
-                ctx.check_permissions(
-                    (*perms ^ self.permissions())
-                        .assignable_from()
-                        .cross(&PermissionsSet::one(Permissions::Moderator)),
-                )?,
+        if let Some(permissions) = patch.permissions {
+            self.set_permissions(permissions, connection).await?;
         }
 
-        if let RequestContext::External { user, .. } = ctx {
-            if &self == user.unwrap() {
-                return Err(PointercrateError::PatchSelf)
+        if let Some(display_name) = patch.display_name {
+            match display_name {
+                Some(display_name) => self.set_display_name(display_name, connection).await?,
+                None => self.reset_display_name(connection).await?,
             }
         }
-        ctx.check_if_match(&self)?;
 
-        info!("Patching user {} with {}", self, patch);
-
-        validate_nullable!(patch: User::validate_name[display_name]);
-
-        patch!(self, patch: display_name);
-        patch_with!(self, patch: set_permissions(permissions));
-
-        diesel::update(&self)
-            .set((
-                members::display_name.eq(&self.display_name),
-                members::permissions.eq(&self.permissions),
-            ))
-            .execute(ctx.connection())?;
+        if let Some(youtube_channel) = patch.youtube_channel {
+            match youtube_channel {
+                Some(youtube_channel) => self.set_youtube_channel(youtube_channel, connection).await?,
+                None => self.reset_youtube_channel(connection).await?,
+            }
+        }
 
         Ok(self)
+    }
+
+    pub async fn set_permissions(&mut self, permissions: Permissions, connection: &mut PgConnection) -> Result<()> {
+        sqlx::query!(
+            "UPDATE members SET permissions = cast($1::integer as BIT(16)) WHERE member_id = $2", // FIXME(sqlx)
+            permissions.bits() as i32,
+            self.id
+        )
+        .execute(connection)
+        .await?;
+
+        self.permissions = permissions;
+
+        Ok(())
+    }
+
+    pub async fn set_display_name(&mut self, display_name: String, connection: &mut PgConnection) -> Result<()> {
+        Self::validate_name(&display_name)?;
+
+        sqlx::query!("UPDATE members SET display_name = $1 WHERE member_id = $2", display_name, self.id)
+            .execute(connection)
+            .await?;
+
+        self.display_name = Some(display_name);
+
+        Ok(())
+    }
+
+    pub async fn reset_display_name(&mut self, connection: &mut PgConnection) -> Result<()> {
+        sqlx::query!("UPDATE members SET display_name = NULL WHERE member_id = $1", self.id)
+            .execute(connection)
+            .await?;
+
+        self.display_name = None;
+
+        Ok(())
+    }
+
+    pub async fn set_youtube_channel(&mut self, youtube_channel: String, connection: &mut PgConnection) -> Result<()> {
+        let youtube_channel = crate::video::validate_channel(&youtube_channel)?;
+
+        sqlx::query!(
+            "UPDATE members SET youtube_channel = $1::text WHERE member_id = $2",
+            youtube_channel,
+            self.id
+        )
+        .execute(connection)
+        .await?;
+
+        self.youtube_channel = Some(youtube_channel);
+
+        Ok(())
+    }
+
+    pub async fn reset_youtube_channel(&mut self, connection: &mut PgConnection) -> Result<()> {
+        sqlx::query!("UPDATE members SET youtube_channel = NULL WHERE member_id = $1", self.id)
+            .execute(connection)
+            .await?;
+
+        self.youtube_channel = None;
+
+        Ok(())
     }
 }

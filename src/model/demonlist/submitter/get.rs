@@ -1,57 +1,65 @@
 use super::{FullSubmitter, Submitter};
 use crate::{
-    context::RequestContext, error::PointercrateError, model::By, operation::Get,
-    ratelimit::RatelimitScope, Result,
+    model::demonlist::record::submitted_by,
+    ratelimit::{PreparedRatelimits, RatelimitScope},
+    Result,
 };
-use diesel::{result::Error, RunQueryDsl};
+use sqlx::PgConnection;
+use std::net::IpAddr;
 
-impl Get<()> for Submitter {
-    fn get(_: (), ctx: RequestContext) -> Result<Self> {
-        match ctx {
-            RequestContext::Internal(_) =>
+impl Submitter {
+    pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<Submitter> {
+        let row = sqlx::query!("SELECT submitter_id, banned FROM submitters WHERE submitter_id = $1", id)
+            .fetch_one(connection)
+            .await?;
+
+        Ok(Submitter { id, banned: row.banned })
+    }
+
+    pub async fn by_ip_or_create(
+        ip: IpAddr, connection: &mut PgConnection, ratelimits: Option<PreparedRatelimits<'_>>,
+    ) -> Result<Submitter> {
+        let optional_row = sqlx::query!(
+            "SELECT submitter_id, banned FROM submitters WHERE ip_address = cast($1::text as inet)",
+            ip.to_string()
+        )
+        .fetch_optional(connection)
+        .await?;
+
+        match optional_row {
+            Some(row) =>
                 Ok(Submitter {
-                    id: 0,
-                    banned: false,
+                    id: row.submitter_id,
+                    banned: row.banned,
                 }),
-            RequestContext::External { ip, connection, .. } =>
-                match Submitter::by(&ip).first(connection) {
-                    Ok(submitter) => Ok(submitter),
-                    Err(Error::NotFound) =>
-                        ctx.ratelimit(RatelimitScope::NewSubmitter).and_then(|_| {
-                            Submitter::insert(&ip, connection).map_err(PointercrateError::database)
-                        }),
-                    Err(err) => Err(PointercrateError::database(err)),
-                },
+            None => {
+                if let Some(ratelimits) = ratelimits {
+                    ratelimits.check(RatelimitScope::NewSubmitter)?;
+                }
+
+                let id = sqlx::query!(
+                    "INSERT INTO submitters (ip_address) VALUES (cast($1::text as inet)) RETURNING submitter_id",
+                    ip.to_string()
+                )
+                .fetch_one(connection)
+                .await?
+                .submitter_id;
+
+                Ok(Submitter { id, banned: false })
+            },
         }
     }
-}
 
-impl Get<i32> for Submitter {
-    fn get(id: i32, ctx: RequestContext) -> Result<Self> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
-
-        match Submitter::by(id).first(ctx.connection()) {
-            Ok(submitter) => Ok(submitter),
-            Err(Error::NotFound) =>
-                Err(PointercrateError::ModelNotFound {
-                    model: "Submitter",
-                    identified_by: id.to_string(),
-                }),
-            Err(err) => Err(PointercrateError::database(err)),
-        }
-    }
-}
-
-impl<T> Get<T> for FullSubmitter
-where
-    Submitter: Get<T>,
-{
-    fn get(t: T, ctx: RequestContext) -> Result<Self> {
-        let submitter = Submitter::get(t, ctx)?;
-
+    pub async fn upgrade(self, connection: &mut PgConnection) -> Result<FullSubmitter> {
         Ok(FullSubmitter {
-            records: Get::get(&submitter, ctx)?,
-            submitter,
+            records: submitted_by(&self, connection).await?,
+            submitter: self,
         })
+    }
+}
+
+impl FullSubmitter {
+    pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<FullSubmitter> {
+        Submitter::by_id(id, connection).await?.upgrade(connection).await
     }
 }

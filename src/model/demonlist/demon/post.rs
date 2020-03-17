@@ -1,16 +1,15 @@
-use super::{Demon, FullDemon};
 use crate::{
-    citext::{CiStr, CiString},
-    context::RequestContext,
-    model::demonlist::{creator::Creator, player::DatabasePlayer},
-    operation::{Get, Post},
-    schema::demons,
-    video, Result,
+    cistring::CiString,
+    model::demonlist::{
+        creator::Creator,
+        demon::{Demon, FullDemon, MinimalDemon},
+        player::DatabasePlayer,
+    },
+    Result,
 };
-use diesel::{insert_into, Connection, RunQueryDsl};
 use log::info;
-use serde_derive::Deserialize;
-use std::collections::HashSet;
+use serde::Deserialize;
+use sqlx::PgConnection;
 
 #[derive(Deserialize, Debug)]
 pub struct PostDemon {
@@ -23,79 +22,64 @@ pub struct PostDemon {
     video: Option<String>,
 }
 
-#[derive(Insertable, Debug)]
-#[table_name = "demons"]
-pub struct NewDemon<'a> {
-    name: &'a CiStr,
-    position: i16,
-    requirement: i16,
-    verifier: i32,
-    publisher: i32,
-    video: Option<&'a String>,
-}
-
-impl Post<PostDemon> for Demon {
-    fn create_from(mut data: PostDemon, ctx: RequestContext) -> Result<Demon> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
-
-        let connection = ctx.connection();
-
+impl FullDemon {
+    /// Must be run within a transaction!
+    pub async fn create_from(data: PostDemon, connection: &mut PgConnection) -> Result<FullDemon> {
         info!("Creating new demon from {:?}", data);
 
-        Demon::validate_requirement(&mut data.requirement)?;
+        Demon::validate_requirement(data.requirement)?;
 
         let video = match data.video {
-            Some(ref video) => Some(video::validate(video)?),
+            Some(ref video) => Some(crate::video::validate(video)?),
             None => None,
         };
 
-        connection.transaction(|| {
-            Demon::validate_name(&mut data.name, connection)?;
-            Demon::validate_position(&mut data.position, connection)?;
+        Demon::validate_position(data.position, connection).await?;
 
-            let publisher = DatabasePlayer::get(data.publisher.as_ref(), ctx)?;
-            let verifier = DatabasePlayer::get(data.verifier.as_ref(), ctx)?;
+        let publisher = DatabasePlayer::by_name_or_create(data.publisher.as_ref(), connection).await?;
+        let verifier = DatabasePlayer::by_name_or_create(data.verifier.as_ref(), connection).await?;
 
-            let new = NewDemon {
-                name: data.name.as_ref(),
+        Demon::shift_down(data.position, connection).await?;
+
+        let id_of_inserted = sqlx::query!(
+            "INSERT INTO demons (name, position, requirement, video, verifier, publisher) VALUES ($1::text,$2,$3,$4::text,$5,$6) \
+             RETURNING id",
+            data.name.to_string(),
+            data.position,
+            data.requirement,
+            video.as_ref().map(AsRef::as_ref).unwrap_or("").to_string(), // FIXME(sqlx)
+            verifier.id,
+            publisher.id
+        )
+        .fetch_one(connection)
+        .await?
+        .id;
+
+        let demon = Demon {
+            base: MinimalDemon {
+                id: id_of_inserted,
                 position: data.position,
-                requirement: data.requirement,
-                verifier: verifier.id,
-                publisher: publisher.id,
-                video: video.as_ref(),
-            };
-
-            Demon::shift_down(new.position, connection)?;
-
-            let id = insert_into(demons::table)
-                .values(&new)
-                .returning(demons::id)
-                .get_result(connection)?;
-
-            let creators_hash: HashSet<CiString> = data.creators.into_iter().collect();
-
-            for creator in creators_hash {
-                Creator::create_from(
-                    (data.name.as_ref(), creator.as_ref()),
-                    RequestContext::Internal(connection),
-                )?;
-            }
-
-            Ok(Demon {
-                id,
                 name: data.name,
-                position: data.position,
-                requirement: data.requirement,
-                video: data.video,
-                publisher,
-                verifier,
-            })
-        })
-    }
-}
+            },
+            requirement: data.requirement,
+            video,
+            publisher,
+            verifier,
+        };
 
-impl Post<PostDemon> for FullDemon {
-    fn create_from(data: PostDemon, ctx: RequestContext) -> Result<Self> {
-        FullDemon::get(Demon::create_from(data, ctx)?, ctx)
+        let mut creators = Vec::new();
+
+        for creator in data.creators {
+            let player = DatabasePlayer::by_name_or_create(creator.as_ref(), connection).await?;
+            Creator::insert(&demon.base, &player, connection).await?;
+
+            creators.push(player);
+        }
+
+        Ok(FullDemon {
+            demon,
+            creators,
+            records: Vec::new(),
+        })
     }
 }

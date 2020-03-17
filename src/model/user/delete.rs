@@ -1,42 +1,15 @@
-use super::User;
-use crate::{
-    context::RequestContext, error::PointercrateError, middleware::auth::Me, operation::Delete,
-    schema::members, Result,
-};
-use diesel::{delete, ExpressionMethods, RunQueryDsl};
-use log::info;
+use crate::{model::user::User, Result};
+use log::warn;
+use sqlx::PgConnection;
 
-impl Delete for User {
-    fn delete(self, ctx: RequestContext) -> Result<()> {
-        ctx.check_permissions(perms!(Administrator))?;
-        ctx.check_if_match(&self)?;
+impl User {
+    pub async fn delete(self, connection: &mut PgConnection) -> Result<()> {
+        warn!("Deleting user account {}", self);
 
-        if let RequestContext::External { user, .. } = ctx {
-            if &self == user.unwrap() {
-                return Err(PointercrateError::DeleteSelf)
-            }
-        }
+        sqlx::query!("DELETE FROM members WHERE member_id = $1", self.id)
+            .execute(connection)
+            .await?;
 
-        info!("Deleting user {}", self);
-
-        delete(members::table)
-            .filter(members::member_id.eq(self.id))
-            .execute(ctx.connection())
-            .map(|_| ())
-            .map_err(PointercrateError::database)
-    }
-}
-
-impl Delete for Me {
-    fn delete(self, ctx: RequestContext) -> Result<()> {
-        ctx.check_if_match(&self)?;
-
-        info!("Self-deleting user {}", self.0);
-
-        delete(members::table)
-            .filter(members::member_id.eq(self.0.id))
-            .execute(ctx.connection())
-            .map(|_| ())
-            .map_err(PointercrateError::database)
+        Ok(())
     }
 }

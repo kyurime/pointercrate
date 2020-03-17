@@ -1,44 +1,63 @@
-use super::Submitter;
 use crate::{
-    context::RequestContext,
-    model::demonlist::submitter::FullSubmitter,
-    operation::{deserialize_non_optional, Patch},
-    schema::submitters,
+    model::demonlist::submitter::{FullSubmitter, Submitter},
+    util::non_nullable,
     Result,
 };
-use diesel::{ExpressionMethods, RunQueryDsl};
 use log::info;
-use serde_derive::Deserialize;
+use serde::Deserialize;
+use sqlx::PgConnection;
 
-make_patch! {
-    struct PatchSubmitter {
-        banned: bool
+#[derive(Debug, Deserialize)]
+pub struct PatchSubmitter {
+    #[serde(default, deserialize_with = "non_nullable")]
+    banned: Option<bool>,
+}
+
+impl FullSubmitter {
+    pub async fn apply_patch(self, patch: PatchSubmitter, connection: &mut PgConnection) -> Result<Self> {
+        Ok(FullSubmitter {
+            submitter: self.submitter.apply_patch(patch, connection).await?,
+            records: self.records,
+        })
     }
 }
 
-impl Patch<PatchSubmitter> for Submitter {
-    fn patch(mut self, patch: PatchSubmitter, ctx: RequestContext) -> Result<Self> {
-        ctx.check_permissions(perms!(ListModerator or ListAdministrator))?;
-        ctx.check_if_match(&self)?;
+impl Submitter {
+    pub async fn ban(&mut self, connection: &mut PgConnection) -> Result<()> {
+        sqlx::query!("UPDATE submitters SET banned = true WHERE submitter_id = $1", self.id)
+            .execute(connection)
+            .await?;
 
-        info!("Patching player {} with {}", self.id, patch);
+        let deleted = sqlx::query!("DELETE FROM records WHERE submitter = $1 AND status_ = 'SUBMITTED'", self.id)
+            .execute(connection)
+            .await?;
 
-        patch!(self, patch: banned);
+        info!("Banning submitter {} caused deletion of {} submissions", self, deleted);
 
-        diesel::update(submitters::table)
-            .filter(submitters::submitter_id.eq(&self.id))
-            .set(submitters::banned.eq(&self.banned))
-            .execute(ctx.connection())?;
+        self.banned = true;
+
+        Ok(())
+    }
+
+    pub async fn unban(&mut self, connection: &mut PgConnection) -> Result<()> {
+        sqlx::query!("UPDATE submitters SET banned = false WHERE submitter_id = $1", self.id)
+            .execute(connection)
+            .await?;
+
+        self.banned = false;
+
+        Ok(())
+    }
+
+    pub async fn apply_patch(mut self, patch: PatchSubmitter, connection: &mut PgConnection) -> Result<Self> {
+        info!("Patching submitter {} with {:?}", self, patch);
+
+        match patch.banned {
+            Some(true) => self.ban(connection).await?,
+            Some(false) => self.unban(connection).await?,
+            _ => (),
+        }
 
         Ok(self)
-    }
-}
-
-impl Patch<PatchSubmitter> for FullSubmitter {
-    fn patch(self, patch: PatchSubmitter, ctx: RequestContext) -> Result<Self> {
-        Ok(FullSubmitter {
-            submitter: self.submitter.patch(patch, ctx)?,
-            ..self
-        })
     }
 }

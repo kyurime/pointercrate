@@ -1,11 +1,8 @@
 use super::Page;
-use crate::{
-    actor::database::GetMessage, api::PCResponder, context::RequestData, model::user::User,
-    permissions::Permissions, state::PointercrateState,
-};
-use actix_web::{AsyncResponder, HttpRequest, Responder};
+use crate::{model::user::User, permissions::Permissions, state::PointercrateState, ViewResult};
+use actix_web::HttpResponse;
+use actix_web_codegen::get;
 use maud::{html, Markup, PreEscaped};
-use tokio::prelude::Future;
 
 #[derive(Debug)]
 struct Homepage {
@@ -13,24 +10,21 @@ struct Homepage {
     pointercrate_team: Vec<User>,
 }
 
-pub fn handler(req: &HttpRequest<PointercrateState>) -> PCResponder {
-    let req_clone = req.clone();
+#[get("/")]
+pub async fn index(state: PointercrateState) -> ViewResult<HttpResponse> {
+    let mut connection = state.connection().await?;
 
-    req.state()
-        .database(GetMessage::new(
-            (Permissions::ListAdministrator, Permissions::Administrator),
-            RequestData::Internal,
-        ))
-        .map(move |(demonlist_team, pointercrate_team)| {
-            Homepage {
-                demonlist_team,
-                pointercrate_team,
-            }
-            .render(&req_clone)
-            .respond_to(&req_clone)
-            .unwrap()
-        })
-        .responder()
+    let demonlist_team = User::by_permission(Permissions::ListAdministrator, &mut connection).await?;
+    let pointercrate_team = User::by_permission(Permissions::Administrator, &mut connection).await?;
+
+    Ok(HttpResponse::Ok().content_type("text/html; charset=utf-8").body(
+        Homepage {
+            demonlist_team,
+            pointercrate_team,
+        }
+        .render()
+        .0,
+    ))
 }
 
 impl Page for Homepage {
@@ -39,7 +33,8 @@ impl Page for Homepage {
     }
 
     fn description(&self) -> String {
-        "This is the home of the Geometry Dash 1.9 Private Server demonlist".to_owned()
+        "This is the home of the Geometry Dash 1.9 Private Server demonlist"
+            .to_owned()
     }
 
     fn scripts(&self) -> Vec<&str> {
@@ -50,7 +45,7 @@ impl Page for Homepage {
         vec!["css/home.css"]
     }
 
-    fn body(&self, req: &HttpRequest<PointercrateState>) -> Markup {
+    fn body(&self) -> Markup {
         html! {
             div.tabbed.information-banner.left {
                 div.tab-display {
@@ -146,9 +141,9 @@ impl Page for Homepage {
                             p {"Oh and I also changed some of the design, for hopefully the first and final time.."}
                         }
                     }
-                    div.tab-selection style="padding: 20px 0px; text-align: center"{
-                        h3.tab.tab-active data-tab-id="99" style="padding: 10px; text-align:left" { "4/13/2019" }
-                        h3.tab.tab-active data-tab-id="100" style="padding: 10px; text-align:left" { "10/3/2019" }
+                    aside.tab-selection style="padding: 20px 0px; text-align: center"{
+                        h3.tab data-tab-id="99" style="padding: 10px; text-align:left" { "2019-04-13" }
+                        h3.tab data-tab-id="100" style="padding: 10px; text-align: left" { "2019-10-03" }
                     }
                 }
             }
@@ -220,7 +215,7 @@ impl Page for Homepage {
         }
     }
 
-    fn head(&self, _: &HttpRequest<PointercrateState>) -> Vec<Markup> {
+    fn head(&self) -> Vec<Markup> {
         vec![html! {
             (PreEscaped(r#"
 <style>

@@ -1,38 +1,82 @@
+//! Module containing all code relating to records on the demonlist
+//!
+//! Each record can have one of four statuses, 'approved', 'rejected', 'under consideration' or
+//! 'submitted'. We will call a record of some player on some demon a (player, demon)-record.
+//! We call a (player, demon)-record R _unique_ iff all other records by that player on the demon
+//! have a different status than R. We call it _globally unique_ if R is the only record, regardless
+//! of state, of player on demon.
+//!
+//! * 'approved' means that the record shows up on the demonlist and that further submissions for
+//!   this (player, demon) pair are only allowed with a different video and higher progress. An
+//!   approved record is unique. Whenever a record becomes 'accepted', all 'submitted' or 'under
+//!   consideration' records with lower progress are removed.
+//! * 'rejected' means that the record doesn't show up on the demonlist and that further submissions
+//!   with that (player, demon) pair or that video will not be permitted. A rejected record is
+//!   globally unique
+//! * 'submitted' means that the record has been submitted. No further restrictions apply, meaning
+//!   further submissions for this (demon, player) tuple are allowed. However as soon as one record
+//!   for some (player, demon) tuple transitions from 'submitted' to ' approved' or 'rejected'. A
+//!   submitted record is NOT unique
+//! * 'under consideration' means essentially the same as 'submitted', only that all further
+//!   submissions for this (demon, player) tuple are disallowed. Note that this does not mean that
+//!   the 'under consideration' status makes. A record under consideration IS NOT UNIQUE!
+
+pub use self::{
+    get::{approved_records_by, approved_records_on, submitted_by},
+    paginate::RecordPagination,
+    patch::PatchRecord,
+    post::Submission,
+};
 use crate::{
-    citext::CiString,
-    error::PointercrateError,
-    model::{
-        demonlist::{demon::MinimalDemon, player::DatabasePlayer},
-        By, Model,
-    },
-    schema::records,
+    model::demonlist::{demon::MinimalDemon, player::DatabasePlayer, record::note::Note, submitter::Submitter},
+    state::PointercrateState,
+    Result,
 };
 use derive_more::Display;
-use diesel::{deserialize::Queryable, pg::Pg, Expression, Table};
-use diesel_derive_enum::DbEnum;
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt::{Display, Formatter};
+use serde_json::json;
+use sqlx::PgConnection;
+use std::{
+    fmt::{Display, Formatter},
+    hash::{Hash, Hasher},
+};
 
 mod delete;
 mod get;
+pub mod note;
 mod paginate;
 mod patch;
 mod post;
 
-pub use self::{paginate::RecordPagination, patch::PatchRecord, post::Submission};
-use crate::model::demonlist::Submitter;
-
-#[derive(Debug, AsExpression, Eq, PartialEq, Clone, Copy, Hash, DbEnum)]
-#[DieselType = "Record_status"]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum RecordStatus {
-    #[db_rename = "SUBMITTED"]
     Submitted,
-
-    #[db_rename = "APPROVED"]
     Approved,
-
-    #[db_rename = "REJECTED"]
     Rejected,
+    UnderConsideration,
+}
+
+impl RecordStatus {
+    fn to_sql(&self) -> String {
+        match self {
+            RecordStatus::Submitted => "SUBMITTED",
+            RecordStatus::Approved => "APPROVED",
+            RecordStatus::Rejected => "REJECTED",
+            RecordStatus::UnderConsideration => "UNDER_CONSIDERATION",
+        }
+        .to_owned()
+    }
+
+    fn from_sql(sql: &str) -> Self {
+        match sql {
+            "SUBMITTED" => RecordStatus::Submitted,
+            "APPROVED" => RecordStatus::Approved,
+            "REJECTED" => RecordStatus::Rejected,
+            "UNDER_CONSIDERATION" => RecordStatus::UnderConsideration,
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl Default for RecordStatus {
@@ -47,6 +91,7 @@ impl Display for RecordStatus {
             RecordStatus::Submitted => write!(f, "submitted"),
             RecordStatus::Approved => write!(f, "approved"),
             RecordStatus::Rejected => write!(f, "rejected"),
+            RecordStatus::UnderConsideration => write!(f, "under consideration"),
         }
     }
 }
@@ -71,64 +116,17 @@ impl<'de> Deserialize<'de> for RecordStatus {
             "approved" => Ok(RecordStatus::Approved),
             "submitted" => Ok(RecordStatus::Submitted),
             "rejected" => Ok(RecordStatus::Rejected),
+            "under consideration" => Ok(RecordStatus::UnderConsideration),
             _ =>
                 Err(serde::de::Error::invalid_value(
                     serde::de::Unexpected::Str(&string),
-                    &"'approved', 'submitted' or 'rejected'",
+                    &"'approved', 'submitted', 'under consideration' or 'rejected'",
                 )),
         }
     }
 }
 
-#[derive(Debug, Queryable, Display, Hash)]
-#[display(fmt = "{} {}% on {} (ID: {})", player_id, progress, demon_id, id)]
-pub struct DatabaseRecord {
-    id: i32,
-    progress: i16,
-    video: Option<String>,
-    status: RecordStatus,
-    player_id: i32,
-    submitter_id: i32,
-    demon_id: i32,
-    notes: Option<String>,
-}
-
-impl Model for DatabaseRecord {
-    type From = records::table;
-    type Selection = <records::table as Table>::AllColumns;
-
-    fn from() -> Self::From {
-        records::table
-    }
-
-    fn selection() -> Self::Selection {
-        records::all_columns
-    }
-}
-
-table! {
-    use crate::citext::CiText;
-    use diesel::sql_types::*;
-    use crate::model::demonlist::record::Record_status;
-
-    records_pds (id) {
-        id -> Int4,
-        progress -> Int2,
-        video -> Nullable<Varchar>,
-        status_ -> Record_status,
-        notes -> Nullable<Text>,
-        player_id -> Int4,
-        player_name -> CiText,
-        player_banned -> Bool,
-        demon_id -> Int4,
-        demon_name -> CiText,
-        position -> Int2,
-        submitter_id -> Int4,
-        submitter_banned -> Bool,
-    }
-}
-
-#[derive(Debug, Serialize, Hash, Display)]
+#[derive(Debug, Serialize, Display)]
 #[display(fmt = "{} {}% on {} (ID: {})", player, progress, demon, id)]
 pub struct FullRecord {
     pub id: i32,
@@ -138,67 +136,30 @@ pub struct FullRecord {
     pub player: DatabasePlayer,
     pub demon: MinimalDemon,
     pub submitter: Option<Submitter>,
-    pub notes: Option<String>,
+    pub notes: Vec<Note>,
 }
 
-table! {
-    use crate::citext::CiText;
-    use diesel::sql_types::*;
-    use crate::model::demonlist::record::Record_status;
-
-    records_pd (id) {
-        id -> Int4,
-        progress -> Int2,
-        video -> Nullable<Varchar>,
-        status_ -> Record_status,
-        submitter_id -> Int4,
-        player_id -> Int4,
-        player_name -> CiText,
-        player_banned -> Bool,
-        demon_id -> Int4,
-        demon_name -> CiText,
-        position -> Int2,
+impl Hash for FullRecord {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.progress.hash(state);
+        self.video.hash(state);
+        self.status.hash(state);
+        self.player.id.hash(state);
+        self.demon.id.hash(state)
+        // submitter cannot be patch, notes have different endpoints -> no hash
     }
-}
-
-#[derive(Debug, Serialize, Hash, Display)]
-#[display(fmt = "{} {}% on {} (ID: {})", player, progress, demon, id)]
-pub struct Record {
-    pub id: i32,
-    pub progress: i16,
-    pub video: Option<String>,
-    pub status: RecordStatus,
-    pub player: DatabasePlayer,
-    pub demon: MinimalDemon,
-    pub submitter: Option<i32>,
 }
 
 #[derive(Debug, Hash, Serialize, Display)]
 #[display(fmt = "{} {}% on {} (ID: {})", player, progress, demon, id)]
-pub struct EmbeddedRecordPD {
+pub struct MinimalRecordPD {
     pub id: i32,
     pub progress: i16,
     pub video: Option<String>,
     pub status: RecordStatus,
     pub demon: MinimalDemon,
     pub player: DatabasePlayer,
-}
-
-table! {
-    use crate::citext::CiText;
-    use diesel::sql_types::*;
-    use crate::model::demonlist::record::Record_status;
-
-    records_d (id) {
-        id -> Int4,
-        progress -> Int2,
-        video -> Nullable<Varchar>,
-        status_ -> Record_status,
-        player -> Int4,
-        demon_id -> Int4,
-        demon_name -> CiText,
-        position -> Int2,
-    }
 }
 
 #[derive(Debug, Hash, Serialize, Display)]
@@ -211,23 +172,7 @@ pub struct MinimalRecordD {
     pub demon: MinimalDemon,
 }
 
-table! {
-    use crate::citext::CiText;
-    use diesel::sql_types::*;
-    use crate::model::demonlist::record::Record_status;
-
-    records_p (id) {
-        id -> Int4,
-        progress -> Int2,
-        video -> Nullable<Varchar>,
-        status_ -> Record_status,
-        demon -> Int4,
-        player_id -> Int4,
-        player_name -> CiText,
-        player_banned -> Bool,
-    }
-}
-#[derive(Debug, Hash, Serialize, Display)]
+#[derive(Debug, Hash, Serialize, Display, PartialEq, Eq)]
 #[display(fmt = "{} - {}% (ID: {})", player, progress, id)]
 pub struct MinimalRecordP {
     pub id: i32,
@@ -237,267 +182,140 @@ pub struct MinimalRecordP {
     pub player: DatabasePlayer,
 }
 
-impl Model for FullRecord {
-    type From = records_pds::table;
-    type Selection = <records_pds::table as Table>::AllColumns;
-
-    fn from() -> Self::From {
-        records_pds::table
+impl FullRecord {
+    /// Gets the maximal and minimal submitter id currently in use
+    ///
+    /// The returned tuple is of the form (max, min)
+    pub async fn extremal_record_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
+        let row = sqlx::query!("SELECT MAX(id) AS max_id, MIN(id) AS min_id FROM records")
+            .fetch_one(connection)
+            .await?; // FIXME: crashes on empty table
+        Ok((row.max_id, row.min_id))
     }
 
-    fn selection() -> Self::Selection {
-        records_pds::all_columns
-    }
-}
+    pub async fn validate(self, state: PointercrateState) {
+        let mut connection = match state.connection().await {
+            Ok(connection) => connection,
+            Err(err) => return error!("INTERNAL SERVER ERROR: failed to acquire database connection: {:?}", err),
+        };
 
-impl By<records_pds::id, i32> for FullRecord {}
+        let video = match self.video {
+            Some(ref video) => video,
+            None => return,
+        };
 
-impl Queryable<<<FullRecord as Model>::Selection as Expression>::SqlType, Pg> for FullRecord {
-    type Row = (
-        i32,
-        i16,
-        Option<String>,
-        RecordStatus,
-        Option<String>,
-        i32,
-        CiString,
-        bool,
-        i32,
-        CiString,
-        i16,
-        i32,
-        bool,
-    );
+        debug!("Verifying that submission {} with video {} actually is valid", self, video);
 
-    fn build(row: Self::Row) -> Self {
-        FullRecord {
-            id: row.0,
-            progress: row.1,
-            video: row.2,
-            status: row.3,
-            notes: row.4,
-            player: DatabasePlayer {
-                id: row.5,
-                name: row.6,
-                banned: row.7,
+        match state.http_client.head(video).send().await {
+            Ok(response) => {
+                let status = response.status().as_u16();
+
+                info!("Record valid!");
+
+                if status == 401 || status == 403 || status == 405 {
+                    // Some websites (billibilli) respond unfavorably to HEAD requests. Retry with
+                    // GET
+                    match state.http_client.get(video).send().await {
+                        Ok(response) => {
+                            let status = response.status().as_u16();
+
+                            if status >= 200 && status < 400 {
+                                debug!("HEAD request yielded some sort of successful response, executing webhook");
+
+                                self.execute_webhook(&state).await;
+                            }
+                        },
+                        Err(err) => {
+                            error!(
+                                "INTERNAL SERVER ERROR: HEAD request to verify video failed: {:?}. Deleting submission",
+                                err
+                            );
+
+                            match self.delete(&mut connection).await {
+                                Ok(_) => (),
+                                Err(error) => error!("INTERNAL SERVER ERROR: Failure to delete record - {:?}!", error),
+                            }
+                        },
+                    }
+                } else if status >= 200 && status < 400 {
+                    debug!("HEAD request yielded some sort of successful response, executing webhook");
+
+                    self.execute_webhook(&state).await;
+                } else {
+                    warn!("Server response to 'HEAD {}' was {:?}, deleting submission!", video, response);
+
+                    match self.delete(&mut connection).await {
+                        Ok(_) => (),
+                        Err(error) => error!("INTERNAL SERVER ERROR: Failure to delete record - {:?}!", error),
+                    }
+                }
             },
-            demon: MinimalDemon {
-                id: row.8,
-                position: row.10,
-                name: row.9,
-            },
-            submitter: Some(Submitter {
-                id: row.11,
-                banned: row.12,
-            }),
-        }
-    }
-}
+            Err(error) => {
+                error!(
+                    "INTERNAL SERVER ERROR: HEAD request to verify video failed: {:?}. Deleting submission",
+                    error
+                );
 
-impl Model for Record {
-    type From = records_pd::table;
-    type Selection = <records_pd::table as Table>::AllColumns;
-
-    fn from() -> Self::From {
-        records_pd::table
-    }
-
-    fn selection() -> Self::Selection {
-        records_pd::all_columns
-    }
-}
-
-impl By<records_pd::id, i32> for Record {}
-
-impl Queryable<<<Record as Model>::Selection as Expression>::SqlType, Pg> for Record {
-    type Row = (
-        // record
-        i32,
-        i16,
-        Option<String>,
-        RecordStatus,
-        // submitter
-        i32,
-        // player
-        i32,
-        CiString,
-        bool,
-        // demon
-        i32,
-        CiString,
-        i16,
-    );
-
-    fn build(row: Self::Row) -> Self {
-        Record {
-            id: row.0,
-            progress: row.1,
-            video: row.2,
-            status: row.3,
-            submitter: Some(row.4),
-            player: DatabasePlayer {
-                id: row.5,
-                name: row.6,
-                banned: row.7,
-            },
-            demon: MinimalDemon {
-                id: row.8,
-                name: row.9,
-                position: row.10,
+                match self.delete(&mut connection).await {
+                    Ok(_) => (),
+                    Err(error) => error!("INTERNAL SERVER ERROR: Failure to delete record - {:?}!", error),
+                }
             },
         }
     }
-}
 
-impl Record {
-    pub fn validate_video(video: &mut String) -> Result<(), PointercrateError> {
-        *video = crate::video::validate(video)?;
-
-        Ok(())
-    }
-}
-
-impl Model for EmbeddedRecordPD {
-    type From = records_pd::table;
-    type Selection = (
-        records_pd::id,
-        records_pd::progress,
-        records_pd::status_,
-        records_pd::video,
-        records_pd::player_id,
-        records_pd::player_name,
-        records_pd::player_banned,
-        records_pd::demon_id,
-        records_pd::demon_name,
-        records_pd::position,
-    );
-
-    fn from() -> Self::From {
-        records_pd::table
-    }
-
-    fn selection() -> Self::Selection {
-        Self::Selection::default()
-    }
-}
-
-impl Queryable<<<EmbeddedRecordPD as Model>::Selection as Expression>::SqlType, Pg>
-    for EmbeddedRecordPD
-{
-    type Row = (
-        i32,
-        i16,
-        RecordStatus,
-        Option<String>,
-        i32,
-        CiString,
-        bool,
-        i32,
-        CiString,
-        i16,
-    );
-
-    fn build(row: Self::Row) -> Self {
-        EmbeddedRecordPD {
-            id: row.0,
-            progress: row.1,
-            status: row.2,
-            video: row.3,
-            player: DatabasePlayer {
-                id: row.4,
-                name: row.5,
-                banned: row.6,
-            },
-            demon: MinimalDemon {
-                id: row.7,
-                name: row.8,
-                position: row.9,
-            },
+    async fn execute_webhook(&self, state: &PointercrateState) {
+        if let Some(ref webhook_url) = state.webhook_url {
+            match state
+                .http_client
+                .post(&**webhook_url)
+                .header("Content-Type", "application/json")
+                .body(self.webhook_embed().to_string())
+                .send()
+                .await
+            {
+                Err(error) => error!("INTERNAL SERVER ERROR: Failure to execute discord webhook: {:?}", error),
+                Ok(_) => debug!("Successfully executed discord webhook"),
+            }
+        } else {
+            warn!("Trying to execute webhook, though no link was configured!");
         }
     }
-}
 
-impl Model for MinimalRecordD {
-    type From = records_d::table;
-    type Selection = <records_d::table as Table>::AllColumns;
+    fn webhook_embed(&self) -> serde_json::Value {
+        let progress = f32::from(self.progress) / 100f32;
 
-    fn from() -> Self::From {
-        records_d::table
-    }
+        let mut payload = json!({
+            "content": format!("**New record submitted! ID: {}**", self.id),
+            "embeds": [
+                {
+                    "type": "rich",
+                    "title": format!("{}% on {}", self.progress, self.demon.name),
+                    "description": format!("{} just got {}% on {}! Go add their record!", self.player.name, self.progress, self.demon.name),
+                    "footer": {
+                        "text": format!("This record has been submitted by submitter #{}", self.submitter.map(|s|s.id).unwrap_or(1))
+                    },
+                    "color": (0x9e0000 as f32 * progress) as i32 & 0xFF0000 + (0x00e000 as f32 * progress) as i32 & 0x00FF00,
+                    "author": {
+                        "name": format!("{} (ID: {})", self.player.name, self.player.id),
+                        "url": self.video
+                    },
+                    "thumbnail": {
+                        "url": "https://cdn.discordapp.com/emojis/561867333476286464.png?size=1024"
+                    },
+                }
+            ]
+        });
 
-    fn selection() -> Self::Selection {
-        records_d::all_columns
-    }
-}
-
-impl Queryable<<<MinimalRecordD as Model>::Selection as Expression>::SqlType, Pg>
-    for MinimalRecordD
-{
-    type Row = (
-        i32,
-        i16,
-        Option<String>,
-        RecordStatus,
-        i32,
-        i32,
-        CiString,
-        i16,
-    );
-
-    fn build(row: Self::Row) -> Self {
-        MinimalRecordD {
-            id: row.0,
-            progress: row.1,
-            video: row.2,
-            status: row.3,
-            // skip index 4, player id
-            demon: MinimalDemon {
-                id: row.5,
-                name: row.6,
-                position: row.7,
-            },
+        if let Some(ref video) = self.video {
+            payload["embeds"][0]["fields"] = json! {
+                [{
+                    "name": "Video Proof:",
+                    "value": video
+                }]
+            };
         }
-    }
-}
 
-impl Model for MinimalRecordP {
-    type From = records_p::table;
-    type Selection = <records_p::table as Table>::AllColumns;
-
-    fn from() -> Self::From {
-        records_p::table
-    }
-
-    fn selection() -> Self::Selection {
-        records_p::all_columns
-    }
-}
-
-impl Queryable<<<MinimalRecordP as Model>::Selection as Expression>::SqlType, Pg>
-    for MinimalRecordP
-{
-    type Row = (
-        i32,
-        i16,
-        Option<String>,
-        RecordStatus,
-        i32,
-        i32,
-        CiString,
-        bool,
-    );
-
-    fn build(row: Self::Row) -> Self {
-        MinimalRecordP {
-            id: row.0,
-            progress: row.1,
-            video: row.2,
-            status: row.3,
-            player: DatabasePlayer {
-                id: row.5,
-                name: row.6,
-                banned: row.7,
-            },
-        }
+        payload
     }
 }

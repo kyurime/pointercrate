@@ -1,28 +1,23 @@
-use super::{Record, RecordStatus};
 use crate::{
-    citext::CiString,
-    config::{EXTENDED_LIST_SIZE, LIST_SIZE},
-    context::RequestContext,
+    cistring::CiString,
+    config,
     error::PointercrateError,
-    model::{
-        demonlist::{
-            record::{DatabaseRecord, MinimalDemon},
-            DatabasePlayer, Demon, Submitter,
-        },
-        Model,
+    model::demonlist::{
+        demon::MinimalDemon,
+        player::DatabasePlayer,
+        record::{note::Note, FullRecord, RecordStatus},
+        submitter::Submitter,
     },
-    operation::{Delete, Get, Post},
-    ratelimit::RatelimitScope,
-    schema::records,
-    video, Result,
+    ratelimit::{PreparedRatelimits, RatelimitScope},
+    Result,
 };
-use diesel::{
-    insert_into, BoolExpressionMethods, Connection, ExpressionMethods, QueryDsl, RunQueryDsl,
-};
+use derive_more::Display;
 use log::{debug, info};
-use serde_derive::Deserialize;
+use serde::Deserialize;
+use sqlx::{PgConnection, Row};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Display)]
+#[display(fmt = "{}% on {} by {} [status: {}]", progress, demon, player, status)]
 pub struct Submission {
     pub progress: i16,
     pub player: CiString,
@@ -31,196 +26,148 @@ pub struct Submission {
     pub video: Option<String>,
     #[serde(default)]
     pub status: RecordStatus,
+
+    /// An initial, submitter provided note for the demon.
+    #[serde(default)]
+    pub note: Option<String>,
 }
 
-#[derive(Insertable, Debug)]
-#[table_name = "records"]
-struct NewRecord<'a> {
-    progress: i16,
-    video: Option<&'a str>,
-    #[column_name = "status_"]
-    status: RecordStatus,
-    player: i32,
-    submitter: i32,
-    demon: i32,
-}
-
-impl Post<Submission> for Option<Record> {
-    fn create_from(
-        Submission {
-            progress,
-            player,
-            demon,
-            video,
-            status,
-        }: Submission,
-        ctx: RequestContext,
-    ) -> Result<Self> {
-        if status != RecordStatus::Submitted || video.is_none() {
-            ctx.check_permissions(perms!(ListHelper or ListModerator or ListAdministrator))?;
-        }
-
-        let submitter = Submitter::get((), ctx)?;
-
-        info!(
-            "Processing record addition '{}% on {} by {} ({})'",
-            progress, demon, player, status
-        );
+impl FullRecord {
+    pub async fn create_from(
+        submitter: Submitter, submission: Submission, connection: &mut PgConnection, ratelimits: Option<PreparedRatelimits<'_>>,
+    ) -> Result<FullRecord> {
+        info!("Processing record addition '{}' by {}", submission, submitter);
 
         // Banned submitters cannot submit records
         if submitter.banned {
-            return Err(PointercrateError::BannedFromSubmissions)?
+            return Err(PointercrateError::BannedFromSubmissions)
         }
 
-        // Check if a video exists and validate it
-        let video = match video {
-            Some(ref video) => Some(video::validate(video)?),
+        // validate video
+        let video = match submission.video {
+            Some(ref video) => Some(crate::video::validate(video)?),
             None => None,
         };
 
-        let connection = ctx.connection();
+        // Resolve player and demon name against the database
+        let player = DatabasePlayer::by_name_or_create(submission.player.as_ref(), connection).await?;
+        // TODO: handle the ambiguous case
+        let demon = MinimalDemon::by_name(submission.demon.as_ref(), connection).await?;
 
-        connection.transaction(||{
-            // Resolve player and demon name against the database
-            let player = DatabasePlayer::get(player.as_ref(), ctx)?;
-            let demon = Demon::get(demon.as_ref(), ctx)?;
+        // Banned player can't have records on the list
+        if player.banned {
+            return Err(PointercrateError::PlayerBanned)
+        }
 
-            // Banned player can't have records on the list
-            if player.banned {
-                return Err(PointercrateError::PlayerBanned)
+        // Cannot submit records for the legacy list (it is possible to directly add them for list mods)
+        if demon.position > config::extended_list_size() && submission.status == RecordStatus::Submitted {
+            return Err(PointercrateError::SubmitLegacy)
+        }
+
+        // Can only submit 100% records for the extended list (it is possible to directly add them for list
+        // mods)
+        if demon.position > config::list_size() && submission.progress != 100 && submission.status == RecordStatus::Submitted {
+            return Err(PointercrateError::Non100Extended)
+        }
+
+        let requirement = demon.requirement(connection).await?;
+
+        // Check if the record meets the record requirement for this demon
+        if submission.progress > 100 || submission.progress < requirement {
+            return Err(PointercrateError::InvalidProgress { requirement })
+        }
+
+        debug!("Submission is valid, checking for duplicates!");
+
+        // Search for existing records. If a video exists, we also check if a record with
+        // exactly that video exists.
+
+        if let Some(ref video) = video {
+            if let Some(row) = sqlx::query!("SELECT id, status_::text FROM records WHERE video = $1", video.to_string())
+                .fetch_optional(connection) // FIXME(sqlx)
+                .await?
+            {
+                return Err(PointercrateError::SubmissionExists {
+                    existing: row.id,
+                    status: RecordStatus::from_sql(&row.status_),
+                })
             }
+        }
 
-            // Cannot submit records for the legacy list (it is possible to directly add them for list mods)
-            if demon.position > *EXTENDED_LIST_SIZE && status == RecordStatus::Submitted {
-                return Err(PointercrateError::SubmitLegacy)
-            }
+        let existing = sqlx::query!(
+            "SELECT id, status_::text FROM records WHERE demon = $1 AND player = $2 AND (status_ = 'REJECTED' OR status_ = \
+             'UNDER_CONSIDERATION' OR (status_ = 'APPROVED' AND progress >= $3)) LIMIT 1",
+            demon.id,
+            player.id,
+            submission.progress
+        )
+        .fetch_optional(connection)
+        .await?;
 
-            // Can only submit 100% records for the extended list (it is possible to directly add them for list mods)
-            if demon.position > *LIST_SIZE && progress != 100 && status == RecordStatus::Submitted {
-                return Err(PointercrateError::Non100Extended)
-            }
+        if let Some(row) = existing {
+            return Err(PointercrateError::SubmissionExists {
+                existing: row.id,
+                status: RecordStatus::from_sql(&row.status_),
+            })
+        }
 
-            // Check if the record meets the record requirement for this demon
-            if progress > 100 || progress < demon.requirement {
-                return Err(PointercrateError::InvalidProgress {
-                    requirement: demon.requirement,
-                })?
-            }
+        // Check ratelimits before any change is made to the database so that the transaction rollback is
+        // easier.
+        if let Some(ratelimits) = ratelimits {
+            ratelimits.check(RatelimitScope::RecordSubmissionGlobal)?;
+            ratelimits.check(RatelimitScope::RecordSubmission)?;
+        }
 
-            debug!("Submission is valid, checking for duplicates!");
+        let id = sqlx::query(
+            "INSERT INTO records (progress, video, status_, player, submitter, demon) VALUES ($1, $2::TEXT, 'SUBMITTED', $3, $4,$5) \
+             RETURNING id",
+        )
+        .bind(submission.progress)
+        .bind(&video)
+        .bind(player.id)
+        .bind(submitter.id)
+        .bind(demon.id)
+        .fetch_one(connection)
+        .await?
+        .get("id");
 
-            // Search for existing records. If no video is provided, we check if a record with the same
-            // (demon, player) combination exists. If a video exists, we also check if a record with
-            // exactly that video exists. Note that in the second case, two records can be matched,
-            // which is why we need the loop here
-            let same_demon_and_player = records::player
-                .eq(player.id)
-                .and(records::demon.eq(demon.id));
+        let mut record = FullRecord {
+            id,
+            progress: submission.progress,
+            video,
+            status: RecordStatus::Submitted,
+            player,
+            demon,
+            submitter: Some(submitter),
+            notes: Vec::new(),
+        };
 
-            let records: Vec<DatabaseRecord> = if video.is_some() {
-                DatabaseRecord::all().filter(same_demon_and_player.or(records::video.eq(video.as_ref()))).get_results(connection)?
-            } else {
-                DatabaseRecord::all().filter(same_demon_and_player).get_results(connection)?
-            };
+        // Dealing with different status and upholding their invariant is complicated, we should not
+        // duplicate that code!
+        if submission.status != RecordStatus::Submitted {
+            record.set_status(submission.status, connection).await?;
+        }
 
-            let video_ref = video.as_ref().map(AsRef::as_ref);
-            let mut to_delete = Vec::new();
+        if let Some(note) = submission.note {
+            let note_id = sqlx::query!(
+                "INSERT INTO record_notes (record, content) VALUES ($1, $2) RETURNING id",
+                record.id,
+                note
+            )
+            .fetch_one(connection)
+            .await?
+            .id;
 
-            for record in records {
-                // If we have a duplicate it has one of the three record stats. If its rejected, we
-                // reject the submission instantly. If it approved, we reject the submission if the
-                // approved record has higher progress than the submission. If its submitted, we do the
-                // same, but at the same time, we mark the existing submission with lower progress for
-                // deleting.
+            record.notes.push(Note {
+                id: note_id,
+                record: id,
+                content: note,
+                transferred: false,
+                author: None,
+                editors: Vec::new(),
+            })
+        }
 
-                // First we reject all records where the video is already in the database
-                debug!("Existing record is {} with status {}", record, record.status);
-
-                if record.video == video {
-                    return Err(PointercrateError::SubmissionExists {
-                        existing: record.id,
-                        status: record.status
-                    })
-                }
-
-                // Then we reject all records, where the same player/demon combo has already been rejected
-                if record.status == RecordStatus::Rejected {
-                    return Err(PointercrateError::SubmissionExists {
-                        status: record.status,
-                        existing: record.id,
-                    })
-                }
-
-                // Then we reject all submissions, where any other record with higher progress with the same player/demon exists (approved or submited)
-                if status == RecordStatus::Submitted && record.progress >= progress {
-                    return Err(PointercrateError::SubmissionExists {
-                        status: record.status,
-                        existing: record.id,
-                    })
-                }
-
-                // Lastly, we handle the case where existing and new have the same status. This should be pretty self explaining
-                if record.status == status {
-                    if record.progress < progress {
-                        to_delete.push(record)
-                    } else {
-                        return Err(PointercrateError::SubmissionExists {
-                            status: record.status,
-                            existing: record.id,
-                        })
-                    }
-                }
-            }
-
-            // At this point all the validation checks are done. Only the ratelimit is left!
-            // We wanna exempt list mods though
-            if !ctx.is_list_mod() {
-                ctx.ratelimit(RatelimitScope::RecordSubmission)?;
-                ctx.ratelimit(RatelimitScope::RecordSubmissionGlobal)?;
-            }
-
-
-            // If none of the duplicates caused us to reject the submission, we now delete submissions marked for deleting
-            for record in to_delete {
-                debug!(
-                    "The submission is duplicated, but new one has higher progress. Deleting old with id {}!",
-                    record.id
-                );
-
-                record.delete(RequestContext::Internal(ctx.connection()))?;
-            }
-
-            debug!("All duplicates either already accepted, or has lower progress, accepting!");
-
-            let new = NewRecord {
-                progress,
-                video: video_ref,
-                status,
-                player: player.id,
-                submitter: submitter.id,
-                demon: demon.id,
-            };
-
-            let id = insert_into(records::table)
-                .values(&new)
-                .returning(records::id)
-                .get_result(connection)?;
-
-            info!("Submission successful! Created new record with ID {}", id);
-
-            Ok(Some(Record {
-                id,
-                progress,
-                video,
-                status,
-                player,
-                submitter: Some(submitter.id),
-                demon: MinimalDemon {
-                    id: demon.id,
-                    position: demon.position,
-                    name: demon.name
-                }
-            }))
-        })
+        Ok(record)
     }
 }

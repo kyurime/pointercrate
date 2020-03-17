@@ -292,6 +292,9 @@ CREATE VIEW demons_p AS  -- demons with publisher
     INNER JOIN players AS publishers
     ON publishers.id = demons.publisher;
 
+-- Drop the old audit logs since we migrated the data over to the new ones already. Its a waste of time to update the references into the demons table
+-- DROP TABLE audit_log;
+
 -- Drop the old column
 ALTER TABLE records DROP COLUMN demon_name;
 

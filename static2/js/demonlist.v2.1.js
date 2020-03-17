@@ -43,11 +43,9 @@ class StatsViewer extends FilteredPaginator {
     this._amountBeaten = this.html.find("#amount-beaten");
     this._amountLegacy = this.html.find("#amount-legacy");
     this._current = this.html.find("#name");
-    this._error = this.html.find("#error-output");
+    this._welcome = this.html.find(".viewer-welcome");
     this._progress = this.html.find("#progress");
-    this._content = this.html.find("#stats-data");
-
-    let nationName = "International";
+    this._content = this.html.find(".viewer-content");
 
     document
       .getElementById("show-stats-viewer")
@@ -64,7 +62,7 @@ class StatsViewer extends FilteredPaginator {
   onSelect(selected) {
     makeRequest(
       "GET",
-      "/players/" + selected.dataset.id + "/",
+      "/api/v1/players/" + selected.dataset.id + "/",
       this.errorOutput,
       jsonData => {
         this.onReceive(jsonData);
@@ -100,7 +98,7 @@ class StatsViewer extends FilteredPaginator {
       playerData.records
     );
 
-    this._error.hide(100);
+    this._welcome.hide(100);
     this._content.show(100);
   }
 
@@ -110,6 +108,8 @@ class StatsViewer extends FilteredPaginator {
     this._verified.html(formatDemons(verified) || "None");
 
     let beaten = records.filter(record => record.progress == 100);
+
+    beaten.sort((r1, r2) => r1.demon.name.localeCompare(r2.demon.name));
 
     let legacy = beaten.filter(
       record => record.demon.position > window.extended_list_length
@@ -153,6 +153,7 @@ $(document).ready(function() {
   var player = submissionForm.input("id_player");
   var progress = submissionForm.input("id_progress");
   var video = submissionForm.input("id_video");
+  var note = submissionForm.input("submit-note");
 
   demon.addValidator(valueMissing, "Please specify a demon");
 
@@ -187,7 +188,8 @@ $(document).ready(function() {
         demon: demon.value,
         player: player.value,
         video: video.value,
-        progress: parseInt(progress.value)
+        progress: parseInt(progress.value),
+        note: note.value
       }),
       error: data => submissionForm.setError(data.responseJSON.message),
       success: () => {
@@ -197,6 +199,7 @@ $(document).ready(function() {
         progress.value = "";
         video.value = "";
         demon.value = "";
+        note.value = "";
       }
     });
   });
