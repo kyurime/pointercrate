@@ -298,5 +298,10 @@ tr:nth-child(even) {
 
 .ct-series-a .ct-line,
 .ct-series-a .ct-point {
-  stroke: #0881c6;
+  stroke: rgba(21, 22, 23, 0.5);
+}
+
+.ct-label {
+  color: inherit;
+  padding-top: 4px;
 }

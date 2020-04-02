@@ -371,20 +371,20 @@ impl Page for Demonlist {
                         }
                         div.ct-chart.ct-perfect-fourth.js-collapse-content#position-chart style="display:none" {}
                     }
-                    (super::rules_panel())
                     (self.records_panel())
                     (PreEscaped(format!("
-                        <script>
-                        window.positionChartLabels = ['{}', 'Now'];
-                        window.positionChartData = [{},{}];
-                        </script>",
-                        labels.join("','"),
-                        self.movements.iter().map(|movement| movement.from_position.to_string()).collect::<Vec<_>>().join(","), self.data.demon.base.position
-                    ))) // FIXME: bad
-                }
-                aside.right {
+                    <script>
+                    window.positionChartLabels = ['{}', 'Now'];
+                    window.positionChartData = [{},{}];
+                    </script>",
+                    labels.join("','"),
+                    self.movements.iter().map(|movement| movement.from_position.to_string()).collect::<Vec<_>>().join(","), self.data.demon.base.position
+                ))) // FIXME: bad
+            }
+            aside.right {
                     (self.overview.team_panel())
                     (super::submit_panel())
+                    (super::rules_panel())
                     (super::stats_viewer_panel())
                     (super::discord_panel())
                 }
