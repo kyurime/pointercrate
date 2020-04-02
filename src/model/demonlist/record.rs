@@ -33,7 +33,7 @@ use crate::{
     Result,
 };
 use derive_more::Display;
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::json;
 use sqlx::PgConnection;
@@ -146,8 +146,9 @@ impl Hash for FullRecord {
         self.video.hash(state);
         self.status.hash(state);
         self.player.id.hash(state);
-        self.demon.id.hash(state)
-        // submitter cannot be patch, notes have different endpoints -> no hash
+        self.demon.id.hash(state);
+        self.notes.hash(state)
+        // submitter cannot be patched -> no hash
     }
 }
 
@@ -162,7 +163,7 @@ pub struct MinimalRecordPD {
     pub player: DatabasePlayer,
 }
 
-#[derive(Debug, Hash, Serialize, Display)]
+#[derive(Debug, Hash, Serialize, Display, PartialEq, Eq)]
 #[display(fmt = "{}% on {} (ID: {})", progress, demon, id)]
 pub struct MinimalRecordD {
     pub id: i32,
@@ -209,8 +210,6 @@ impl FullRecord {
         match state.http_client.head(video).send().await {
             Ok(response) => {
                 let status = response.status().as_u16();
-
-                info!("Record valid!");
 
                 if status == 401 || status == 403 || status == 405 {
                     // Some websites (billibilli) respond unfavorably to HEAD requests. Retry with

@@ -178,6 +178,15 @@ a {
   text-overflow: ellipsis;
 }
 
+.closable {
+  transition: opacity 1s;
+}
+
+.closable.initial-hidden {
+  display: none;
+  opacity: 0;
+}
+
 /* Roman list */
 
 ul.roman {
@@ -204,8 +213,7 @@ textarea {
 input[type="text"],
 input[type="number"],
 input[type="url"],
-input[type="password"]
-textarea {
+input[type="password"] textarea {
   border: 1px solid #ddd;
   min-width: 0; /* Firefox and Egde need this */
 

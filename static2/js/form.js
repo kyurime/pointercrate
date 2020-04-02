@@ -249,6 +249,8 @@ class FilteredPaginator extends Paginator {
 
     let filterInput = this.html.getElementsByTagName("input")[0];
 
+    filterInput.value = "";
+
     // Apply filter when enter is pressed
     filterInput.addEventListener("keypress", event => {
       if (event.keyCode == 13) {
@@ -260,6 +262,13 @@ class FilteredPaginator extends Paginator {
     filterInput.addEventListener("change", () =>
       this.updateQueryData(filterParam, filterInput.value)
     );
+
+    filterInput.parentNode.addEventListener("click", event => {
+      if (event.offsetX > filterInput.offsetWidth) {
+        filterInput.value = "";
+        this.updateQueryData(filterParam, "");
+      }
+    });
 
     var timeout = undefined;
 
@@ -280,7 +289,9 @@ class FilteredPaginator extends Paginator {
 class Input {
   constructor(span) {
     this.span = span;
-    this.input = span.getElementsByTagName("input")[0] || span.getElementsByTagName("textarea")[0];
+    this.input =
+      span.getElementsByTagName("input")[0] ||
+      span.getElementsByTagName("textarea")[0];
     this.error = span.getElementsByTagName("p")[0];
     this.clearOnInvalid = false;
     this.validators = [];
@@ -545,7 +556,7 @@ function makeRequest(
   headers = {},
   data = {}
 ) {
-  errorOutput.style.display = "";
+  if (errorOutput) errorOutput.style.display = "";
 
   headers["Accept"] = "application/json";
 

@@ -55,10 +55,12 @@ function embedVideo(video) {
 }
 
 class RecordManager extends Paginator {
-  constructor() {
+  constructor(tok) {
     super("record-pagination", {}, generateRecord);
 
     var manager = document.getElementById("record-manager");
+
+    this.currentRecord = null;
 
     this._welcome = manager.getElementsByClassName("viewer-welcome")[0];
     this._content = manager.getElementsByClassName("viewer-content")[0];
@@ -72,6 +74,7 @@ class RecordManager extends Paginator {
     this._progress = document.getElementById("record-progress");
     this._submitter = document.getElementById("record-submitter");
     this._notes = document.getElementById("record-notes");
+    this._tok = tok; // FIXME: bad
 
     this.dropdown = new Dropdown(
       document
@@ -93,7 +96,7 @@ class RecordManager extends Paginator {
   }
 
   onReceive(response) {
-    var recordData = response.responseJSON.data;
+    var recordData = (this.currentRecord = response.responseJSON.data);
 
     var embeddedVideo = embedVideo(recordData.video);
 
@@ -114,24 +117,128 @@ class RecordManager extends Paginator {
     this._status.innerHTML = recordData.status;
     this._progress.innerHTML = recordData.progress;
     this._submitter.innerHTML = recordData.submitter.id;
-    this._notes.innerHTML = recordData.notes;
+
+    // clear notes
+    while (this._notes.firstChild) {
+      this._notes.removeChild(this._notes.firstChild);
+    }
+
+    for (let note of recordData.notes) {
+      this._notes.appendChild(createNoteHtml(note, this._tok));
+    }
+
+    $(this._notes.parentElement).show(100); // TODO: maybe via CSS transform?
 
     $(this._welcome).hide(100);
     $(this._content).show(100);
   }
 }
 
-$(document).ready(function() {
-  TABBED_PANES["account-tabber"].addSwitchListener("3", () => {
-    if (window.recordManager === undefined) {
-      window.recordManager = new RecordManager();
-      window.recordManager.initialize();
+function createNoteHtml(note, csrfToken) {
+  let noteDiv = document.createElement("div");
 
-      setupRecordFilterPlayerIdForm();
-      setupRecordFilterPlayerNameForm();
-    }
+  noteDiv.classList.add("white");
+  noteDiv.classList.add("hover");
+
+  // only add option to delete notes if you're list admin (and yes, server sided validation is also in place. I am just too lazy to write permission error handling)
+  let isAdmin =
+    (window.permissions & 0x8) == 0x8 || window.username == note.author;
+
+  if (isAdmin) {
+    var closeX = document.createElement("span");
+    closeX.classList.add("hover");
+    closeX.classList.add("plus");
+    closeX.classList.add("cross");
+
+    closeX.style.transform = "scale(0.75)";
+
+    closeX.addEventListener("click", () => {
+      confirm("This action will irrevocably delete this note. Proceed?");
+
+      makeRequest(
+        "DELETE",
+        "/api/v1/records/" +
+          window.recordManager.currentRecord.id +
+          "/notes/" +
+          note.id +
+          "/",
+        null,
+        () => {
+          // node suicide
+          noteDiv.parentElement.removeChild(noteDiv);
+        },
+        {},
+        { "X-CSRF-TOKEN": csrfToken }
+      );
+    });
+  }
+
+  let b = document.createElement("b");
+  b.innerHTML = "Record Note #" + note.id;
+
+  let i = document.createElement("i");
+  i.innerHTML = note.content;
+
+  let furtherInfo = document.createElement("i");
+  furtherInfo.style.fontSize = "80%";
+  furtherInfo.style.textAlign = "right";
+
+  if (note.author === null) {
+    furtherInfo.innerHTML =
+      "This note was left as a comment by the submitter. ";
+  } else {
+    furtherInfo.innerHTML = "This note was left by " + note.author + ". ";
+  }
+
+  if (note.editors.length) {
+    furtherInfo.innerHTML +=
+      "This note was subsequently modified by: " +
+      note.editors.join(", ") +
+      ". ";
+  }
+
+  if (note.transferred) {
+    furtherInfo.innerHTML += "This not was not originally left on this record.";
+  }
+
+  if (isAdmin) noteDiv.appendChild(closeX);
+  noteDiv.appendChild(b);
+  noteDiv.appendChild(i);
+  noteDiv.appendChild(furtherInfo);
+
+  return noteDiv;
+}
+
+function setupAddNote(csrfToken) {
+  let adder = document.getElementById("add-record-note");
+  let output = adder.getElementsByClassName("output")[0];
+  let textArea = adder.getElementsByTagName("textarea")[0];
+  let add = adder.getElementsByClassName("button")[0];
+
+  add.addEventListener("click", () => {
+    makeRequest(
+      "POST",
+      "/api/v1/records/" + window.recordManager.currentRecord.id + "/notes/",
+      output,
+      noteResponse => {
+        let newNote = createNoteHtml(noteResponse.responseJSON.data, csrfToken);
+        window.recordManager._notes.appendChild(newNote);
+
+        $(adder).hide(100);
+        textArea.value = "";
+      },
+      {},
+      { "X-CSRF-TOKEN": csrfToken },
+      { content: textArea.value }
+    );
   });
-});
+
+  document
+    .getElementById("add-record-note-open")
+    .addEventListener("click", () => {
+      $(adder).show(100);
+    });
+}
 
 function setupRecordFilterPlayerIdForm() {
   var recordFilterPlayerIdForm = new Form(

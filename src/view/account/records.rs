@@ -1,6 +1,46 @@
 use crate::view::{demonlist::OverviewDemon, dropdown, paginator};
 use maud::{html, Markup};
 
+fn record_editor() -> Markup {
+    html! {
+        div.panel.fade.closable#edit-record style = "display: none" {
+            span.plus.cross.hover {}
+            h2.underlined.pad {
+                "Edit Record #"
+                span#edit-record-id {}
+                " - "
+            }
+            form.flex.col#edit-record-form novalidate = "" {
+                p.info-red.output {}
+                span.form-input#edit-record-demon {
+                    label for = "record_demon" {"ID of the demon the record is on:"}
+                    input type = "number" name = "record_demon" value = "";
+                    p.error {}
+                }
+                span.form-input#edit-record-player {
+                    label for = "record_player" {"ID of the player of the record:"}
+                    input type = "number" name = "record_player" value = "";
+                    p.error {}
+                }
+                span.form-input#edit-record-progress {
+                    label for = "record_progress" {"Progress made in the record:"}
+                    input type = "number" name = "record_progress" min = "0" max = "100" value = "";
+                    p.error {}
+                }
+                span.form-input#edit-record-video {
+                    label for = "record_video" {"Video proof of legitimacy"}
+                    input type = "url" name = "record_video";
+                    p.error {}
+                }
+                p {
+                    "All modifications to the record will only be saved upon clicking the button below. Selecting a different record, or leaving this page, will discard all unsaved modifications"
+                }
+                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Save edit(s)";
+            }
+        }
+    }
+}
+
 fn record_manager(demons: &[OverviewDemon]) -> Markup {
     html! {
         div.panel.fade#record-manager {
@@ -68,16 +108,6 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                                     }
                                     br;
                                     span#record-submitter {}
-                                }
-                            }
-
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "Notes:"
-                                    }
-                                    br;
-                                    span#record-notes {}
                                 }
                             }
                         }
@@ -193,11 +223,32 @@ fn player_selector() -> Markup {
     }
 }
 
+fn note_adder() -> Markup {
+    html! {
+        div.panel.fade.closable#add-record-note style = "display: none" {
+            span.plus.cross.hover {}
+            div.button.blue.hover.small style = "width: 100px; margin-bottom: 10px"{
+                "Add"
+            }
+            p.info-red.output {}
+            textarea style = "width: 100%" placeholder = "Add note here. Click 'Add' above when done!"{}
+        }
+    }
+}
+
 pub(super) fn page(demons: &[OverviewDemon]) -> Markup {
     html! {
         div.m-center.flex.tab-content.container data-tab-id = "3" {
             div.left {
+                (record_editor())
                 (record_manager(demons))
+                (note_adder())
+                div.panel.fade#record-notes-container style = "display:none" {
+                    div#record-notes {} // populated by javascript when a record is clicked
+                    div.white.hover.clickable#add-record-note-open {
+                        b {"Add Note"}
+                    }
+                }
                 (manager_help())
             }
             div.right {

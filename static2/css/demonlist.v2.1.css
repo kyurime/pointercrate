@@ -295,3 +295,8 @@ tr:nth-child(even) {
   position: absolute;
   width: 0;
 }
+
+.ct-series-a .ct-line,
+.ct-series-a .ct-point {
+  stroke: #0881c6;
+}
