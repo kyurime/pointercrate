@@ -38,7 +38,7 @@ impl Page for Homepage {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec![]
+        vec!["js/home.js", "js/modules/tab.mjs"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -47,8 +47,8 @@ impl Page for Homepage {
 
     fn body(&self) -> Markup {
         html! {
-            div.tabbed.information-banner.left {
-                div.tab-display {
+            div.information-banner.left {
+                div.tab-display#information-tabs {
                     div.information {
                         div style = "display: flex; flex-flow: column;"{
                             h1 style="text-align: left; margin-top: 0px" {
@@ -117,8 +117,8 @@ impl Page for Homepage {
                     }
                 }
             }
-            div.tabbed.center.information-banner.left#changelog {
-                div.tab-display {
+            div.center.information-banner.left {
+                div.tab-display#changelog-tabs {
                     div style = "display: flex; flex-flow: column;"{
                         h2 style="text-align: left; margin-top: 0px" {
                             "Changelog"

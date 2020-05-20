@@ -282,8 +282,6 @@ impl FullRecord {
     }
 
     fn webhook_embed(&self) -> serde_json::Value {
-        let progress = f32::from(self.progress) / 100f32;
-
         let mut payload = json!({
             "content": format!("**New record submitted! ID: {}**", self.id),
             "embeds": [
@@ -294,7 +292,6 @@ impl FullRecord {
                     "footer": {
                         "text": format!("This record has been submitted by submitter #{}", self.submitter.map(|s|s.id).unwrap_or(1))
                     },
-                    "color": (0x9e0000 as f32 * progress) as i32 & 0xFF0000 + (0x00e000 as f32 * progress) as i32 & 0x00FF00,
                     "author": {
                         "name": format!("{} (ID: {})", self.player.name, self.player.id),
                         "url": self.video

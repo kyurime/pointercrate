@@ -15,7 +15,7 @@ use gdcf_model::{
     user::Creator,
 };
 use log::error;
-use maud::{html, Markup, PreEscaped};
+use maud::{html, Markup, PreEscaped, Render};
 
 #[derive(Debug)]
 pub struct DemonMovement {
@@ -29,6 +29,7 @@ pub struct Demonlist {
     data: FullDemon,
     server_level: Option<CacheEntry<Level<Option<u64>, Option<Creator>>, gdcf_diesel::Entry>>,
     movements: Vec<DemonMovement>,
+    link_banned: bool,
 }
 
 #[get("/demonlist/{position}/")]
@@ -37,6 +38,10 @@ pub async fn page(state: PointercrateState, position: Path<i16>) -> ViewResult<H
     let overview = DemonlistOverview::load(&mut connection).await?;
     let demon = FullDemon::by_position(position.into_inner(), &mut connection).await?;
     let gd_demon = compat::gd_demon_by_name(&state.gdcf, &demon.demon.base.name);
+    let link_banned = sqlx::query!("SELECT link_banned FROM players WHERE id = $1", demon.demon.verifier.id)
+        .fetch_one(&mut connection)
+        .await?
+        .link_banned;
 
     let mut movements: Vec<DemonMovement> = sqlx::query_as!(
         DemonMovement,
@@ -52,19 +57,14 @@ pub async fn page(state: PointercrateState, position: Path<i16>) -> ViewResult<H
         .await?;
 
     match addition {
-        Some(time) =>
-            match movements.first() {
-                Some(movement) =>
-                    movements.insert(0, DemonMovement {
-                        at: time.time,
-                        from_position: movement.from_position,
-                    }),
-                None =>
-                    movements.push(DemonMovement {
-                        at: time.time,
-                        from_position: demon.demon.base.position,
-                    }),
-            },
+        Some(time) => {
+            let from_position = movements.first().map(|m| m.from_position).unwrap_or(demon.demon.base.position);
+
+            movements.insert(0, DemonMovement {
+                at: time.time,
+                from_position,
+            });
+        },
         None => error!("No addition logged for demon {}!", demon),
     }
 
@@ -76,6 +76,7 @@ pub async fn page(state: PointercrateState, position: Path<i16>) -> ViewResult<H
             data: demon,
             server_level: gd_demon.ok(),
             movements,
+            link_banned,
         }
         .render()
         .0,
@@ -131,9 +132,19 @@ impl Demonlist {
                         }
                     }
                 }
-                @if let Some(ref video) = self.data.demon.video {
-                    @if let Some(embedded_video) = video::embed(video) {
-                        iframe."ratio-16-9"."js-delay-attr" style="width:90%; margin: 15px 5%" allowfullscreen="" data-attr = "src" data-attr-value = (embedded_video) {"Verification Video"}
+                @if self.link_banned {
+                    p {
+                        "Due to the questionable nature of the verifier's youtube content, embedding of their videos has been disabled"
+                    }
+                }
+                @else {
+                    @if let Some(ref video) = self.data.demon.video {
+                        @if let Some(embedded_video) = video::embed(video) {
+                            h3 {
+                                "Showcase video:"
+                            }
+                            iframe."ratio-16-9"."js-delay-attr" style="width:90%; margin: 15px 5%" allowfullscreen="" data-attr = "src" data-attr-value = (embedded_video) {"Verification Video"}
+                        }
                     }
                 }
                 div.underlined.pad.flex.wrap#level-info {
@@ -318,7 +329,7 @@ impl Page for Demonlist {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/form.js", "js/demonlist.v2.1.js"]
+        vec!["js/modules/form.mjs", "js/modules/demonlist.mjs", "js/demonlist.v2.2.js"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -339,9 +350,6 @@ impl Page for Demonlist {
             } else {
                 movement.at.date().format("%b %y").to_string()
             };
-
-            dbg!(&labels);
-            dbg!(&would_be_label);
 
             match last_label {
                 Some(ref label) if &would_be_label == label => labels.push(String::new()),
@@ -411,7 +419,7 @@ impl Page for Demonlist {
                                         "name": "pointercrate"
                                     }}
                                 }},{{
-                                    "@type": "ListItem",
+                                    "@type": "ListItem",<
                                     "position": 2,
                                     "item": {{
                                         "@id": "https://pointercrate.xyze.dev/demonlist/",
@@ -428,11 +436,11 @@ impl Page for Demonlist {
                             ]
                         }},
                         "name": "#{0} - {1}",
-                        "description": {2},
+                        "description": "{2}",
                         "url": "https://pointercrate.xyze.dev/demonlist/{0}/"
                     }}
                     </script>
-                "##, self.data.position(), self.data.name(), self.description())))
+                "##, self.data.position(), self.data.name(), self.description().render().0)))
             },
             html! {
                 (PreEscaped(format!("

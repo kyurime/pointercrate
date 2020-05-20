@@ -9,33 +9,54 @@ fn record_editor() -> Markup {
                 "Edit Record #"
                 span#edit-record-id {}
                 " - "
+                div.dropdown-menu.js-search#edit-record-status {
+                    input type="text" style = "color: #444446; font-weight: bold;";
+                    div.menu {
+                        ul {
+                            li.dark-grey.hover data-value="approved" {"Approved"}
+                            li.dark-grey.hover data-value="rejected" {"Rejected"}
+                            li.dark-grey.hover data-value="under consideration" {"Under Consideration"}
+                            li.dark-grey.hover data-value="submitted" {"Submitted"}
+                        }
+                    }
+                }
             }
             form.flex.col#edit-record-form novalidate = "" {
                 p.info-red.output {}
-                span.form-input#edit-record-demon {
-                    label for = "record_demon" {"ID of the demon the record is on:"}
-                    input type = "number" name = "record_demon" value = "";
+                p.info-green.output {}
+                span.form-input#edit-record-demon-id {
+                    label for = "record_demon" {"ID of the demon the record should be on:"}
+                    input type = "number" name = "demon_id" value = "";
+                    p.error {}
+                }
+                span.form-input#edit-record-demon-name {
+                    label for = "record_demon" {"Name of the demon the record should be on:"}
+                    input type = "text" name = "demon" value = "";
                     p.error {}
                 }
                 span.form-input#edit-record-player {
-                    label for = "record_player" {"ID of the player of the record:"}
-                    input type = "number" name = "record_player" value = "";
+                    label for = "record_player" {"Name of the player of the record:"}
+                    input type = "text" name = "player" value = "";
                     p.error {}
                 }
                 span.form-input#edit-record-progress {
                     label for = "record_progress" {"Progress made in the record:"}
-                    input type = "number" name = "record_progress" min = "0" max = "100" value = "";
+                    input type = "number" name = "progress" min = "0" max = "100" value = "";
                     p.error {}
                 }
                 span.form-input#edit-record-video {
-                    label for = "record_video" {"Video proof of legitimacy"}
-                    input type = "url" name = "record_video";
+                    label for = "record_video" {"Video proof of legitimacy:"}
+                    input type = "url" name = "video";
                     p.error {}
                 }
-                p {
-                    "All modifications to the record will only be saved upon clicking the button below. Selecting a different record, or leaving this page, will discard all unsaved modifications"
+                p{
+                    b {"Important: "}
+                    "Not all fields have to be filled out! Leaving a field empty leaves that value unchanged! The fields 'demon id' and 'demon name' are mutually exclusive"
                 }
-                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Save edit(s)";
+                p {
+                    "All modifications to the record will only be saved upon clicking the button below. Selecting a different record, or leaving the staff area, will discard all unsaved modifications. Navigating to a different tab above is fine. Selecting a different record below instead targets the newly selected record for modification!"
+                }
+                input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Save edit(s)";
             }
         }
     }
@@ -47,9 +68,9 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
             h2.underlined.pad {
                 "Record Manager - "
                 (dropdown("All", html! {
-                    li.white.hover.underlined data-value = "All Demons"
+                    li.dark-grey.hover.underlined data-value = "All"
                      {"All Demons"}
-                }, demons.into_iter().map(|demon| html!(li.white.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}))))
+                }, demons.into_iter().map(|demon| html!(li.dark-grey.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}))))
             }
             div.flex.viewer {
                 (paginator("record-pagination", "/api/v1/records/"))
@@ -109,6 +130,10 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                                     br;
                                     span#record-submitter {}
                                 }
+                            }
+                            div.flex.no-stretch style = "margin: 15px 10px 0px; justify-content: space-evenly" {
+                                span.button.dark-grey.hover.js-scroll data-destination = "edit-record" data-reveal = "true" {"Edit Record"};
+                                span.button.red.hover#record-delete {"Delete Record"};
                             }
                         }
                     }
@@ -227,7 +252,7 @@ fn note_adder() -> Markup {
     html! {
         div.panel.fade.closable#add-record-note style = "display: none" {
             span.plus.cross.hover {}
-            div.button.blue.hover.small style = "width: 100px; margin-bottom: 10px"{
+            div.button.dark-grey.hover.small style = "width: 100px; margin-bottom: 10px"{
                 "Add"
             }
             p.info-red.output {}
@@ -244,10 +269,10 @@ pub(super) fn page(demons: &[OverviewDemon]) -> Markup {
                 (record_manager(demons))
                 (note_adder())
                 div.panel.fade#record-notes-container style = "display:none" {
-                    div#record-notes {} // populated by javascript when a record is clicked
-                    div.white.hover.clickable#add-record-note-open {
+                    div.hover.clickable#add-record-note-open {
                         b {"Add Note"}
                     }
+                    div#record-notes {} // populated by javascript when a record is clicked
                 }
                 (manager_help())
             }

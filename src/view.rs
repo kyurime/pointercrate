@@ -60,10 +60,9 @@ pub trait Page {
                     script src = {(STATIC) "js/nav.v2.js"} {}
                     script src = {(STATIC) "js/misc.v2.js"} {}
                     script src = {(STATIC) "js/ui.v2.js"} {}
-                    script src = {(STATIC) "js/tab.js"} {}
 
                     @for script in self.scripts() {
-                        script src = {(STATIC)(script)} {}
+                        script src = {(STATIC)(script)} type="module" {}
                     }
 
                     link rel = "stylesheet" href = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css";
@@ -151,7 +150,7 @@ pub fn footer() -> Markup {
                 }
                 div {
                     h2 { "Terms of Use:" }
-                    "All content on pointercrate.com is provided free of charge. However, you may not redistribute, in any way, any original content found here without the creator's explicit permission."
+                    "All content on pointercrate.com is provided free of charge. However, you may not redistribute, in any way, any original content found here without the creator's explicit permission. All content is provided without any guarantees."
                 }
                 nav {
                     h2 {
@@ -218,10 +217,10 @@ pub fn filtered_paginator(id: &str, endpoint: &str) -> Markup {
     }
 }
 
-pub fn dropdown(default_text: &str, default_item: Markup, filter_items: impl Iterator<Item = Markup>) -> Markup {
+pub fn dropdown(default_entry: &str, default_item: Markup, filter_items: impl Iterator<Item = Markup>) -> Markup {
     html! {
         div.dropdown-menu.js-search {
-            input type="text" value = (default_text) data-default=(default_text) style = "color: inherit; font-weight: bold;";
+            input type="text" data-default=(default_entry) style = "color: inherit; font-weight: bold;";
             div.menu {
                 ul {
                     (default_item)

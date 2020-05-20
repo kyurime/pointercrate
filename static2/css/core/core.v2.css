@@ -33,7 +33,7 @@
 }
 
 .see-through {
-  opacity: 0.95;
+/*  opacity: 0.95; bugged on newer browsers */
   backdrop-filter: blur(10px);
 }
 
@@ -129,18 +129,18 @@
 }
 
 .red {
-  background: #ff003c;
+  background: #674c52;
   color: white;
 }
 
 .red.hover:not(.disabled):not([disabled]):hover,
 .red.active {
-  background: #ff2457;
+  background: #c5788a;
 }
 
 .red.hover:not(.disabled):not([disabled]):active,
 .red.active {
-  background: #f21347;
+  background: #c5788a;
 }
 
 .green {

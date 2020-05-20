@@ -66,7 +66,13 @@ impl Page for AccountPage {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/form.js", "js/account.js", "js/dlmanage.js"]
+        vec![
+            "js/modules/form.mjs",
+            "js/modules/tab.mjs",
+            "js/account/profile.js",
+            "js/account/users.js",
+            "js/staff.js",
+        ]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -74,9 +80,11 @@ impl Page for AccountPage {
     }
 
     fn body(&self) -> Markup {
+        dbg!(self.user.has_permission(Permissions::Administrator) || self.user.has_permission(Permissions::ListAdministrator));
+        dbg!(&self.user);
         html! {
             span#chicken-salad-red-fish style = "display:none" {(self.csrf_token)}
-            div.tabbed#account-tabber {
+            div.tab-display#account-tabber {
                 div.tab-selection.flex.wrap.m-center.fade style="text-align: center;" {
                     div.tab.tab-active.button.dark-grey.hover.no-shadow data-tab-id="1" {
                         b {
@@ -85,7 +93,7 @@ impl Page for AccountPage {
                         (PreEscaped("&nbsp;"))
                         i class = "fa fa-user fa-2x" aria-hidden="true" {}
                     }
-                    @if self.user.has_permission(Permissions::Administrator) {
+                    @if self.user.has_permission(Permissions::Administrator) || self.user.has_permission(Permissions::ListAdministrator) {
                         div.tab.button.dark-grey.hover.no-shadow data-tab-id="2" {
                             b {
                                 "Users"
@@ -105,14 +113,12 @@ impl Page for AccountPage {
                     }
                 }
 
-                div.tab-display {
-                    (profile::page(&self.user))
-                    @if self.user.has_permission(Permissions::Administrator) {
-                        (users::page())
-                    }
-                    @if self.user.has_permission(Permissions::ListHelper) {
-                        (records::page(&self.demons))
-                    }
+                (profile::page(&self.user))
+                @if self.user.has_permission(Permissions::Administrator) || self.user.has_permission(Permissions::ListAdministrator) {
+                    (users::page(self.user.has_permission(Permissions::Administrator)))
+                }
+                @if self.user.has_permission(Permissions::ListHelper) {
+                    (records::page(&self.demons))
                 }
             }
         }

@@ -113,7 +113,7 @@ tr:nth-child(even) {
 }
 
 .dropdown {
-  background: rgb(34, 36, 37);
+  background: rgba(34, 36, 37, .95);
   text-align: center;
   border-radius: 12px;
   margin-top: 2%;

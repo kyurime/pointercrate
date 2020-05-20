@@ -10,7 +10,7 @@ header nav {
 
   z-index: 999;
 
-  background-color: rgb(25, 38, 43);
+  background-color: rgba(25, 38, 43, .95);
 
   backdrop-filter: blur(15px);
 

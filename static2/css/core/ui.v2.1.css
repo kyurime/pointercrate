@@ -213,28 +213,24 @@ textarea {
 input[type="text"],
 input[type="number"],
 input[type="url"],
-input[type="password"] textarea {
+input[type="password"],
+textarea {
   border: 1px solid #ddd;
   min-width: 0; /* Firefox and Egde need this */
 
-  min-height: 1em;
-  height: 2em;
-
   padding: 0px 5px;
-  margin-left: 10px;
-  margin-right: 10px;
-  width: calc(100% - 20px);
 
+  color: rgb(232, 230, 227);
   background: rgba(0, 0, 0, 0);
   box-sizing: border-box;
 }
 
-form input[type="text"],
-form input[type="number"],
-form input[type="url"],
-form input[type="password"],
-textarea {
-  color: rgb(232, 230, 227);
+input[type="text"],
+input[type="number"],
+input[type="url"],
+input[type="password"] {
+  min-height: 1em;
+  height: 2em;
 }
 
 form input[type="text"]:valid,
@@ -452,17 +448,13 @@ input::placeholder {
   position: absolute;
   display: none;
 
-  width: calc(100% - 22px);
+  width: calc(100% - 2px);
   max-height: 400px;
   overflow-y: scroll;
 
   background:rgba(21, 22, 23, 0.5);
 
   backdrop-filter: blur(15px);
-
-  margin-left: 10px;
-  margin-right: 10px;
-  margin-top: 2%;
 
   z-index: 100;
 
@@ -661,6 +653,7 @@ h2 .dropdown-menu ul {
 .info-yellow {
   background: #fffadd;
   border: 1px solid #e0e37b;
+  border-radius: 10px;
   padding: 5px 15px;
   color: #4d4707;
   margin: 25px 0px;
@@ -669,6 +662,7 @@ h2 .dropdown-menu ul {
 .info-red {
   background: #fdd;
   border: 1px solid #ff9393;
+  border-radius: 10px;
   padding: 5px 15px;
   color: #4d0707;
   margin: 25px 0px;
