@@ -123,15 +123,15 @@ impl Page for Homepage {
                         h2 style="text-align: left; margin-top: 0px" {
                             "Changelog"
                         }
-                        div.tab-content.tab-content-active data-tab-id ="99" {
+                        div.tab-content.tab-content-active data-tab-id ="98" {
                             h3 style="text-align: left; font-size: 110%" {
-                                "4/13/2019: Making it ours.."
+                                "5/22/2020: Updated 2"
                             }
                             p {
-                                "I literally don't understand rust. Like, " i{"at all"}
+                                "Pulled from master... again (still don't understand rust though)"
                             }
                         }
-                        div.tab-content data-tab-id ="100" {
+                        div.tab-content data-tab-id ="99" {
                             h3 style="text-align: left; font-size: 110%" {
                                 "10/3/2019: Small Updates"
                             }
@@ -140,10 +140,19 @@ impl Page for Homepage {
                             }
                             p {"Oh and I also changed some of the design, for hopefully the first and final time.."}
                         }
+                        div.tab-content data-tab-id ="100" {
+                            h3 style="text-align: left; font-size: 110%" {
+                                "4/13/2019: Making it ours.."
+                            }
+                            p {
+                                "I literally don't understand rust. Like, " i{"at all"}
+                            }
+                        }
                     }
                     aside.tab-selection style="padding: 20px 0px; text-align: center"{
-                        h3.tab data-tab-id="99" style="padding: 10px; text-align:left" { "2019-04-13" }
-                        h3.tab data-tab-id="100" style="padding: 10px; text-align: left" { "2019-10-03" }
+                        h3.tab.tab-active data-tab-id="98" style="padding: 10px; text-align:left" { "2020-05-22" }
+                        h3.tab data-tab-id="99" style="padding: 10px; text-align:left" { "2019-10-03" }
+                        h3.tab data-tab-id="100" style="padding: 10px; text-align:left" { "2019-04-13" }
                     }
                 }
             }

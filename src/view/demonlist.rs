@@ -190,7 +190,7 @@ fn submission_panel() -> Markup {
                         textarea name = "note" placeholder = "Your dreams and hopes for this records... or something like that" {}
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Submit record";
+                    input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Submit record";
                 }
             }
         }
