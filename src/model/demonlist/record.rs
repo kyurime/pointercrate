@@ -183,6 +183,12 @@ pub struct MinimalRecordP {
     pub player: DatabasePlayer,
 }
 
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+pub enum WebhookType {
+    Add,
+    Edited,
+}
+
 impl FullRecord {
     /// Gets the maximal and minimal submitter id currently in use
     ///
@@ -221,7 +227,7 @@ impl FullRecord {
                             if status >= 200 && status < 400 {
                                 debug!("HEAD request yielded some sort of successful response, executing webhook");
 
-                                self.execute_webhook(&state).await;
+                                self.execute_webhook(&state, WebhookType::Add).await;
                             }
                         },
                         Err(err) => {
@@ -239,7 +245,7 @@ impl FullRecord {
                 } else if status >= 200 && status < 400 {
                     debug!("HEAD request yielded some sort of successful response, executing webhook");
 
-                    self.execute_webhook(&state).await;
+                    self.execute_webhook(&state, WebhookType::Add).await;
                 } else {
                     warn!("Server response to 'HEAD {}' was {:?}, deleting submission!", video, response);
 
@@ -263,13 +269,25 @@ impl FullRecord {
         }
     }
 
-    async fn execute_webhook(&self, state: &PointercrateState) {
+    pub async fn edit_webhook(self, state: PointercrateState) {
+        // not really going to check much lol
+        debug!("Executing edited record webhook");
+        self.execute_webhook(&state, WebhookType::Edited).await;
+    }
+
+    async fn execute_webhook(&self, state: &PointercrateState, webhook_type: WebhookType) {
         if let Some(ref webhook_url) = state.webhook_url {
+
+            let body = match webhook_type {
+                WebhookType::Edited => self.webhook_status_embed().to_string(),
+                _ => self.webhook_embed().to_string()
+            };
+
             match state
                 .http_client
                 .post(&**webhook_url)
                 .header("Content-Type", "application/json")
-                .body(self.webhook_embed().to_string())
+                .body(body)
                 .send()
                 .await
             {
@@ -311,6 +329,28 @@ impl FullRecord {
                 }]
             };
         }
+
+        payload
+    }
+
+    fn webhook_status_embed(&self) -> serde_json::Value {
+        let payload = json!({
+            "content": format!("**Record edited! ID: {}**", self.id),
+            "embeds": [
+                {
+                    "type": "rich",
+                    "title": format!("{}% on {}", self.progress, self.demon.name),
+                    "description": format!("{}'s record's status is set to `{}`!", self.player.name, self.status),
+                    "author": {
+                        "name": format!("Owner: {} (ID: {})", self.player.name, self.player.id),
+                        "url": self.video
+                    },
+                    "thumbnail": {
+                        "url": "https://cdn.discordapp.com/emojis/561867333476286464.png?size=1024"
+                    },
+                }
+            ]
+        });
 
         payload
     }

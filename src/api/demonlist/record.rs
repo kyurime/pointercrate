@@ -121,7 +121,11 @@ pub async fn patch(
 
     connection.commit().await?;
 
-    Ok(HttpResponse::Ok().json_with_etag(&record))
+    let response = HttpResponse::Ok().json_with_etag(&record);
+
+    actix_rt::spawn(record.edit_webhook(state));
+
+    Ok(response)
 }
 
 #[delete("/{record_id}/")]
