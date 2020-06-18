@@ -1,4 +1,5 @@
 use crate::{
+    config,
     error::PointercrateError,
     extractor::{auth::TokenAuth, if_match::IfMatch, ip::Ip},
     model::demonlist::{
@@ -65,7 +66,7 @@ pub async fn submit(
         let user = user?.0;
 
         user.inner().require_permissions(Permissions::ListHelper)?;
-        audit_connection(&mut connection, user.inner()).await?; // might as well
+        audit_connection(&mut connection, user.inner().id).await?; // might as well
     }
 
     let ratelimiter = state.ratelimits.prepare(ip);
@@ -110,10 +111,17 @@ pub async fn patch(
 ) -> ApiResult<HttpResponse> {
     let mut connection = state.audited_transaction(&user).await?;
 
-    user.inner().require_permissions(Permissions::ListHelper)?;
+    //user.inner().require_permissions(Permissions::ListHelper)?;
 
     // FIXME: prevent lost updates by using SELECT ... FOR UPDATE
     let mut record = FullRecord::by_id(record_id.into_inner(), &mut connection).await?;
+
+    if record.demon.position > config::extended_list_size() {
+        // only list mods can modify legacy records
+        user.inner().require_permissions(Permissions::ListModerator)?;
+    } else {
+        user.inner().require_permissions(Permissions::ListHelper)?;
+    }
 
     if_match.require_etag_match(&record)?;
 
