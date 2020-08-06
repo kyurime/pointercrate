@@ -153,8 +153,35 @@ a {
   align-items: center;
 }
 
-.flex:not(.no-stretch) > * {
+.flex:not(.no-stretch) > *:not(.no-stretch) {
   flex-grow: 1;
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 1083458237;
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgb(23, 23, 23);
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 10px;
+  max-width: 600px;
+}
+
+.dialog p {
+  margin: 15px;
 }
 
 /* Panel styles */
@@ -253,11 +280,11 @@ textarea:invalid {
   text-align: left;
   font-style: italic;
 
-  margin: 2px 10px;
+  margin: 2px 10px !important;
 }
 
 .form-input .error {
-  font-size: 60%;
+  font-size: 60% !important;
   color: coral;
 }
 
@@ -297,6 +324,9 @@ textarea:invalid {
   width: 1em;
   background-color: #eee;
   margin-top: 2px;
+}
+.stats-container .checkmark {
+  font-size: 111%;
 }
 
 /* On mouse-over, add a grey background color */
@@ -387,14 +417,19 @@ input::placeholder {
  * + .viewer-content is the element that contains the content of the viewer, displayed to the right of the paginator
  */
 
+.viewer {
+  margin-top: 10px;
+}
+
 /* Hidden until first element in paginator is selected */
 .viewer .viewer-content {
   display: none;
+  margin-left: 10px;
 }
 
 .viewer .viewer-welcome {
   text-align: center;
-  margin: 10px 0 0 0;
+  margin-left: 10px;
 }
 
 @media (min-width: 768px) {
@@ -433,7 +468,7 @@ input::placeholder {
   font-size: 110%;
 }
 
-.stats-container :not(b) {
+.stats-container :not(b):not(.fa) {
   font-size: 90%;
 }
 
@@ -479,7 +514,7 @@ h2 .dropdown-menu ul {
 .dropdown-menu > input[type="text"] {
   border: none;
   border-bottom: 1px dotted #555;
-  max-width: 250px;
+  width: 100%;
   font-size: 1em;
 }
 

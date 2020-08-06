@@ -1,9 +1,5 @@
-"use strict";
-
 import {
-  Paginator,
   post,
-  patch,
   del,
   get,
   displayError,
@@ -14,67 +10,23 @@ import {
   rangeUnderflow,
   rangeOverflow,
   stepMismatch,
-  typeMismatch
+  Paginator,
+  typeMismatch,
+  Viewer,
+  setupFormDialogEditor,
+  Output,
+  setupDropdownEditor,
+  setupDialogEditor,
+  PaginatorEditorBackend,
 } from "../modules/form.mjs";
+import {
+  initializeRecordSubmitter,
+  generateRecord,
+  embedVideo,
+} from "../modules/demonlist.mjs";
+import { setupPlayerSelectionEditor } from "../modules/demonlist.mjs";
 
-let recordManager;
-let recordEditor;
-
-function generateRecord(record) {
-  var li = document.createElement("li");
-  var recordId = document.createElement("b");
-
-  li.className = "dark-grey hover";
-  li.dataset.id = record.id;
-
-  switch (record.status) {
-    case "approved":
-      li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
-      break;
-    case "rejected":
-      li.style.backgroundColor = "rgba(255, 161, 174, .3)";
-      break;
-    case "submitted":
-      li.style.backgroundColor = "rgba(255, 255, 161, .3)";
-      break;
-    case "under consideration":
-      li.style.backgroundColor = "rgba(142, 230, 230, .3)";
-      break;
-    default:
-      break;
-  }
-
-  recordId.appendChild(document.createTextNode("Record #" + record.id));
-
-  li.appendChild(recordId);
-  li.appendChild(document.createElement("br"));
-  li.appendChild(
-    document.createTextNode(record.player.name + " (" + record.player.id + ")")
-  );
-  li.appendChild(document.createElement("br"));
-  li.appendChild(
-    document.createTextNode(record.progress + "% on " + record.demon.name)
-  );
-  li.appendChild(document.createElement("br"));
-
-  return li;
-}
-
-function embedVideo(video) {
-  if (video === undefined) return;
-  // welcome to incredibly fragile string parsing with stadust
-  // see pointercrate::video::embed for a proper implementation of this
-
-  if (video.startsWith("https://www.youtube")) {
-    return "https://www.youtube.com/embed/" + video.substring(32);
-  }
-
-  if (video.statsWith("https://www.twitch")) {
-    return (
-      "https://player.twitch.tv/?autoplay=false&video=" + video.substring(29)
-    );
-  }
-}
+export let recordManager;
 
 class RecordManager extends Paginator {
   constructor(tok) {
@@ -82,18 +34,16 @@ class RecordManager extends Paginator {
 
     var manager = document.getElementById("record-manager");
 
-    this.currentRecord = null;
-    this.currentRecordEtag = null;
-
-    this._welcome = manager.getElementsByClassName("viewer-welcome")[0];
-    this._content = manager.getElementsByClassName("viewer-content")[0];
+    this.output = new Viewer(
+      manager.getElementsByClassName("viewer-content")[0],
+      this
+    );
 
     this._video = document.getElementById("record-video");
     this._video_link = document.getElementById("record-video-link");
     this._id = document.getElementById("record-id");
     this._demon = document.getElementById("record-demon");
     this._holder = document.getElementById("record-holder");
-    this._status = document.getElementById("record-status");
     this._progress = document.getElementById("record-progress");
     this._submitter = document.getElementById("record-submitter");
     this._notes = document.getElementById("record-notes");
@@ -107,59 +57,128 @@ class RecordManager extends Paginator {
 
     new Dropdown(
       manager.getElementsByClassName("dropdown-menu")[0]
-    ).addEventListener(selected => {
+    ).addEventListener((selected) => {
       if (selected === "All") this.updateQueryData("demon_id", undefined);
       else this.updateQueryData("demon_id", selected);
     });
-    this.dropdown.addEventListener(selected => {
+    this.dropdown.addEventListener((selected) => {
       if (selected === "All") this.updateQueryData("status", undefined);
       else this.updateQueryData("status", selected);
     });
+
+    this._status = setupDropdownEditor(
+      new PaginatorEditorBackend(this, this._tok, true),
+      "edit-record-status",
+      "status",
+      this.output
+    );
+
+    this.initProgressDialog();
+    this.initVideoDialog();
+    setupPlayerSelectionEditor(
+      new PaginatorEditorBackend(this, this._tok, true),
+      "record-holder-dialog-pagination",
+      "record-holder-pen",
+      this.output
+    );
+    this.initDemonDialog();
+  }
+
+  initProgressDialog() {
+    let form = setupFormDialogEditor(
+      new PaginatorEditorBackend(this, this._tok, true),
+      "record-progress-dialog",
+      "record-progress-pen",
+      this.output
+    );
+
+    form.addValidators({
+      "record-progress-edit": {
+        "Record progress cannot be negative": rangeUnderflow,
+        "Record progress cannot be larger than 100%": rangeOverflow,
+        "Record progress must be a valid integer": badInput,
+        "Record progress mustn't be a decimal": stepMismatch,
+        "Please enter a progress value": valueMissing,
+      },
+    });
+
+    form.addErrorOverride(42215, "record-progress-edit");
+  }
+
+  initVideoDialog() {
+    let form = setupFormDialogEditor(
+      new PaginatorEditorBackend(this, this._tok, false),
+      "record-video-dialog",
+      "record-video-pen",
+      this.output
+    );
+
+    form.addValidators({
+      "record-video-edit": {
+        "Please enter a valid URL": typeMismatch,
+      },
+    });
+
+    for (let errorCode of [42222, 42223, 42224, 42225]) {
+      form.addErrorOverride(errorCode, "record-video-edit");
+    }
+  }
+
+  initDemonDialog() {
+    var editor = setupDialogEditor(
+      new PaginatorEditorBackend(this, this._tok, true),
+      "record-demon-dialog",
+      "record-demon-pen",
+      this.output
+    );
+
+    new Dropdown(
+      document.getElementById("edit-demon-record")
+    ).addEventListener((demonId) => editor({ demon_id: parseInt(demonId) }));
   }
 
   onReceive(response) {
+    super.onReceive(response);
+
     if (response.status == 204) {
       return;
     }
 
-    var recordData = (this.currentRecord = response.data.data);
-    this.currentRecordEtag = response.headers["etag"];
-
-    var embeddedVideo = embedVideo(recordData.video);
+    var embeddedVideo = embedVideo(this.currentObject.video);
 
     if (embeddedVideo !== undefined) {
       this._video.style.display = "block";
-      this._video.src = embedVideo(recordData.video);
+      this._video_link.style.display = "initial";
+      this._video.src = embeddedVideo;
+      this._video_link.href = this.currentObject.video;
+      this._video_link.innerHTML = this.currentObject.video;
     } else {
       this._video.style.display = "none";
+      this._video_link.style.display = "none";
     }
 
-    this._video_link.href = recordData.video;
-    this._video_link.innerHTML = recordData.video;
-    this._id.innerHTML = recordData.id;
+    this._id.innerHTML = this.currentObject.id;
     this._demon.innerHTML =
-      recordData.demon.name + " (" + recordData.demon.id + ")";
+      this.currentObject.demon.name + " (" + this.currentObject.demon.id + ")";
     this._holder.innerHTML =
-      recordData.player.name + " (" + recordData.player.id + ")";
-    this._status.innerHTML = recordData.status;
-    this._progress.innerHTML = recordData.progress;
-    this._submitter.innerHTML = recordData.submitter.id;
+      this.currentObject.player.name +
+      " (" +
+      this.currentObject.player.id +
+      ")";
+    this._status.selectSilently(this.currentObject.status);
+    this._progress.innerHTML = this.currentObject.progress + "%";
+    this._submitter.innerHTML = this.currentObject.submitter.id;
 
     // clear notes
     while (this._notes.firstChild) {
       this._notes.removeChild(this._notes.firstChild);
     }
 
-    for (let note of recordData.notes) {
+    for (let note of this.currentObject.notes) {
       this._notes.appendChild(createNoteHtml(note, this._tok));
     }
 
-    recordEditor.selectRecord(recordData);
-
-    $(this._notes.parentElement).show(100); // TODO: maybe via CSS transform?
-
-    $(this._welcome).hide(100);
-    $(this._content).show(100);
+    $(this._notes.parentElement).show(300); // TODO: maybe via CSS transform?
   }
 }
 
@@ -184,7 +203,7 @@ function createNoteHtml(note, csrfToken) {
       if (confirm("This action will irrevocably delete this note. Proceed?")) {
         del(
           "/api/v1/records/" +
-            recordManager.currentRecord.id +
+            recordManager.currentObject.id +
             "/notes/" +
             note.id +
             "/",
@@ -232,17 +251,17 @@ function createNoteHtml(note, csrfToken) {
 
 function setupAddNote(csrfToken) {
   let adder = document.getElementById("add-record-note");
-  let output = adder.getElementsByClassName("output")[0];
+  let output = new Output(adder);
   let textArea = adder.getElementsByTagName("textarea")[0];
   let add = adder.getElementsByClassName("button")[0];
 
   add.addEventListener("click", () => {
     post(
-      "/api/v1/records/" + recordManager.currentRecord.id + "/notes/",
+      "/api/v1/records/" + recordManager.currentObject.id + "/notes/",
       { "X-CSRF-TOKEN": csrfToken },
       { content: textArea.value }
     )
-      .then(noteResponse => {
+      .then((noteResponse) => {
         let newNote = createNoteHtml(noteResponse.data.data, csrfToken);
         recordManager._notes.appendChild(newNote);
 
@@ -255,7 +274,7 @@ function setupAddNote(csrfToken) {
   document
     .getElementById("add-record-note-open")
     .addEventListener("click", () => {
-      $(adder).show(100);
+      $(adder).show(300);
     });
 }
 
@@ -266,8 +285,22 @@ function setupRecordFilterPlayerIdForm() {
   var playerId = recordFilterPlayerIdForm.input("record-player-id");
 
   playerId.addValidator(valueMissing, "Player ID required");
-  recordFilterPlayerIdForm.onSubmit(function(event) {
-    window.recordManager.updateQueryData("player", playerId.value);
+  recordFilterPlayerIdForm.onSubmit(function () {
+    recordManager.updateQueryData("player", playerId.value);
+  });
+}
+
+function setupRecordSearchRecordIdForm() {
+  var recordSearchByIdForm = new Form(
+    document.getElementById("record-search-by-record-id-form")
+  );
+  var recordId = recordSearchByIdForm.input("record-record-id");
+
+  recordId.addValidator(valueMissing, "Record ID required");
+  recordSearchByIdForm.onSubmit(function () {
+    recordManager
+      .selectArbitrary(parseInt(recordId.value))
+      .catch(displayError(recordSearchByIdForm));
   });
 }
 
@@ -278,12 +311,12 @@ function setupRecordFilterPlayerNameForm() {
   var playerName = recordFilterPlayerNameForm.input("record-player-name");
 
   playerName.addValidators({
-    "Player name required": valueMissing
+    "Player name required": valueMissing,
   });
 
-  recordFilterPlayerNameForm.onSubmit(function(event) {
+  recordFilterPlayerNameForm.onSubmit(function () {
     get("/api/v1/players/?name=" + playerName.value)
-      .then(response => {
+      .then((response) => {
         let json = response.data;
 
         if (!json || json.length == 0) {
@@ -292,88 +325,22 @@ function setupRecordFilterPlayerNameForm() {
           recordManager.updateQueryData("player", json[0].id);
         }
       })
-      .catch(displayError(recordFilterPlayerNameForm.errorOutput));
+      .catch(displayError(recordFilterPlayerNameForm));
   });
 }
 
-class RecordEditor extends Form {
-  constructor(csrfToken) {
-    super(document.getElementById("edit-record-form"));
-
-    this.recordId = document.getElementById("edit-record-id");
-
-    this.statusDropdown = new Dropdown(
-      document.getElementById("edit-record-status")
-    );
-
-    var progress = this.input("edit-record-progress");
-    var video = this.input("edit-record-video");
-
-    progress.addValidator(rangeUnderflow, "Record progress cannot be negative");
-    progress.addValidator(
-      rangeOverflow,
-      "Record progress cannot be larger than 100%"
-    );
-    progress.addValidator(badInput, "Record progress must be a valid integer");
-    progress.addValidator(stepMismatch, "Record progress mustn't be a decimal");
-
-    video.addValidator(typeMismatch, "Please enter a valid URL");
-
-    this.setClearOnSubmit(true);
-    this.onSubmit(function(event) {
-      let data = this.serialize();
-
-      if (this.statusDropdown.selected != recordManager.currentRecord.status) {
-        data["status"] = this.statusDropdown.selected;
-      }
-
-      patch(
-        "/api/v1/records/" + recordManager.currentRecord.id + "/",
-        {
-          "X-CSRF-TOKEN": csrfToken,
-          "If-Match": recordManager.currentRecordEtag
-        },
-        data
-      )
-        .then(response => {
-          if (response.status == 304) {
-            this.setSuccess("Nothing changed!");
-          } else {
-            // directly refresh the record manager :pog:
-            recordManager.refresh();
-            recordManager.onReceive(response);
-
-            this.setSuccess(
-              "Record successfully edited! You may now close this panel"
-            );
-          }
-        })
-        .catch(displayError(this.errorOutput));
-    });
-  }
-
-  selectRecord(record) {
-    this.recordId.innerText = record.id;
-    this.statusDropdown.select(record.status);
-  }
-}
-
 function setupEditRecordForm(csrfToken) {
-  recordEditor = new RecordEditor(csrfToken);
-
   document.getElementById("record-delete").addEventListener("click", () => {
     if (
       confirm(
         "Are you sure? This will irrevocably delete this record and all notes made on it!"
       )
     ) {
-      del("/api/v1/records/" + recordManager.currentRecord.id + "/", {
+      del("/api/v1/records/" + recordManager.currentObject.id + "/", {
         "X-CSRF-TOKEN": csrfToken,
-        "If-Match": window.recordManager.currentRecordEtag
+        "If-Match": recordManager.currentEtag,
       }).then(() => {
-        $(recordManager._content).hide(100);
-        $(recordManager._notes.parentElement).hide(100);
-        $(recordManager._welcome).show(100);
+        recordManager.output.hideContent();
         recordManager.refresh();
       });
     }
@@ -385,7 +352,10 @@ export function initialize(csrfToken) {
   setupRecordFilterPlayerNameForm();
   setupAddNote(csrfToken);
   setupEditRecordForm(csrfToken);
+  setupRecordSearchRecordIdForm();
+
+  initializeRecordSubmitter(csrfToken, true);
 
   recordManager = new RecordManager(csrfToken);
-  recordManager.initialize();
+  return recordManager.initialize();
 }

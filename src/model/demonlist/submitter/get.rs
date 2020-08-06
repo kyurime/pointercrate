@@ -1,19 +1,27 @@
-use super::{FullSubmitter, Submitter};
+use super::Submitter;
 use crate::{
-    model::demonlist::record::submitted_by,
+    error::PointercrateError,
     ratelimit::{PreparedRatelimits, RatelimitScope},
     Result,
 };
-use sqlx::PgConnection;
+use sqlx::{Error, PgConnection};
 use std::net::IpAddr;
 
 impl Submitter {
     pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<Submitter> {
-        let row = sqlx::query!("SELECT submitter_id, banned FROM submitters WHERE submitter_id = $1", id)
+        let result = sqlx::query!("SELECT submitter_id, banned FROM submitters WHERE submitter_id = $1", id)
             .fetch_one(connection)
-            .await?;
+            .await;
 
-        Ok(Submitter { id, banned: row.banned })
+        match result {
+            Ok(row) => Ok(Submitter { id, banned: row.banned }),
+            Err(Error::NotFound) =>
+                Err(PointercrateError::ModelNotFound {
+                    model: "Submitter",
+                    identified_by: id.to_string(),
+                }),
+            Err(err) => Err(err.into()),
+        }
     }
 
     pub async fn by_ip_or_create(
@@ -48,18 +56,5 @@ impl Submitter {
                 Ok(Submitter { id, banned: false })
             },
         }
-    }
-
-    pub async fn upgrade(self, connection: &mut PgConnection) -> Result<FullSubmitter> {
-        Ok(FullSubmitter {
-            records: submitted_by(&self, connection).await?,
-            submitter: self,
-        })
-    }
-}
-
-impl FullSubmitter {
-    pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<FullSubmitter> {
-        Submitter::by_id(id, connection).await?.upgrade(connection).await
     }
 }

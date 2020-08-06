@@ -1,7 +1,3 @@
-function forall(selector, callback) {
-  $(selector).each((i, elem) => callback(i, $(elem)));
-}
-
 function forceRatio(element, wRatio, hRatio) {
   var target = $(element);
   var width = target.width();
@@ -11,7 +7,7 @@ function forceRatio(element, wRatio, hRatio) {
   }
 }
 
-$(window).on("load resize", function() {
+$(window).on("load resize", function () {
   // back to top things
 
   var scrollers = $(".js-scroll");
@@ -34,19 +30,23 @@ $(window).on("load resize", function() {
 
   // sometimes animating scrolltop causes things to get stuck. This fixes it.
 
-  $(window).bind("mousewheel touchmove touchstart", function() {
+  $(window).bind("mousewheel touchmove touchstart", function () {
     $("html, body").stop();
   });
 
   // Closable panels
 
-  forall(".plus.cross", (i, elem) => {
-    var parent = elem.parent();
+  for (let x of document.querySelectorAll(".plus.cross")) {
+    let parent = x.parentNode;
 
-    if (parent.hasClass("closable")) {
-      elem.click(() => parent.fadeOut(1000));
+    while (parent !== null && parent.classList !== null) {
+      if (parent.classList.contains("closable")) {
+        x.addEventListener("click", () => $(parent).fadeOut(1000));
+        break;
+      }
+      parent = parent.parentNode;
     }
-  });
+  }
 
   // Animation stuff when scrolling
   var toAnimate = $(".js-scroll-anim");
@@ -64,7 +64,7 @@ $(window).on("load resize", function() {
       attributes: true,
       characterData: false,
       attributeFilter: ["style"],
-      subtree: true
+      subtree: true,
     };
     observer.observe(elem.parentElement, conf);
 
@@ -100,12 +100,12 @@ $(window).on("load resize", function() {
     });
   }
 
-  $(".js-collapse").each(function(i, elem) {
+  $(".js-collapse").each(function (i, elem) {
     var collapse = $(elem);
     var content = collapse.find(".js-collapse-content");
     var arrow = collapse.find(".arrow");
 
-    arrow.parent().click(function() {
+    arrow.parent().click(function () {
       if (!collapse.hasClass("js-sliding")) {
         collapse.addClass("js-sliding");
         if (collapse.hasClass("active")) {
@@ -125,11 +125,11 @@ $(window).on("load resize", function() {
 
   // ratio things
 
-  $(".ratio-16-9").each(function() {
+  $(".ratio-16-9").each(function () {
     forceRatio(this, 16, 9);
     if (this.tagName == "IFRAME") this.onload = () => forceRatio(this, 16, 9);
   });
-  $(".ratio-4-3").each(function() {
+  $(".ratio-4-3").each(function () {
     forceRatio(this, 4, 3);
     if (this.tagName == "IFRAME") this.onload = () => forceRatio(this, 4, 3);
   });

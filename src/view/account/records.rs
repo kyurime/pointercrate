@@ -1,67 +1,6 @@
 use crate::view::{demonlist::OverviewDemon, dropdown, paginator};
 use maud::{html, Markup};
 
-fn record_editor() -> Markup {
-    html! {
-        div.panel.fade.closable#edit-record style = "display: none" {
-            span.plus.cross.hover {}
-            h2.underlined.pad {
-                "Edit Record #"
-                span#edit-record-id {}
-                " - "
-                div.dropdown-menu.js-search#edit-record-status {
-                    input type="text" style = "color: #444446; font-weight: bold;";
-                    div.menu {
-                        ul {
-                            li.dark-grey.hover data-value="approved" {"Approved"}
-                            li.dark-grey.hover data-value="rejected" {"Rejected"}
-                            li.dark-grey.hover data-value="under consideration" {"Under Consideration"}
-                            li.dark-grey.hover data-value="submitted" {"Submitted"}
-                        }
-                    }
-                }
-            }
-            form.flex.col#edit-record-form novalidate = "" {
-                p.info-red.output {}
-                p.info-green.output {}
-                span.form-input#edit-record-demon-id {
-                    label for = "record_demon" {"ID of the demon the record should be on:"}
-                    input type = "number" name = "demon_id" value = "";
-                    p.error {}
-                }
-                span.form-input#edit-record-demon-name {
-                    label for = "record_demon" {"Name of the demon the record should be on:"}
-                    input type = "text" name = "demon" value = "";
-                    p.error {}
-                }
-                span.form-input#edit-record-player {
-                    label for = "record_player" {"Name of the player of the record:"}
-                    input type = "text" name = "player" value = "";
-                    p.error {}
-                }
-                span.form-input#edit-record-progress {
-                    label for = "record_progress" {"Progress made in the record:"}
-                    input type = "number" name = "progress" min = "0" max = "100" value = "";
-                    p.error {}
-                }
-                span.form-input#edit-record-video {
-                    label for = "record_video" {"Video proof of legitimacy:"}
-                    input type = "url" name = "video";
-                    p.error {}
-                }
-                p{
-                    b {"Important: "}
-                    "Not all fields have to be filled out! Leaving a field empty leaves that value unchanged! The fields 'demon id' and 'demon name' are mutually exclusive"
-                }
-                p {
-                    "All modifications to the record will only be saved upon clicking the button below. Selecting a different record, or leaving the staff area, will discard all unsaved modifications. Navigating to a different tab above is fine. Selecting a different record below instead targets the newly selected record for modification!"
-                }
-                input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Save edit(s)";
-            }
-        }
-    }
-}
-
 fn record_manager(demons: &[OverviewDemon]) -> Markup {
     html! {
         div.panel.fade#record-manager {
@@ -78,66 +17,72 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                     "Click on a record on the left to get started!"
                 }
                 div.viewer-content {
-                    div {
-                        div.flex.col {
-                            h3 style = "font-size:1.4em; overflow: hidden" { "Record #" i#record-id{}}
-
-                            iframe."ratio-16-9"#record-video style="width:90%; margin: 15px 5%" allowfullscreen="" {"Verification Video"}
-                            div.stats-container.flex.space  {
-                                span{
-                                    b {
-                                        "Video Link:"
+                    div.flex.col {
+                        h3 style = "font-size:1.1em; margin-top: 10px" {
+                            "Record #"
+                            i#record-id {}
+                            " - "
+                            div.dropdown-menu.js-search#edit-record-status style = "max-width: 220px"{
+                                input type="text" style = "color: inherit; font-weight: bold;";
+                                div.menu {
+                                    ul {
+                                        li.dark-grey.hover data-value="approved" {"Approved"}
+                                        li.dark-grey.hover data-value="rejected" {"Rejected"}
+                                        li.dark-grey.hover data-value="under consideration" {"Under Consideration"}
+                                        li.dark-grey.hover data-value="submitted" {"Submitted"}
                                     }
-                                    br;
-                                    a.link#record-video-link target = "_blank" {}
                                 }
-                            }
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "Demon:"
-                                    }
-                                    br;
-                                    span#record-demon {}
-                                }
-                                span {
-                                    b {
-                                        "Record Holder:"
-                                    }
-                                    br;
-                                    span#record-holder {}
-                                }
-                                span {
-                                    b {
-                                        "Record status:"
-                                    }
-                                    br;
-                                    span#record-status {}
-                                }
-                            }
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "Progress:"
-                                    }
-                                    br;
-                                    span#record-progress {}
-                                }
-                                span {
-                                    b {
-                                        "Submitter ID:"
-                                    }
-                                    br;
-                                    span#record-submitter {}
-                                }
-                            }
-                            div.flex.no-stretch style = "margin: 15px 10px 0px; justify-content: space-evenly" {
-                                span.button.dark-grey.hover.js-scroll data-destination = "edit-record" data-reveal = "true" {"Edit Record"};
-                                span.button.red.hover#record-delete {"Delete Record"};
                             }
                         }
+
+                        iframe."ratio-16-9"#record-video style="width:90%; margin: 15px 5%" allowfullscreen="" {"Video"}
+                        p.info-red.output style = "margin: 10px" {}
+                        p.info-green.output style = "margin: 10px" {}
+                        div.stats-container.flex.space  {
+                            span{
+                                b {
+                                    i.fa.fa-pencil.clickable#record-video-pen aria-hidden = "true" {} " Video Link:"
+                                }
+                                br;
+                                a.link#record-video-link target = "_blank" {}
+                            }
+                        }
+                        div.stats-container.flex.space {
+                            span {
+                                b {
+                                    i.fa.fa-pencil.clickable#record-demon-pen aria-hidden = "true" {} " Demon:"
+                                }
+                                br;
+                                span#record-demon {}
+                            }
+                            span {
+                                b {
+                                    i.fa.fa-pencil.clickable#record-holder-pen aria-hidden = "true" {} " Record Holder:"
+                                }
+                                br;
+                                span#record-holder {}
+                            }
+                        }
+                        div.stats-container.flex.space {
+                            span {
+                                b {
+                                    i.fa.fa-pencil.clickable#record-progress-pen aria-hidden = "true" {} " Progress:"
+                                }
+                                br;
+                                span#record-progress {}
+                            }
+                            span {
+                                b {
+                                    "Submitter ID:"
+                                }
+                                br;
+                                span#record-submitter {}
+                            }
+                        }
+                        span.button.red.hover#record-delete style = "margin: 15px auto 0px" {"Delete Record"};
                     }
                 }
+
             }
         }
     }
@@ -248,6 +193,28 @@ fn player_selector() -> Markup {
     }
 }
 
+fn record_selector() -> Markup {
+    html! {
+        div.panel.fade {
+            h2.underlined.pad {
+                "Search record by ID"
+            }
+            p {
+                "Records can be uniquely identified by ID. Entering a record's ID below will select it on the left (provided the record exists)"
+            }
+            form.flex.col#record-search-by-record-id-form novalidate = "" {
+                p.info-red.output {}
+                span.form-input#record-record-id {
+                    label for = "id" {"Record ID:"}
+                    input required = "" type = "number" name = "id" min = "0" style="width:93%"; // FIXME: I have no clue why the input thinks it's a special snowflake and fucks up its width, but I dont have the time to fix it
+                    p.error {}
+                }
+                input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
+            }
+        }
+    }
+}
+
 fn note_adder() -> Markup {
     html! {
         div.panel.fade.closable#add-record-note style = "display: none" {
@@ -265,7 +232,7 @@ pub(super) fn page(demons: &[OverviewDemon]) -> Markup {
     html! {
         div.m-center.flex.tab-content.container data-tab-id = "3" {
             div.left {
-                (record_editor())
+                (crate::view::demonlist::submission_panel())
                 (record_manager(demons))
                 (note_adder())
                 div.panel.fade#record-notes-container style = "display:none" {
@@ -278,7 +245,124 @@ pub(super) fn page(demons: &[OverviewDemon]) -> Markup {
             }
             div.right {
                 (status_selector())
+                (record_selector())
                 (player_selector())
+                (crate::view::demonlist::submit_panel())
+            }
+            (change_progress_dialog())
+            (change_video_dialog())
+            (change_holder_dialog())
+            (change_demon_dialog(demons))
+        }
+    }
+}
+
+fn change_progress_dialog() -> Markup {
+    html! {
+        div.overlay.closable {
+            div.dialog#record-progress-dialog {
+                span.plus.cross.hover {}
+                h2.underlined.pad {
+                    "Change record progress:"
+                }
+                p style = "max-width: 400px"{
+                    "Change the progress value of this record. Has to be between the demon's record requirement and 100 (inclusive)."
+                }
+                form.flex.col novalidate = "" {
+                    p.info-red.output {}
+                    p.info-green.output {}
+                    span.form-input#record-progress-edit {
+                        label for = "progress" {"Progress:"}
+                        input name = "progress" type = "number" min = "0" max="100" required = "";
+                        p.error {}
+                    }
+                    input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                }
+            }
+        }
+    }
+}
+
+fn change_video_dialog() -> Markup {
+    html! {
+        div.overlay.closable {
+            div.dialog#record-video-dialog {
+                span.plus.cross.hover {}
+                h2.underlined.pad {
+                    "Change video link:"
+                }
+                p style = "max-width: 400px"{
+                    "Change the video link for this record. Note that as a list mod, you can leave the text field empty to remove the video from this record."
+                }
+                form.flex.col novalidate = "" {
+                    p.info-red.output {}
+                    p.info-green.output {}
+                    span.form-input#record-video-edit {
+                        label for = "video" {"Video link:"}
+                        input name = "video" type = "url";
+                        p.error {}
+                    }
+                    input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                }
+            }
+        }
+    }
+}
+
+fn change_holder_dialog() -> Markup {
+    html! {
+        div.overlay.closable {
+            div.dialog#record-holder-dialog {
+                span.plus.cross.hover {}
+                h2.underlined.pad {
+                    "Change record holder:"
+                }
+                div.flex.viewer {
+                    (crate::view::filtered_paginator("record-holder-dialog-pagination", "/api/v1/players/"))
+                    div {
+                        p {
+                            "Change the player associated with this record. If the player you want to change this record to already exists, search them up on the left and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to create a new player."
+                        }
+                        form.flex.col novalidate = "" {
+                            p.info-red.output {}
+                            p.info-green.output {}
+                            span.form-input#record-holder-name-edit {
+                                label for = "player" {"Player name:"}
+                                input name = "player" type="text" required = "";
+                                p.error {}
+                            }
+                            input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn change_demon_dialog(demons: &[OverviewDemon]) -> Markup {
+    html! {
+        div.overlay.closable {
+            div.dialog#record-demon-dialog {
+                span.plus.cross.hover {}
+                h2.underlined.pad {
+                    "Change record demon:"
+                }
+                div.flex.col {
+                    p {
+                        "Change the demon associated with this record. Search up the demon this record should be associated with below. Then click it to modify the record"
+                    }
+                    div.dropdown-menu.js-search#edit-demon-record {
+                        input type="text" style = "color: inherit; font-weight: bold;";
+                        div.menu {
+                           ul {
+                                @for demon in demons {
+                                    li.white.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

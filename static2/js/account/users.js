@@ -5,10 +5,9 @@ import {
   displayError,
   patch,
   valueMissing,
-  tooShort,
-  get,
-  Paginator,
-  Form
+  FilteredPaginator,
+  Form,
+  Viewer,
 } from "../modules/form.mjs";
 
 let selectedUser;
@@ -17,12 +16,12 @@ let editForm;
 
 function setupPatchUserPermissionsForm(csrfToken) {
   editForm = new Form(document.getElementById("patch-permissions"));
-  editForm.onSubmit(function(event) {
+  editForm.onSubmit(function () {
     patch(
       "/api/v1/users/" + selectedUser.id + "/",
       {
         "X-CSRF-TOKEN": csrfToken,
-        "If-Match": selectedUser.etag
+        "If-Match": selectedUser.etag,
       },
       {
         permissions:
@@ -31,10 +30,10 @@ function setupPatchUserPermissionsForm(csrfToken) {
           editForm.input("perm-list-mod").value * 0x4 +
           editForm.input("perm-list-admin").value * 0x8 +
           editForm.input("perm-mod").value * 0x2000 +
-          editForm.input("perm-admin").value * 0x4000
+          editForm.input("perm-admin").value * 0x4000,
       }
     )
-      .then(response => {
+      .then((response) => {
         if (response.status == 200) {
           selectedUser = response.data.data;
           selectedUser.etag = response.headers["etag"];
@@ -44,7 +43,7 @@ function setupPatchUserPermissionsForm(csrfToken) {
           editForm.setSuccess("No changes made!");
         }
       })
-      .catch(displayError(editForm.errorOutput));
+      .catch(displayError(editForm));
   });
 
   let deleteUserButton = document.getElementById("delete-user");
@@ -54,10 +53,10 @@ function setupPatchUserPermissionsForm(csrfToken) {
     deleteUserButton.addEventListener("click", () => {
       del("/api/v1/users/" + selectedUser.id + "/", {
         "X-CSRF-TOKEN": csrfToken,
-        "If-Match": selectedUser.etag
+        "If-Match": selectedUser.etag,
       })
-        .then(response => editForm.setSuccess("Successfully deleted user!"))
-        .catch(displayError(editForm.errorOutput));
+        .then(() => editForm.setSuccess("Successfully deleted user!"))
+        .catch(displayError(editForm));
     });
   }
 }
@@ -68,40 +67,14 @@ function setupUserByIdForm() {
 
   userId.addValidator(valueMissing, "User ID required");
 
-  userByIdForm.onSubmit(function(event) {
-    get("/api/v1/users/" + userId.value + "/")
-      .then(response => userPaginator.onReceive(response))
-      .catch(response => {
-        if (response.data.code == 40401) {
-          userId.setError(response.data.message);
-        } else {
-          userByIdForm.setError(response.data.message);
-        }
-      });
-  });
-}
-
-function setupUserByNameForm() {
-  var userByNameForm = new Form(document.getElementById("find-name-form"));
-  var userName = userByNameForm.input("find-name");
-
-  userName.addValidators({
-    "Username required": valueMissing,
-    "Username is at least 3 characters long": tooShort
-  });
-
-  userByNameForm.onSubmit(function(event) {
-    get("/api/v1/users/?name=" + userName.value)
-      .then(response => {
-        if (!response.data || response.data.length == 0) {
-          userName.setError("No user with that name found!");
-        } else {
-          get("/api/v1/users/" + response.data[0].id + "/").then(response =>
-            userPaginator.onReceive(response)
-          );
-        }
-      })
-      .catch(displayError(userByNameForm.errorOutput));
+  userByIdForm.onSubmit(function () {
+    userPaginator.selectArbitrary(userId.value).catch((response) => {
+      if (response.data.code == 40401) {
+        userId.setError(response.data.message);
+      } else {
+        userByIdForm.setError(response.data.message);
+      }
+    });
   });
 }
 
@@ -127,12 +100,19 @@ function generateUser(userData) {
   return li;
 }
 
-class UserPaginator extends Paginator {
+class UserPaginator extends FilteredPaginator {
   constructor() {
-    super("user-pagination", { limit: 10 }, generateUser);
+    super("user-pagination", generateUser, "name_contains", { limit: 10 });
+
+    this.output = new Viewer(
+      this.html.parentNode.getElementsByClassName("viewer-content")[0],
+      this
+    );
   }
 
   onReceive(response) {
+    super.onReceive(response);
+
     selectedUser = response.data.data;
     selectedUser.etag = response.headers["etag"];
 
@@ -144,29 +124,10 @@ class UserPaginator extends Paginator {
       );
     }
 
-    var text = document.getElementById("text"); // TODO: What ever the fuck was I thinking when I named this
-
-    while (text.lastChild) {
-      text.removeChild(text.lastChild);
-    }
-
-    let b = document.createElement("b");
-    b.innerText = "Username: ";
-
-    text.appendChild(b);
-    text.appendChild(document.createTextNode(selectedUser.name));
-
-    if (selectedUser.display_name) {
-      text.appendChild(
-        document.createTextNode(" (" + selectedUser.display_name + ")")
-      );
-    }
-
-    let b2 = document.createElement("b");
-    b2.innerText = " - User ID: ";
-
-    text.appendChild(b2);
-    text.appendChild(document.createTextNode(selectedUser.id));
+    document.getElementById("user-user-name").innerText = selectedUser.name;
+    document.getElementById("user-user-id").innerText = selectedUser.id;
+    document.getElementById("user-display-name").innerText =
+      selectedUser.display_name || "None";
 
     let bitmask = selectedUser.permissions;
 
@@ -184,7 +145,6 @@ class UserPaginator extends Paginator {
 export function initialize(csrfToken) {
   setupPatchUserPermissionsForm(csrfToken);
   setupUserByIdForm();
-  setupUserByNameForm();
 
   userPaginator = new UserPaginator();
   userPaginator.initialize();

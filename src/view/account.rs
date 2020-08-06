@@ -1,7 +1,7 @@
 use super::Page;
 use crate::{
     extractor::auth::TokenAuth,
-    model::user::User,
+    model::{nationality::Nationality, user::User},
     permissions::Permissions,
     state::PointercrateState,
     view::demonlist::{overview_demons, OverviewDemon},
@@ -15,8 +15,11 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+mod demons;
+mod players;
 mod profile;
 mod records;
+mod submitters;
 mod users;
 
 #[derive(Debug)]
@@ -24,6 +27,7 @@ pub struct AccountPage {
     user: User,
     csrf_token: String,
     demons: Vec<OverviewDemon>,
+    pub nations: Vec<Nationality>,
 }
 
 #[get("/account/")]
@@ -32,11 +36,18 @@ pub async fn index(user: ApiResult<TokenAuth>, state: PointercrateState) -> View
         Ok(TokenAuth(user)) => {
             let csrf_token = user.generate_csrf_token(&state.secret);
 
-            let demons = if user.inner().has_permission(Permissions::ListHelper) {
+            let (demons, nations) = if user.inner().has_permission(Permissions::ListHelper) {
                 let mut connection = state.connection().await?;
-                overview_demons(&mut connection).await?
+                (
+                    overview_demons(&mut connection).await?,
+                    if user.inner().has_permission(Permissions::ListModerator) {
+                        Nationality::all(&mut connection).await?
+                    } else {
+                        Vec::new()
+                    },
+                )
             } else {
-                Vec::new()
+                (Vec::new(), Vec::new())
             };
 
             HttpResponse::Ok().content_type("text/html; charset=utf-8").body(
@@ -44,6 +55,7 @@ pub async fn index(user: ApiResult<TokenAuth>, state: PointercrateState) -> View
                     user: user.into_inner(),
                     csrf_token,
                     demons,
+                    nations,
                 }
                 .render()
                 .0,
@@ -71,6 +83,10 @@ impl Page for AccountPage {
             "js/modules/tab.mjs",
             "js/account/profile.js",
             "js/account/users.js",
+            "js/account/records.js",
+            "js/account/demon.js",
+            "js/account/player.js",
+            "js/account/submitter.js",
             "js/staff.js",
         ]
     }
@@ -80,8 +96,6 @@ impl Page for AccountPage {
     }
 
     fn body(&self) -> Markup {
-        dbg!(self.user.has_permission(Permissions::Administrator) || self.user.has_permission(Permissions::ListAdministrator));
-        dbg!(&self.user);
         html! {
             span#chicken-salad-red-fish style = "display:none" {(self.csrf_token)}
             div.tab-display#account-tabber {
@@ -90,7 +104,7 @@ impl Page for AccountPage {
                         b {
                             "Profile"
                         }
-                        (PreEscaped("&nbsp;"))
+                        (PreEscaped("&nbsp;&nbsp;"))
                         i class = "fa fa-user fa-2x" aria-hidden="true" {}
                     }
                     @if self.user.has_permission(Permissions::Administrator) || self.user.has_permission(Permissions::ListAdministrator) {
@@ -98,7 +112,7 @@ impl Page for AccountPage {
                             b {
                                 "Users"
                             }
-                            (PreEscaped("&nbsp;"))
+                            (PreEscaped("&nbsp;&nbsp;"))
                             i class = "fa fa-users fa-2x" aria-hidden="true" {}
                         }
                     }
@@ -107,8 +121,31 @@ impl Page for AccountPage {
                             b {
                                 "Records"
                             }
-                            (PreEscaped("&nbsp;"))
+                            (PreEscaped("&nbsp;&nbsp;"))
                             i class = "fa fa-trophy fa-2x" aria-hidden="true" {}
+                        }
+                    }
+                    @if self.user.has_permission(Permissions::ListModerator) {
+                        div.tab.button.dark-grey.hover.no-shadow data-tab-id="4" {
+                            b {
+                                "Players"
+                            }
+                            (PreEscaped("&nbsp;&nbsp;"))
+                            i class = "fa fa-beer fa-2x" aria-hidden="true" {}
+                        }
+                        div.tab.button.dark-grey.hover.no-shadow data-tab-id="5" {
+                            i class = "fa fa-shower fa-2x" aria-hidden="true" {}
+                            (PreEscaped("&nbsp;&nbsp;"))
+                            b {
+                                "Demons"
+                            }
+                        }
+                        div.tab.button.dark-grey.hover.no-shadow data-tab-id="6" {
+                            b {
+                                "Submitters"
+                            }
+                            (PreEscaped("&nbsp;&nbsp;"))
+                            i class = "fa fa-eye fa-2x" aria-hidden="true" {}
                         }
                     }
                 }
@@ -120,6 +157,11 @@ impl Page for AccountPage {
                 @if self.user.has_permission(Permissions::ListHelper) {
                     (records::page(&self.demons))
                 }
+                @if self.user.has_permission(Permissions::ListModerator) {
+                    (players::page(&self.nations))
+                    (demons::page())
+                    (submitters::page())
+                }
             }
         }
     }
@@ -130,7 +172,8 @@ impl Page for AccountPage {
 
         vec![html! {
             (PreEscaped(
-                format!("<script>window.username='{}'; window.etag='{}'; window.permissions='{}'</script>", self.user.name, hasher.finish().to_string(), self.user.permissions.bits())
+                format!(r#"
+                <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.4.3/css/flag-icon.min.css" rel="stylesheet"><script>window.username='{}'; window.etag='{}'; window.permissions='{}'</script>"#, self.user.name, hasher.finish().to_string(), self.user.permissions.bits())
             ))
         }]
     }

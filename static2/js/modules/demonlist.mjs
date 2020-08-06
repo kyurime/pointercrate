@@ -1,7 +1,5 @@
 import {
-  FilteredPaginator,
   Dropdown,
-  get,
   Form,
   post,
   valueMissing,
@@ -10,13 +8,32 @@ import {
   stepMismatch,
   rangeUnderflow,
   rangeOverflow,
-  tooLong
+  tooLong,
+  findParentWithClass,
+  FilteredPaginator,
+  Viewer,
+  setupFormDialogEditor,
 } from "./form.mjs";
 
-export function initializeRecordSubmitter() {
-  var submissionForm = new Form(document.getElementById("submission-form"));
+export function embedVideo(video) {
+  if (!video) return;
+  // welcome to incredibly fragile string parsing with stadust
+  // see pointercrate::video::embed for a proper implementation of this
 
-  submissionForm.setClearOnSubmit(true);
+  if (video.startsWith("https://www.youtube")) {
+    return "https://www.youtube.com/embed/" + video.substring(32);
+  }
+
+  if (video.startsWith("https://www.twitch")) {
+    return (
+      "https://player.twitch.tv/?autoplay=false&parent=pointercrate.com&video=" +
+      video.substring(29)
+    );
+  }
+}
+
+export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
+  var submissionForm = new Form(document.getElementById("submission-form"));
 
   var demon = submissionForm.input("id_demon");
   var player = submissionForm.input("id_player");
@@ -46,12 +63,20 @@ export function initializeRecordSubmitter() {
   );
   video.addValidator(typeMismatch, "Please enter a valid URL");
 
-  submissionForm.onSubmit(function(event) {
-    post("/api/v1/records/", {}, submissionForm.serialize())
-      .then(response =>
-        submissionForm.setSuccess("Record successfully submitted")
-      )
-      .catch(response => submissionForm.setError(response.data.message)); // TODO: maybe specially handle some error codes
+  submissionForm.onSubmit(function () {
+    let data = submissionForm.serialize();
+    let headers = {};
+
+    if (submitApproved) {
+      data.status = "approved";
+      headers["X-CSRF-TOKEN"] = csrf;
+    }
+    post("/api/v1/records/", headers, data)
+      .then(() => {
+        submissionForm.setSuccess("Record successfully submitted");
+        submissionForm.clear();
+      })
+      .catch((response) => submissionForm.setError(response.data.message)); // TODO: maybe specially handle some error codes
   });
 }
 
@@ -62,9 +87,20 @@ export class StatsViewer extends FilteredPaginator {
    * @param {HtmlElement} html The container element of this stats viewer instance
    */
   constructor(html) {
-    super("stats-viewer-pagination", generatePlayer, "name_contains");
+    super(
+      "stats-viewer-pagination",
+      generateStatsViewerPlayer,
+      "name_contains"
+    );
+
+    // different from pagination endpoint here!
+    this.retrievalEndpoint = "/api/v1/players/";
 
     this.html = html;
+    this.output = new Viewer(
+      html.getElementsByClassName("viewer-content")[0],
+      this
+    );
 
     this._name = document.getElementById("player-name");
     this._created = document.getElementById("created");
@@ -83,7 +119,7 @@ export class StatsViewer extends FilteredPaginator {
     this.dropdown = new Dropdown(
       html.getElementsByClassName("dropdown-menu")[0]
     );
-    this.dropdown.addEventListener(selected => {
+    this.dropdown.addEventListener((selected) => {
       if (selected == "International") {
         this.updateQueryData("nation", undefined);
       } else {
@@ -92,12 +128,9 @@ export class StatsViewer extends FilteredPaginator {
     });
   }
 
-  // we have to override this because the pagination endpoint is different from the endpoint we retrieve data from
-  selectArbitrary(id) {
-    return get("/api/v1/players/" + id + "/").then(this.onReceive.bind(this));
-  }
-
   onReceive(response) {
+    super.onReceive(response);
+
     this._rank.innerHTML = this.currentlySelected.dataset.rank;
     this._score.innerHTML = this.currentlySelected.getElementsByTagName(
       "i"
@@ -127,15 +160,15 @@ export class StatsViewer extends FilteredPaginator {
     formatDemonsInto(this._published, playerData.published);
     formatDemonsInto(this._verified, playerData.verified);
 
-    let beaten = playerData.records.filter(record => record.progress == 100);
+    let beaten = playerData.records.filter((record) => record.progress == 100);
 
     beaten.sort((r1, r2) => r1.demon.name.localeCompare(r2.demon.name));
 
     let legacy = beaten.filter(
-      record => record.demon.position > window.extended_list_length
+      (record) => record.demon.position > window.extended_list_length
     ).length;
     let extended = beaten.filter(
-      record =>
+      (record) =>
         record.demon.position > window.list_length &&
         record.demon.position <= window.extended_list_length
     ).length;
@@ -147,26 +180,146 @@ export class StatsViewer extends FilteredPaginator {
     this._amountLegacy.textContent = legacy;
 
     var hardest = playerData.verified
-      .concat(beaten.map(record => record.demon))
+      .concat(beaten.map((record) => record.demon))
       .reduce((acc, next) => (acc.position > next.position ? next : acc), {
         position: 34832834,
-        name: "None"
+        name: "None",
       });
 
     this._hardest.textContent = hardest.name || "None";
 
     var non100Records = playerData.records
-      .filter(record => record.progress != 100)
+      .filter((record) => record.progress != 100)
       .sort((r1, r2) => r1.progress - r2.progress);
 
     formatRecordsInto(this._progress, non100Records);
-
-    $(this._welcome).hide(100);
-    $(this._content).show(100);
   }
 }
 
-function generatePlayer(player) {
+export function setupPlayerSelectionEditor(
+  backend,
+  paginatorId,
+  buttonId,
+  output
+) {
+  let paginator = new FilteredPaginator(
+    paginatorId,
+    generatePlayer,
+    "name_contains"
+  );
+
+  let form = setupFormDialogEditor(
+    backend,
+    findParentWithClass(paginator.html, "dialog").id,
+    buttonId,
+    output
+  );
+
+  let playerName = form.inputs[0];
+
+  playerName.addValidator(valueMissing, "Please provide a player name");
+
+  paginator.initialize();
+  paginator.addSelectionListener((selected) => {
+    playerName.value = selected.name;
+    form.html.requestSubmit();
+  });
+}
+
+export function generatePlayer(player) {
+  var li = document.createElement("li");
+  var b = document.createElement("b");
+  var b2 = document.createElement("b");
+
+  li.className = "dark-grey";
+
+  if (player.banned) {
+    li.style.backgroundColor = "rgba(255, 161, 174, .3)";
+  } else {
+    li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
+  }
+
+  li.dataset.name = player.name;
+  li.dataset.id = player.id;
+
+  b2.appendChild(document.createTextNode(player.id));
+
+  if (player.nationality) {
+    var span = document.createElement("span");
+
+    span.className =
+      "flag-icon flag-icon-" + player.nationality.country_code.toLowerCase();
+
+    li.appendChild(span);
+    li.appendChild(document.createTextNode(" "));
+  }
+
+  li.appendChild(b);
+  li.appendChild(document.createTextNode(player.name + " - "));
+  li.appendChild(b2);
+
+  return li;
+}
+
+export function generateDemon(demon) {
+  let li = document.createElement("li");
+  let b = document.createElement("b");
+
+  li.dataset.id = demon.id;
+
+  b.innerText = "#" + demon.position + " - ";
+
+  li.appendChild(b);
+  li.appendChild(
+    document.createTextNode(demon.name + " (ID: " + demon.id + ")")
+  );
+  li.appendChild(document.createElement("br"));
+  li.appendChild(document.createTextNode("by " + demon.publisher.name));
+
+  return li;
+}
+
+export function generateRecord(record) {
+  var li = document.createElement("li");
+  var recordId = document.createElement("b");
+
+  li.className = "dark-grey";
+  li.dataset.id = record.id;
+
+  switch (record.status) {
+    case "approved":
+      li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
+      break;
+    case "rejected":
+      li.style.backgroundColor = "rgba(255, 161, 174, .3)";
+      break;
+    case "submitted":
+      li.style.backgroundColor = "rgba(255, 255, 161, .3)";
+      break;
+    case "under consideration":
+      li.style.backgroundColor = "rgba(142, 230, 230, .3)";
+      break;
+    default:
+      break;
+  }
+
+  recordId.appendChild(document.createTextNode("Record #" + record.id));
+
+  li.appendChild(recordId);
+  li.appendChild(document.createElement("br"));
+  li.appendChild(
+    document.createTextNode(record.player.name + " (" + record.player.id + ")")
+  );
+  li.appendChild(document.createElement("br"));
+  li.appendChild(
+    document.createTextNode(record.progress + "% on " + record.demon.name)
+  );
+  li.appendChild(document.createElement("br"));
+
+  return li;
+}
+
+function generateStatsViewerPlayer(player) {
   var li = document.createElement("li");
   var b = document.createElement("b");
   var i = document.createElement("i");
@@ -226,7 +379,9 @@ function formatDemonsInto(element, demons) {
 
   if (demons.length) {
     for (var demon of demons) {
-      element.appendChild(formatDemon(demon, "/demonlist/" + demon.position + "/"));
+      element.appendChild(
+        formatDemon(demon, "/demonlist/" + demon.position + "/")
+      );
       element.appendChild(document.createTextNode(" - "));
     }
     element.removeChild(element.lastChild);

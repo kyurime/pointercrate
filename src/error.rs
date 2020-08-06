@@ -179,6 +179,13 @@ pub enum PointercrateError {
         position: i16,
     },
 
+    /// `409 CONFLICT` error returned if a player is attempted to be added to a demon where they are
+    /// already listed as creator
+    ///
+    /// Error Code: `40905`
+    #[display(fmt = "This player is already registered as a creator on this demon")]
+    CreatorExists,
+
     /// `411 LENGTH REQUIRED`
     ///
     /// Error Code `41100`
@@ -288,7 +295,7 @@ pub enum PointercrateError {
     /// `422 UNPROCESSABLE ENTITY` variant
     ///
     /// Error Code `42218`
-    #[display(fmt = "The given player is banned!")]
+    #[display(fmt = "The given player is banned and thus cannot have non-rejected records on the list!")]
     PlayerBanned,
 
     /// `422 UNPROCESSABLE ENTITY` variant
@@ -458,6 +465,7 @@ impl PointercrateError {
             PointercrateError::Conflict => 40900,
             PointercrateError::NameTaken => 40902,
             PointercrateError::DemonExists { .. } => 40904,
+            PointercrateError::CreatorExists => 40905,
 
             PointercrateError::LengthRequired => 41100,
 

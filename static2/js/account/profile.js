@@ -5,9 +5,14 @@ import {
   valueMissing,
   tooShort,
   post,
-  patch,
-  typeMismatch
+  Output,
+  typeMismatch,
+  del,
+  displayError,
 } from "../modules/form.mjs";
+import { EditorBackend } from "../modules/form.mjs";
+import { setupFormDialogEditor } from "../modules/form.mjs";
+import { Input } from "../modules/form.mjs";
 
 function setupGetAccessToken() {
   var accessTokenArea = document.getElementById("token-area");
@@ -32,21 +37,21 @@ function setupGetAccessToken() {
   loginPassword.setClearOnInvalid(true);
   loginPassword.addValidators({
     "Password required": valueMissing,
-    "Password too short. It needs to be at least 10 characters long.": tooShort
+    "Password too short. It needs to be at least 10 characters long.": tooShort,
   });
 
-  loginForm.onSubmit(function(event) {
+  loginForm.onSubmit(function () {
     post("/api/v1/auth/", {
       Authorization:
-        "Basic " + btoa(window.username + ":" + loginPassword.value)
+        "Basic " + btoa(window.username + ":" + loginPassword.value),
     })
-      .then(response => {
+      .then((response) => {
         loginPassword.value = "";
         accessToken.innerHTML = response.data.token;
         htmlLoginForm.style.display = "none";
         accessTokenArea.style.display = "block";
       })
-      .catch(response => {
+      .catch((response) => {
         if (response.data.code == 40100) {
           loginPassword.setError("Invalid credentials");
         } else {
@@ -56,68 +61,133 @@ function setupGetAccessToken() {
   });
 }
 
-function setupEditAccount() {
-  var editForm = new Form(document.getElementById("edit-form"));
+class ProfileEditorBackend extends EditorBackend {
+  constructor(passwordInput) {
+    super();
 
-  var editYtChannel = editForm.input("edit-yt-channel");
-  var editPassword = editForm.input("edit-password");
-  var authPassword = editForm.input("auth-password");
+    this._pw = passwordInput;
+    this._displayName = document.getElementById("profile-display-name");
+    this._youtube = document.getElementById("profile-youtube-channel");
+  }
 
-  editForm.addValidators({
-    "edit-yt-channel": {
-      "Please enter a valid URL": typeMismatch
-    },
-    "edit-password": {
-      "Password too short. It needs to be at least 10 characters long.": tooShort
-    },
-    "edit-password-repeat": {
-      "Password too short. It needs to be at least 10 characters long.": tooShort,
-      "Passwords don't match": rpp => rpp.value == editPassword.value
-    },
-    "auth-password": {
-      "Password required": valueMissing,
-      "Password too short. It needs to be at least 10 characters long.": tooShort
+  url() {
+    return "/api/v1/auth/me/";
+  }
+
+  headers() {
+    return {
+      "If-Match": window.etag,
+      Authorization: "Basic " + btoa(window.username + ":" + this._pw.value),
+    };
+  }
+
+  onSuccess(response) {
+    if (response.status == 204) {
+      window.location.reload();
+    } else {
+      window.etag = response.headers["etag"];
+      window.username = response.data.data.name;
+
+      this._displayName.innerText = response.data.data.display_name || "-";
+      this._youtube.removeChild(this._youtube.lastChild); // only ever has one child
+      if (response.data.data.youtube_channel) {
+        let a = document.createElement("a");
+        a.href = response.data.data.youtube_channel;
+        a.classList.add("link");
+        this._youtube.appendChild(a);
+      } else {
+        this._youtube.innerText = "-";
+      }
     }
+  }
+}
+
+function setupEditAccount() {
+  let output = new Output(document.getElementById("things"));
+  let editDisplayNameForm = setupFormDialogEditor(
+    new ProfileEditorBackend(new Input(document.getElementById("auth-dn"))), // not pretty, but oh well
+    "edit-dn-dialog",
+    "display-name-pen",
+    output
+  );
+
+  editDisplayNameForm.addValidators({
+    "auth-dn": {
+      "Password required": valueMissing,
+      "Password too short. It needs to be at least 10 characters long.": tooShort,
+    },
   });
 
-  editForm.onSubmit(function(event) {
-    patch(
-      "/api/v1/auth/me/",
-      {
-        "If-Match": window.etag,
-        Authorization:
-          "Basic " + btoa(window.username + ":" + authPassword.value)
-      },
-      editForm.serialize()
-    )
-      .then(response => {
-        if (response.status == 304) {
-          editForm.setSuccess("Nothing changed!");
-        }
-        window.location.reload();
-      })
-      .catch(response => {
-        switch (response.data.code) {
-          case 40100:
-            authPassword.setError("Invalid credentials");
-            break;
-          case 41200:
-            editForm.setError(
-              "Concurrent account access was made. Please reload the page"
-            );
-            break;
-          case 41800:
-            editForm.setError(
-              "Concurrent account access was made. Please reload the page"
-            );
-            break;
-          case 42225:
-            editYtChannel.setError(response.data.message);
-            break;
-          default:
-            editForm.setError(response.data.message);
-        }
-      });
+  editDisplayNameForm.addErrorOverride(40100, "auth-dn");
+
+  let editYoutubeForm = setupFormDialogEditor(
+    new ProfileEditorBackend(new Input(document.getElementById("auth-yt"))), // not pretty, but oh well
+    "edit-yt-dialog",
+    "youtube-pen",
+    output
+  );
+
+  editYoutubeForm.addValidators({
+    "edit-yt": {
+      "Please enter a valid URL": typeMismatch,
+    },
+    "auth-yt": {
+      "Password required": valueMissing,
+      "Password too short. It needs to be at least 10 characters long.": tooShort,
+    },
+  });
+
+  editYoutubeForm.addErrorOverride(40100, "auth-yt");
+  editYoutubeForm.addErrorOverride(42225, "edit-yt");
+
+  let changePasswordForm = setupFormDialogEditor(
+    new ProfileEditorBackend(new Input(document.getElementById("auth-pw"))), // not pretty, but oh well
+    "edit-pw-dialog",
+    "change-password",
+    output
+  );
+
+  let editPw = changePasswordForm.input("edit-pw");
+
+  changePasswordForm.addValidators({
+    "auth-pw": {
+      "Password required": valueMissing,
+      "Password too short. It needs to be at least 10 characters long.": tooShort,
+    },
+    "edit-pw": {
+      "Password too short. It needs to be at least 10 characters long.": tooShort,
+    },
+    "edit-pw-repeat": {
+      "Password too short. It needs to be at least 10 characters long.": tooShort,
+      "Passwords don't match": (rpp) => rpp.value == editPw.value,
+    },
+  });
+
+  changePasswordForm.addErrorOverride(40100, "auth-pw");
+
+  var deleteAccountDialog = document.getElementById("delete-acc-dialog");
+  var deleteAccountForm = new Form(
+    deleteAccountDialog.getElementsByTagName("form")[0]
+  );
+  document.getElementById("delete-account").addEventListener("click", () => {
+    $(deleteAccountDialog.parentElement).show();
+  });
+
+  var deleteAuth = deleteAccountForm.input("auth-delete");
+  deleteAuth.addValidators({
+    "Password required": valueMissing,
+    "Password too short. It needs to be at least 10 characters long.": tooShort,
+  });
+
+  deleteAccountForm.addErrorOverride(40100, "auth-delete");
+
+  deleteAccountForm.onSubmit(() => {
+    del("/api/v1/auth/me/", {
+      "If-Match": window.etag,
+      Authorization: "Basic " + btoa(window.username + ":" + deleteAuth.value),
+    })
+      .then(() => window.location.reload())
+      .catch(displayError(deleteAccountForm));
   });
 }
 
@@ -141,23 +211,19 @@ function setupInvalidateToken() {
   invalidateForm.addValidators({
     "invalidate-auth-password": {
       "Password required": valueMissing,
-      "Password too short. It needs to be at least 10 characters long.": tooShort
-    }
+      "Password too short. It needs to be at least 10 characters long.": tooShort,
+    },
   });
 
-  invalidateForm.onSubmit(function(event) {
+  invalidateForm.addErrorOverride(40100, "invalidate-auth-password");
+
+  invalidateForm.onSubmit(function () {
     post("/api/v1/auth/invalidate/", {
       Authorization:
-        "Basic " + btoa(window.username + ":" + invalidatePassword.value)
+        "Basic " + btoa(window.username + ":" + invalidatePassword.value),
     })
-      .then(response => window.location.reload())
-      .catch(response => {
-        if (response.data.code == 40100) {
-          loginPassword.setError("Invalid credentials");
-        } else {
-          invalidateForm.setError(response.data.message);
-        }
-      });
+      .then(() => window.location.reload())
+      .catch(displayError(invalidateForm));
   });
 }
 
