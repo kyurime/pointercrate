@@ -340,13 +340,10 @@ impl FullRecord {
                 {
                     "type": "rich",
                     "title": format!("{}% on {}", self.progress, self.demon.name),
-                    "description": format!("{}'s record's status is set to `{}`!", self.player.name, self.status),
+                    "description": format!("{}'s record's status has been set to `{}`!", self.player.name, self.status),
                     "author": {
                         "name": format!("Owner: {} (ID: {})", self.player.name, self.player.id),
                         "url": self.video
-                    },
-                    "thumbnail": {
-                        "url": "https://cdn.discordapp.com/emojis/561867333476286464.png?size=1024"
                     },
                 }
             ]
