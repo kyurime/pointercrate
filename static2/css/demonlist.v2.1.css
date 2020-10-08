@@ -147,6 +147,10 @@ tr:nth-child(even) {
   font-weight: 600;
 }
 
+#lists div .button {
+  border-radius: 0px;
+}
+
 #lists div:first-of-type .button {
   border-radius: 0 0 0 12px;
 }

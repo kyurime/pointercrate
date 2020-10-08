@@ -25,16 +25,16 @@ static MAIN_SECTION: ListSection = ListSection {
     id: "mainlist",
     numbered: true,
 };
-/*
+
 static EXTENDED_SECTION: ListSection = ListSection {
     name: "Extended List",
-    description: "These are demons that dont qualify for the main section of the list, but are still of high relevance. Only 100% records \
-                  are accepted for these demons! Note that non-100% that were submitted/approved before a demon fell off the main list \
-                  will be retained",
+    description: "These are demons that don't qualify for the main section of the list, but are still of high relevance. Only 100% records \
+                  are accepted for these demons! Non-100% records that were submitted/approved before a demon fell off the main list \
+                  will be retained.",
     id: "extended",
     numbered: true,
 };
-*/
+
 static LEGACY_SECTION: ListSection = ListSection {
     name: "Legacy List",
     description: "These are demons that used to be on the list, but got pushed off as new demons were added. They are here for nostalgic \
@@ -64,6 +64,8 @@ fn dropdowns(all_demons: &[OverviewDemon], current: Option<&Demon>) -> Markup {
         nav.flex.wrap.m-center.fade#lists style="text-align: center;" {
             // The drop down for the main list:
             (dropdown(&MAIN_SECTION, main, current))
+            // The drop down for the extended list:
+            (dropdown(&EXTENDED_SECTION, extended, current))
             // The drop down for the legacy list:
             (dropdown(&LEGACY_SECTION, legacy, current))
         }
