@@ -194,7 +194,7 @@ impl Demon {
 
     /// Gets the current max position a demon has
     pub async fn max_position(connection: &mut PgConnection) -> Result<i16> {
-        sqlx::query!("SELECT MAX(position) as max_position FROM demons")
+        sqlx::query!("SELECT COALESCE(MAX(position), 1::SMALLINT) as max_position FROM demons")
             .fetch_one(connection)
             .await
             .map(|row| row.max_position)
@@ -205,9 +205,9 @@ impl Demon {
     ///
     /// The returned tuple is of the form (max, min)
     pub async fn extremal_demon_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!("SELECT MAX(id) AS max_id, MIN(id) AS min_id FROM demons")
+        let row = sqlx::query!("SELECT COALESCE(MAX(id), 0) AS max_id, COALESCE(MIN(id), 0) AS min_id FROM demons")
             .fetch_one(connection)
-            .await?; // FIXME: crashes on empty table
+            .await?;
         Ok((row.max_id, row.min_id))
     }
 

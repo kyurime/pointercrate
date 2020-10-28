@@ -20,9 +20,9 @@ impl Submitter {
     ///
     /// The returned tuple is of the form (max, min)
     pub async fn extremal_submitter_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!("SELECT MAX(submitter_id) AS max_id, MIN(submitter_id) AS min_id FROM submitters")
+        let row = sqlx::query!("SELECT COALESCE(MAX(submitter_id), 0) AS max_id, COALESCE(MIN(submitter_id), 0) AS min_id FROM submitters")
             .fetch_one(connection)
-            .await?; // FIXME: crashes on empty table
+            .await?;
         Ok((row.max_id, row.min_id))
     }
 }
