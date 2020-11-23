@@ -354,12 +354,17 @@ fn rules_panel() -> Markup {
                 }
                 li {
                     span {
-                        " Anyone posting illegitimate recordings and passing them off as legit will have their records removed from the list. Illegitimate records include, but aren't limited to, speedhacks, noclip, auto, nerfs, macros, etc."
+                        "Anyone posting illegitimate recordings and passing them off as legit will have their records removed from the list. Illegitimate records include, but aren't limited to, speedhacks, noclip, auto, nerfs, macros, etc."
                     }
                 }
                 li {
                     span {
                         "Records on a level must be in normal mode and on the live version of the level or on an appropriate bug fixed/low detail copy of said level. Please refer to the bugfix and LDM guidelines."
+                    }
+                }
+                li {
+                    span {
+                        "Records done on the 2.1 version of Geometry Dash must have audible and clear clicks."
                     }
                 }
                 li {
