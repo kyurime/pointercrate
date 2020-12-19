@@ -41,8 +41,9 @@ pub trait Page {
                     meta property="og:title" content = (self.title());
                     meta property="og:description" content = (self.description());
 
+                    meta name="referrer" content = "no-referrer";
                     meta name ="viewport" content="initial-scale=1, maximum-scale=1";
-                    meta name="author" content = "stadust, zmx";
+                    meta name="author" content = "kyurime";
                     meta name="keywords" content ="geometry,dash,hardest,insane,demon,list,demonlist,hardest,levels,gmd,gd,game,top,1.9,gdps";
                     meta name="description" content = (self.description());
                     meta http-equiv="Content-Type" content = "text/html; charset=utf-8";
