@@ -12,7 +12,7 @@ use actix_web_codegen::get;
 use chrono::NaiveDateTime;
 use dash_rs::{
     model::{
-        level::{DemonRating, LevelRating, Password},
+        level::{DemonRating, LevelRating},
         GameVersion,
     },
     Thunk,
@@ -188,9 +188,13 @@ impl Demonlist {
                                     "Length: "
                                 }
                                 br;
-                                @match stats {
-                                    Some(ref stats) => (format!("{}:{:02}", stats.duration.as_secs() / 60, stats.duration.as_secs() % 60)),
-                                    _ => (level.base.length.to_string())
+                                @match level_data.level_data {
+                                    Thunk::Processed(ref objects) => {
+                                        @let length_in_seconds = objects.length_in_seconds();
+
+                                        (format!("{}m:{:02}s", (length_in_seconds as i32)/ 60, (length_in_seconds as i32) % 60))
+                                    }
+                                    _ => "unreachable!()"
                                 }
                             }
                             span {
