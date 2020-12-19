@@ -11,10 +11,6 @@ use actix_web::{web::Path, HttpResponse};
 use actix_web_codegen::get;
 use chrono::NaiveDateTime;
 use dash_rs::{
-    model::{
-        level::{DemonRating, LevelRating},
-        GameVersion,
-    },
     Thunk,
 };
 use log::error;
@@ -207,34 +203,6 @@ impl Demonlist {
                                     _ => "unreachable!()"
                                 }
                             }
-                            span {
-                                b {
-                                    "In-Game Difficulty: "
-                                }
-                                br;
-                                @match level.difficulty {
-                                    LevelRating::NotAvailable => "Unrated",
-                                    LevelRating::Demon(demon_rating) => @match demon_rating {
-                                        DemonRating::Easy => "Easy Demon",
-                                        DemonRating::Medium => "Medium Demon",
-                                        DemonRating::Hard => "Hard Demon",
-                                        DemonRating::Insane => "Insane Demon",
-                                        DemonRating::Extreme => "Extreme Demon",
-                                        _ => "???"
-                                    },
-                                    _ => "Level not rated demon, list mods fucked up"
-                                }
-                            }
-                            @match level.gd_version {
-                                GameVersion::Version{major, minor} => span {
-                                    b {
-                                        "Created in:"
-                                    }
-                                    br;
-                                    (major) "." (minor)
-                                },
-                                _ => {}
-                            }
                             @if let Some(song) = song {
                                 span style = "width: 100%"{
                                     b {
@@ -242,7 +210,7 @@ impl Demonlist {
                                     }
                                     br;
                                     @match song.link {
-                                        Thunk::Processed(ref link) => a.link href = (link.0) {(song.name) " by " (song.artist) " (ID " (song.song_id) ")"},
+                                        Thunk::Processed(ref link) => a.link href = (link.0) {(song.name) " by " (song.artist) " (" (song.song_id) ")"},
                                         _ => "unreachable!()"
                                     }
                                 }
