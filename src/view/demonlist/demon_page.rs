@@ -10,9 +10,7 @@ use crate::{
 use actix_web::{web::Path, HttpResponse};
 use actix_web_codegen::get;
 use chrono::NaiveDateTime;
-use dash_rs::{
-    Thunk,
-};
+use dash_rs::Thunk;
 use log::error;
 use maud::{html, Markup, PreEscaped, Render};
 
