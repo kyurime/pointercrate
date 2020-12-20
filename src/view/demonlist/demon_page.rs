@@ -150,6 +150,38 @@ impl Demonlist {
                     }
                 }
                 div.underlined.pad.flex.wrap#level-info {
+                    @if position <= config::extended_list_size() {
+                        span {
+                            b {
+                                "List score (100%): "
+                            }
+                            br;
+                                (format!("{:.2}", score100))
+                        }
+                    }
+                    @if position <= config::list_size(){
+                        span {
+                            b {
+                                "List score (" (self.data.demon.requirement) "%): "
+                            }
+                            br;
+                            (format!("{:.2}", score_requirement))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn level_info_panel(&self) -> Markup {
+        html! {
+            section.records.panel.fade.js-scroll-anim data-anim = "fade" {
+                div {
+                    h2 {
+                        "Info"
+                    }
+                }
+                div.flex.wrap#level-info {
                     @match &self.integration {
                         GDIntegrationResult::DemonNotFoundByName => {
                             p.info-red {
@@ -174,28 +206,27 @@ impl Demonlist {
                         GDIntegrationResult::Success(level, level_data, song) => {
                             span {
                                 b {
-                                    "ID: "
+                                    "ID:"
                                 }
                                 br;
                                 (level.level_id)
                             }
                             span {
                                 b {
-                                    "Length: "
+                                    "Length:"
                                 }
                                 br;
                                 @match level_data.level_data {
                                     Thunk::Processed(ref objects) => {
                                         @let length_in_seconds = objects.length_in_seconds();
-
-                                        (format!("{}m:{:02}s", (length_in_seconds as i32)/ 60, (length_in_seconds as i32) % 60))
+                                        (format!("{}:{:02}", (length_in_seconds as i32)/ 60, (length_in_seconds as i32) % 60))
                                     }
                                     _ => "unreachable!()"
                                 }
                             }
                             span {
                                 b {
-                                    "Objects: "
+                                    "Objects:"
                                 }
                                 br;
                                 @match level_data.level_data {
@@ -204,35 +235,17 @@ impl Demonlist {
                                 }
                             }
                             @if let Some(song) = song {
-                                span style = "width: 100%"{
+                                span {
                                     b {
                                         "Song:"
                                     }
                                     br;
                                     @match song.link {
-                                        Thunk::Processed(ref link) => a.link href = (link.0) {(song.name) " by " (song.artist) " (" (song.song_id) ")"},
+                                        Thunk::Processed(ref link) => a.link title = (song.song_id) href = (link.0) {(song.name) " by " (song.artist)},
                                         _ => "unreachable!()"
                                     }
                                 }
                             }
-                        }
-                    }
-                    @if position <= config::extended_list_size() {
-                        span {
-                            b {
-                                "List score (100%): "
-                            }
-                            br;
-                                (format!("{:.2}", score100))
-                        }
-                    }
-                    @if position <= config::list_size(){
-                        span {
-                            b {
-                                "List score (" (self.data.demon.requirement) "%): "
-                            }
-                            br;
-                            (format!("{:.2}", score_requirement))
                         }
                     }
                 }
@@ -391,6 +404,7 @@ impl Page for Demonlist {
                     (super::submission_panel())
                     (super::stats_viewer(&self.overview.nations))
                     (self.demon_panel())
+                    (self.level_info_panel())
                     div.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
                         h2.underlined.pad {
                             "Position History"
