@@ -51,7 +51,7 @@ pub enum PointercrateError {
 
     /// `400 BAD REQUEST` error with a message
     ///
-    /// Error Code `40000`
+    /// Error Code `40001`
     #[display(fmt = "{}", message)]
     BadRequest {
         #[serde(skip)]
@@ -69,7 +69,7 @@ pub enum PointercrateError {
 
     /// `401 UNAUTHORIZED`
     ///
-    /// Erro code 40100
+    /// Error code 40100
     #[display(
         fmt = "The server could not verify that you are authorized to access the URL requested. You either supplied the wrong credentials \
                (e.g. a bad password) or your browser doesn't understand how to supply the credentials required."
@@ -185,6 +185,12 @@ pub enum PointercrateError {
     /// Error Code: `40905`
     #[display(fmt = "This player is already registered as a creator on this demon")]
     CreatorExists,
+
+    /// `409 CONFLICT` variant
+    ///
+    /// Error Code `40906`
+    #[display(fmt = "This video is already used by record #{}", id)]
+    DuplicateVideo { id: i32 },
 
     /// `411 LENGTH REQUIRED`
     ///
@@ -466,6 +472,7 @@ impl PointercrateError {
             PointercrateError::NameTaken => 40902,
             PointercrateError::DemonExists { .. } => 40904,
             PointercrateError::CreatorExists => 40905,
+            PointercrateError::DuplicateVideo { .. } => 40906,
 
             PointercrateError::LengthRequired => 41100,
 

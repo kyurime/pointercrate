@@ -126,7 +126,7 @@ fn dropdown(section: &ListSection, demons: &[OverviewDemon], current: Option<&De
     }
 }
 
-pub(super) fn submission_panel() -> Markup {
+pub(super) fn submission_panel(demons: &[OverviewDemon]) -> Markup {
     html! {
         section.panel.fade.closable#submitter style = "display: none" {
             span.plus.cross.hover {}
@@ -143,8 +143,19 @@ pub(super) fn submission_panel() -> Markup {
                     p {
                         "The demon the record was made on. Only demons in the top " (config::extended_list_size()) " are accepted. This excludes legacy demons!"
                     }
-                    span.form-input.flex.col#id_demon {
-                        input type = "text" name = "demon" required="" placeholder = "e. g. 'Bloodbath', 'Yatagarasu'" ;
+                    span.form-input data-type = "dropdown" {
+                        div.dropdown-menu.js-search#id_demon {
+                            input type = "text" name = "demon" required="";
+                            div.menu {
+                               ul {
+                                    @for demon in demons {
+                                        @if demon.position <= config::extended_list_size() {
+                                            li.white.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         p.error {}
                     }
                     h3 {
@@ -161,7 +172,7 @@ pub(super) fn submission_panel() -> Markup {
                         "Progress:"
                     }
                     p {
-                        "The progress made as percentage. Only values greater than the demons record requirement and smaller than or equal to 100 are accepted!"
+                        "The progress made as percentage. Only values greater than or equal to the demons record requirement and smaller than or equal to 100 are accepted!"
                     }
                     span.form-input.flex.col#id_progress {
                         input type = "number" name = "progress" required="" placeholder = "e. g. '50', '98'" min="0" max="100";
@@ -185,7 +196,7 @@ pub(super) fn submission_panel() -> Markup {
                         "Notes or comments: "
                     }
                     p {
-                        "Provide any additional notes you'd like to pass on to the list moderator receiving your submission."
+                        "Provide any additional notes you'd like to pass on to the list moderator receiving your submission. In particular, any required " b { "raw footage"} " goes here."
                     }
                     span.form-input.flex.col#submit-note {
                         textarea name = "note" placeholder = "Your dreams and hopes for this record... or something like that" {}
@@ -324,10 +335,9 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
 
 fn rules_panel() -> Markup {
     html! {
-        section#rules.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
+        section#rules.panel.fade.js-scroll-anim data-anim = "fade" {
             h2.underlined.pad.clickable {
-                "Rules:"
-                span.arrow.hover {}
+                "Guidelines:"
             }
             ul.roman.js-collapse-content style="display:none" {
                 h3 {

@@ -366,8 +366,8 @@ textarea:invalid {
 .search {
   padding: 0px 4px;
 
-  border: 1px solid #525252e6;
-  border-radius: 12px;
+  border: 1px solid #999;
+  border-radius: 0px;
 
   display: flex;
   justify-content: space-between;
@@ -482,6 +482,7 @@ input::placeholder {
 .dropdown-menu .menu {
   position: absolute;
   display: none;
+  top: 2em; /* place it below the box! */
 
   width: calc(100% - 2px);
   max-height: 400px;
@@ -590,19 +591,19 @@ h2 .dropdown-menu ul {
 
 /* (Under)lines */
 .underlined {
-  
+
   margin-bottom: 2px;
 
-  border-bottom: 1px solid transparent;
-  /*
+  /*border-bottom: 1px solid transparent;
   border-image: linear-gradient(
       to right,
-      rgba(0, 0, 0, 0) 10%,
-      rgba(211, 211, 211, 0.9) 25%,
-      rgba(211, 211, 211, 0.9) 75%,
-      rgba(0, 0, 0, 0) 90%
-    );
-  */
+      rgba(0, 0, 0, 0) 0%,
+      rgba(211, 211, 211, 1) 15%,
+      rgba(211, 211, 211, 1) 85%,
+      rgba(0, 0, 0, 0) 100%
+    )
+    1;
+  border-bottom: 1px solid rgba(211, 211, 211, 1);*/
 }
 
 .underlined.pad {
@@ -612,8 +613,7 @@ h2 .dropdown-menu ul {
 .leftlined {
   margin-left: 5px;
 
-  border-left: 1px solid transparent;
-  /*
+  /*border-left: 1px solid transparent;
   border-image: linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0) 0%,
@@ -622,6 +622,7 @@ h2 .dropdown-menu ul {
       rgba(0, 0, 0, 0) 100%
     )
     1;*/
+  border-left: 1px solid rgba(211, 211, 211, 1);
 }
 
 .leftlined.pad {
@@ -633,7 +634,7 @@ h2 .dropdown-menu ul {
 .rightlined {
   margin-right: 5px;
 
-  border-right: 1px solid transparent;
+  /*border-right: 1px solid transparent;
   border-image: linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0) 0%,
@@ -641,7 +642,8 @@ h2 .dropdown-menu ul {
       rgba(211, 211, 211, 1) 85%,
       rgba(0, 0, 0, 0) 100%
     )
-    1;
+    1;*/
+  border-right: 1px solid rgba(211, 211, 211, 1);
 }
 
 .rightlined.pad {
@@ -651,7 +653,7 @@ h2 .dropdown-menu ul {
 .overlined {
   margin-top: 5px;
 
-  border-top: 1px solid transparent;
+  /*border-top: 1px solid transparent;
   border-image: linear-gradient(
       to right,
       rgba(0, 0, 0, 0) 0%,
@@ -659,7 +661,8 @@ h2 .dropdown-menu ul {
       rgba(211, 211, 211, 1) 85%,
       rgba(0, 0, 0, 0) 100%
     )
-    1;
+    1;*/
+  border-top: 1px solid rgba(211, 211, 211, 1);
 }
 
 .overlined.pad {

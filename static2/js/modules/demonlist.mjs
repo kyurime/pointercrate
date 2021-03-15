@@ -40,7 +40,7 @@ export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
   var progress = submissionForm.input("id_progress");
   var video = submissionForm.input("id_video");
 
-  demon.addValidator(valueMissing, "Please specify a demon");
+  demon.addValidator(input => input.dropdown.selected !== undefined, "Please specify a demon");
 
   player.addValidator(valueMissing, "Please specify a record holder");
   player.addValidator(
@@ -76,7 +76,28 @@ export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
         submissionForm.setSuccess("Record successfully submitted");
         submissionForm.clear();
       })
-      .catch((response) => submissionForm.setError(response.data.message)); // TODO: maybe specially handle some error codes
+      .catch((response) =>  {
+        switch(response.data.code) {
+          case 40401:
+            demon.errorText = response.data.message;
+            break;
+          case 42218:
+            player.errorText = response.data.message;
+            break;
+          case 42215:
+          case 42220:
+            progress.errorText = response.data.message;
+            break;
+          case 42222:
+          case 42223:
+          case 42224:
+          case 42225:
+            video.errorText = response.data.message;
+            break;
+          default:
+            submissionForm.setError(response.data.message)
+        }
+      }); // TODO: maybe specially handle some error codes
   });
 }
 
@@ -131,6 +152,7 @@ export class StatsViewer extends FilteredPaginator {
   onReceive(response) {
     super.onReceive(response);
 
+    // Using currentlySelected is O.K. here, as selection via clicking li-elements is the only possibility!
     this._rank.innerHTML = this.currentlySelected.dataset.rank;
     this._score.innerHTML = this.currentlySelected.getElementsByTagName(
       "i"
@@ -360,6 +382,7 @@ function formatDemon(demon, link) {
     element = document.createElement("span");
   } else {
     element = document.createElement("i");
+    element.style.opacity = ".5";
   }
 
   if (link) {

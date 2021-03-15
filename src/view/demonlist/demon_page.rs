@@ -151,16 +151,16 @@ impl Demonlist {
                     @if position <= config::extended_list_size() {
                         span {
                             b {
-                                "List score (100%): "
+                                "Demonlist score (100%): "
                             }
                             br;
-                                (format!("{:.2}", score100))
+                            (format!("{:.2}", score100))
                         }
                     }
                     @if position <= config::list_size(){
                         span {
                             b {
-                                "List score (" (self.data.demon.requirement) "%): "
+                                "Demonlist score (" (self.data.demon.requirement) "%): "
                             }
                             br;
                             (format!("{:.2}", score_requirement))
@@ -399,7 +399,7 @@ impl Page for Demonlist {
 
             div.flex.m-center.container {
                 main.left {
-                    (super::submission_panel())
+                    (super::submission_panel(&self.overview.demon_overview))
                     (super::stats_viewer(&self.overview.nations))
                     (self.demon_panel())
                     (self.level_info_panel())
@@ -422,6 +422,7 @@ impl Page for Demonlist {
             }
             aside.right {
                     (self.overview.team_panel())
+                    (super::rules_panel())
                     (super::submit_panel())
                     (super::rules_panel())
                     (super::stats_viewer_panel())

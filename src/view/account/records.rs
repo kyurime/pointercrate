@@ -19,7 +19,8 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                 div.viewer-content {
                     div.flex.col {
                         h3 style = "font-size:1.1em; margin-top: 10px" {
-                            "Record #"
+                            i.fa.fa-clipboard.clickable#record-copy-info aria-hidden = "true" {}
+                            " Record #"
                             i#record-id {}
                             " - "
                             div.dropdown-menu.js-search#edit-record-status style = "max-width: 220px"{
@@ -39,7 +40,7 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                         p.info-red.output style = "margin: 10px" {}
                         p.info-green.output style = "margin: 10px" {}
                         div.stats-container.flex.space  {
-                            span{
+                            span {
                                 b {
                                     i.fa.fa-pencil.clickable#record-video-pen aria-hidden = "true" {} " Video Link:"
                                 }
@@ -232,7 +233,7 @@ pub(super) fn page(demons: &[OverviewDemon]) -> Markup {
     html! {
         div.m-center.flex.tab-content.container data-tab-id = "3" {
             div.left {
-                (crate::view::demonlist::submission_panel())
+                (crate::view::demonlist::submission_panel(demons))
                 (record_manager(demons))
                 (note_adder())
                 div.panel.fade#record-notes-container style = "display:none" {

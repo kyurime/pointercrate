@@ -1,5 +1,6 @@
 use crate::{
     cistring::CiString,
+    error::PointercrateError,
     model::{
         demonlist::player::{DatabasePlayer, Player, RankedPlayer},
         nationality::Nationality,
@@ -39,6 +40,12 @@ pub struct PlayerPagination {
 
 impl PlayerPagination {
     pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<Player>> {
+        if let Some(limit) = self.limit {
+            if limit < 1 || limit > 100 {
+                return Err(PointercrateError::InvalidPaginationLimit)
+            }
+        }
+
         let order = if self.after_id.is_none() && self.before_id.is_some() {
             "DESC"
         } else {
@@ -108,6 +115,12 @@ pub struct RankingPagination {
 
 impl RankingPagination {
     pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<RankedPlayer>> {
+        if let Some(limit) = self.limit {
+            if limit < 1 || limit > 100 {
+                return Err(PointercrateError::InvalidPaginationLimit)
+            }
+        }
+
         let order = if self.before_index.is_some() && self.after_index.is_none() {
             "DESC"
         } else {

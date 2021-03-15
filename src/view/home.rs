@@ -114,12 +114,13 @@ impl Page for Homepage {
                         h2 { "GitHub Repo ~"}
                         h3 { "The entirety of the pointercrate codebase - on GitHub!"}
                         p{"Found a bug on the website? Want to help with development? Or maybe you just want to find out how everything here works? Head over to the pointercrate GitHub repository!"}
+                        p{"Even our Geometry Dash integration, dash-rs, can be found there!"}
                     }
                 }
             }
             div.center.information-banner.left {
                 div.tab-display#changelog-tabs {
-                    div style = "display: flex; flex-flow: column;"{
+                    div style = "display: flex; flex-flow: column;" {
                         h2 style="text-align: left; margin-top: 0px" {
                             "Changelog"
                         }
