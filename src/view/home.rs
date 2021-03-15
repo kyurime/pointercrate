@@ -33,8 +33,7 @@ impl Page for Homepage {
     }
 
     fn description(&self) -> String {
-        "This is the home of the Geometry Dash 1.9 Private Server demonlist"
-            .to_owned()
+        "This is the home of the Geometry Dash 1.9 Private Server demonlist".to_owned()
     }
 
     fn scripts(&self) -> Vec<&str> {

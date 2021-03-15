@@ -277,10 +277,9 @@ impl FullRecord {
 
     async fn execute_webhook(&self, state: &PointercrateState, webhook_type: WebhookType) {
         if let Some(ref webhook_url) = state.webhook_url {
-
             let body = match webhook_type {
                 WebhookType::Edited => self.webhook_status_embed().to_string(),
-                _ => self.webhook_embed().to_string()
+                _ => self.webhook_embed().to_string(),
             };
 
             match state

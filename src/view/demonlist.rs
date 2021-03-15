@@ -28,9 +28,9 @@ static MAIN_SECTION: ListSection = ListSection {
 
 static EXTENDED_SECTION: ListSection = ListSection {
     name: "Extended List",
-    description: "These are demons that don't qualify for the main section of the list, but are still of high relevance. Only 100% records \
-                  are accepted for these demons! Non-100% records that were submitted/approved before a demon fell off the main list \
-                  will be retained.",
+    description: "These are demons that don't qualify for the main section of the list, but are still of high relevance. Only 100% \
+                  records are accepted for these demons! Non-100% records that were submitted/approved before a demon fell off the main \
+                  list will be retained.",
     id: "extended",
     numbered: true,
 };
