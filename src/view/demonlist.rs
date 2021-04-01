@@ -133,7 +133,7 @@ pub fn demon_dropdown<'a>(dropdown_id: &str, demons: impl Iterator<Item = &'a Ov
             div.menu {
                ul {
                     @for demon in demons {
-                        li.white.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}
+                        li.dark-grey.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}
                     }
                 }
             }
