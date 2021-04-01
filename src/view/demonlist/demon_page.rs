@@ -119,7 +119,7 @@ impl Demonlist {
                     }
                     (PreEscaped(format!(r#"
                     <script>
-                    document.getElementById("demon-heading").addEventListener('click', () => navigator.clipboard.writeText('https://pointercrate.com/demonlist/permalink/{}/'))
+                    document.getElementById("demon-heading").addEventListener('click', () => navigator.clipboard.writeText('https://pointercrate.xyze.dev/demonlist/permalink/{}/'))
                     </script>
                     "#, self.data.demon.base.id)))
                     h3 {
