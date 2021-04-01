@@ -20,9 +20,9 @@ function generateSubmitter(submitter) {
   li.dataset.id = submitter.id;
 
   if (submitter.banned) {
-    li.style.backgroundColor = "rgba(255, 161, 174, .3)";
+    li.style.backgroundColor = "rgba(255, 33, 64, .3)";
   } else {
-    li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
+    li.style.backgroundColor = "rgba(161, 255, 101, .3)";
   }
 
   b.innerText = "Submitter #" + submitter.id;
