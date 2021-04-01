@@ -36,20 +36,6 @@ pub trait Page {
                         (self.title())
                     }
 
-                    script data-ad-client="ca-pub-3064790497687357" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" {}
-
-                    (PreEscaped(r#"
-                    <!-- Global site tag (gtag.js) - Google Analytics -->
-                    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2SGJ4S0TQM"></script>
-                    <script>
-                      window.dataLayer = window.dataLayer || [];
-                      function gtag(){dataLayer.push(arguments);}
-                      gtag('js', new Date());
-                    
-                      gtag('config', 'G-2SGJ4S0TQM');
-                    </script>
-                    "#));
-
                     meta property="og:site_name" content="pointercrate";
                     meta property="og:type" content="website";
                     meta property="og:title" content = (self.title());

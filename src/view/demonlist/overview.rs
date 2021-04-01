@@ -174,7 +174,6 @@ impl Page for DemonlistOverview {
         let dropdowns = super::dropdowns(&self.demon_overview, None);
 
         html! {
-            (super::besides_sidebar_ad())
             (dropdowns)
 
             div.flex.m-center.container {
@@ -219,30 +218,12 @@ impl Page for DemonlistOverview {
                                     }
                                 }
                             }
-                            // Place ad every 20th demon
-                            @if demon.position % 20 == 0 || demon.position == 1 {
-                                section.panel.fade {
-                                (PreEscaped(r#"
-                                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-                                    <ins class="adsbygoogle"
-                                         style="display:block"
-                                         data-ad-format="fluid"
-                                         data-ad-layout-key="-h1+40+4u-93+n"
-                                         data-ad-client="ca-pub-3064790497687357"
-                                         data-ad-slot="5157884729"></ins>
-                                    <script>
-                                         (adsbygoogle = window.adsbygoogle || []).push({});
-                                    </script>
-                                    "#))
-                                }
-                            }
                         }
                     }
                 }
 
                 aside.right {
                     (self.team_panel())
-                    (super::sidebar_ad())
                     (super::rules_panel())
                     (super::submit_panel())
                     (super::stats_viewer_panel())

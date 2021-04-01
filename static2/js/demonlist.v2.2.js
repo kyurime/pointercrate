@@ -12,7 +12,6 @@ $(document).ready(function () {
   document
     .getElementById("show-stats-viewer")
     .addEventListener("click", () => {
-      gtag('event', 'stats-viewer-opened', {'event-category': 'demonlist'});
       window.statsViewer.initialize()
     });
 });

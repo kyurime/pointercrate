@@ -413,24 +413,10 @@ impl Page for Demonlist {
         }
 
         html! {
-            (super::besides_sidebar_ad())
             (dropdowns)
 
             div.flex.m-center.container {
                 main.left {
-                    div.panel.fade style = "padding: 0px; height: 90px" {
-                        (PreEscaped(r#"
-                        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-                        <!-- Demonpage Banner ad -->
-                        <ins class="adsbygoogle"
-                             style="display:inline-block;width:728px;height:90px"
-                             data-ad-client="ca-pub-3064790497687357"
-                             data-ad-slot="4829214686"></ins>
-                        <script>
-                             (adsbygoogle = window.adsbygoogle || []).push({});
-                        </script>
-                        "#))
-                    }
                     (super::submission_panel(&self.overview.demon_overview))
                     (super::stats_viewer(&self.overview.nations))
                     (self.demon_panel())
@@ -454,7 +440,6 @@ impl Page for Demonlist {
             }
             aside.right {
                     (self.overview.team_panel())
-                    (super::sidebar_ad())
                     (super::rules_panel())
                     (super::submit_panel())
                     (super::rules_panel())
