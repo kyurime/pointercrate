@@ -440,7 +440,6 @@ impl Page for Demonlist {
             }
             aside.right {
                     (self.overview.team_panel())
-                    (super::rules_panel())
                     (super::submit_panel())
                     (super::rules_panel())
                     (super::stats_viewer_panel())

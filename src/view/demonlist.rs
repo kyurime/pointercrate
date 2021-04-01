@@ -382,9 +382,10 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
 
 fn rules_panel() -> Markup {
     html! {
-        section#rules.panel.fade.js-scroll-anim data-anim = "fade" {
+        section#rules.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
             h2.underlined.pad.clickable {
-                "Guidelines:"
+                "Rules:"
+                span.arrow.hover {}
             }
             ul.roman.js-collapse-content style="display:none" {
                 h3 {
