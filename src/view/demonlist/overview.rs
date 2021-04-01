@@ -181,11 +181,11 @@ impl Page for DemonlistOverview {
                     (super::submission_panel(&self.demon_overview))
                     (super::stats_viewer(&self.nations))
                     @if let Some(when) = self.when {
-                        div.panel.fade.blue.flex style="align-items: end; " {
+                        div.panel.fade.flex style="align-items: end; " {
                              span style = "text-align: end"{"You are currently looking at the demonlist how it was on"
                              br;
                              b{(when)}}
-                             a.white.button href = "/demonlist/" style = "margin-left: 15px"{ b{"Go to present" }}
+                             a.dark-grey.button href = "/demonlist/" style = "margin-left: 15px"{ b{"Go to present" }}
                         }
                     }
                     @for demon in &self.demon_overview {
