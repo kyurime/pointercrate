@@ -131,7 +131,7 @@ impl Page for AccountPage {
                                 "Players"
                             }
                             (PreEscaped("&nbsp;&nbsp;"))
-                            i class = "fa fa-beer fa-2x" aria-hidden="true" {}
+                            i class = "fa fa-mouse-pointer fa-2x" aria-hidden="true" {}
                         }
                         div.tab.button.dark-grey.hover.no-shadow data-tab-id="5" {
                             i class = "fa fa-shower fa-2x" aria-hidden="true" {}
