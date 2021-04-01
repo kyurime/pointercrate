@@ -16,15 +16,13 @@ import {
   setupFormDialogEditor,
   Output,
   setupDropdownEditor,
-  setupDialogEditor,
-  PaginatorEditorBackend,
+  PaginatorEditorBackend, setupEditorDialog, DropdownDialog,
 } from "../modules/form.mjs";
 import {
   initializeRecordSubmitter,
   generateRecord,
-  embedVideo,
+  embedVideo, PlayerSelectionDialog,
 } from "../modules/demonlist.mjs";
-import { setupPlayerSelectionEditor } from "../modules/demonlist.mjs";
 
 export let recordManager;
 
@@ -75,12 +73,8 @@ class RecordManager extends Paginator {
 
     this.initProgressDialog();
     this.initVideoDialog();
-    setupPlayerSelectionEditor(
-      new PaginatorEditorBackend(this, this._tok, true),
-      "record-holder-dialog-pagination",
-      "record-holder-pen",
-      this.output
-    );
+
+    setupEditorDialog(new PlayerSelectionDialog("record-holder-dialog"), "record-holder-pen", new PaginatorEditorBackend(this, this._tok, true), this.output);
     this.initDemonDialog();
 
     document.getElementById("record-copy-info").addEventListener('click', () => {
@@ -131,16 +125,13 @@ class RecordManager extends Paginator {
   }
 
   initDemonDialog() {
-    var editor = setupDialogEditor(
-      new PaginatorEditorBackend(this, this._tok, true),
-      "record-demon-dialog",
+    setupEditorDialog(
+      new DropdownDialog("record-demon-dialog", "edit-demon-record"),
       "record-demon-pen",
-      this.output
+      new PaginatorEditorBackend(this, this._tok, true),
+      this.output,
+      demonId => ({demon_id: parseInt(demonId)})
     );
-
-    new Dropdown(
-      document.getElementById("edit-demon-record")
-    ).addEventListener((demonId) => editor({ demon_id: parseInt(demonId) }));
   }
 
   onReceive(response) {
@@ -154,12 +145,16 @@ class RecordManager extends Paginator {
 
     if (embeddedVideo !== undefined) {
       this._video.style.display = "block";
-      this._video_link.style.display = "initial";
       this._video.src = embeddedVideo;
-      this._video_link.href = this.currentObject.video;
-      this._video_link.innerHTML = this.currentObject.video;
     } else {
       this._video.style.display = "none";
+    }
+
+    if(this.currentObject.video !== undefined) {
+      this._video_link.href = this.currentObject.video;
+      this._video_link.innerHTML = this.currentObject.video;
+      this._video_link.style.display = "initial";
+    } else {
       this._video_link.style.display = "none";
     }
 

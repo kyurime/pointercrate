@@ -74,10 +74,15 @@ async fn main() -> std::io::Result<()> {
                 "/robots.txt",
                 web::get().to(|req: HttpRequest| NamedFile::open("robots.txt").unwrap().into_response(&req).unwrap()),
             )
+            .route(
+                "/ads.txt",
+                web::get().to(|req: HttpRequest| NamedFile::open("ads.txt").unwrap().into_response(&req).unwrap()),
+            )
             .service(view::home::index)
             .service(view::login::index)
             .service(view::login::post)
             .service(view::login::register)
+            .service(view::demonlist::demon_permalink)
             .service(view::demonlist::page)
             .service(view::demonlist::index)
             .service(view::account::index)
@@ -128,7 +133,8 @@ async fn main() -> std::io::Result<()> {
                             .service(record::submit)
                             .service(record::add_note)
                             .service(record::patch_note)
-                            .service(record::delete_note),
+                            .service(record::delete_note)
+                            .service(record::audit_log),
                     )
                     .service(
                         scope("/players")

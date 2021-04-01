@@ -7,9 +7,11 @@ use crate::{
     view::Page,
     Result, ViewResult,
 };
-use actix_web::HttpResponse;
+use actix_web::{web::Query, HttpResponse};
 use actix_web_codegen::get;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use maud::{html, Markup, PreEscaped};
+use serde::Deserialize;
 use sqlx::PgConnection;
 
 #[derive(Debug)]
@@ -28,17 +30,28 @@ pub struct DemonlistOverview {
     pub mods: Vec<User>,
     pub helpers: Vec<User>,
     pub nations: Vec<Nationality>,
+    pub when: Option<NaiveDateTime>,
 }
 
-pub async fn overview_demons(connection: &mut PgConnection) -> Result<Vec<OverviewDemon>> {
-    Ok(sqlx::query_as!(
-        OverviewDemon,
-        r#"SELECT demons.id, position, demons.name as "name: String", CASE WHEN verifiers.link_banned THEN NULL ELSE video::TEXT END, 
-         players.name as "publisher: String" FROM demons INNER JOIN players ON demons.publisher = players.id INNER JOIN players AS verifiers 
-         ON demons.verifier = verifiers.id WHERE position IS NOT NULL ORDER BY position"#
-    )
-    .fetch_all(connection)
-    .await?)
+pub async fn overview_demons(connection: &mut PgConnection, at: Option<NaiveDateTime>) -> Result<Vec<OverviewDemon>> {
+    match at {
+        None => Ok(sqlx::query_as!(
+                OverviewDemon,
+                r#"SELECT demons.id, position, demons.name as "name: String", CASE WHEN verifiers.link_banned THEN NULL ELSE video::TEXT END, 
+                 players.name as "publisher: String" FROM demons INNER JOIN players ON demons.publisher = players.id INNER JOIN players AS verifiers 
+                 ON demons.verifier = verifiers.id WHERE position IS NOT NULL ORDER BY position"#
+            )
+            .fetch_all(connection)
+            .await?),
+        Some(time) => Ok(sqlx::query_as!(
+                OverviewDemon,
+                r#"SELECT demons.id as "id!", position as "position!", demons.name as "name!: String", CASE WHEN verifiers.link_banned THEN NULL ELSE video::TEXT END, 
+                 players.name as "publisher: String" FROM list_at($1) AS demons INNER JOIN players ON demons.publisher = players.id INNER JOIN players AS verifiers 
+                 ON demons.verifier = verifiers.id ORDER BY position"#, time
+            )
+            .fetch_all(connection)
+            .await?)
+    }
 }
 
 impl DemonlistOverview {
@@ -93,13 +106,13 @@ impl DemonlistOverview {
         }
     }
 
-    pub(super) async fn load(connection: &mut PgConnection) -> Result<DemonlistOverview> {
+    pub(super) async fn load(connection: &mut PgConnection, when: Option<NaiveDateTime>) -> Result<DemonlistOverview> {
         let admins = User::by_permission(Permissions::ListAdministrator, connection).await?;
         let mods = User::by_permission(Permissions::ListModerator, connection).await?;
         let helpers = User::by_permission(Permissions::ListHelper, connection).await?;
 
         let nations = Nationality::all(connection).await?;
-        let demon_overview = overview_demons(connection).await?;
+        let demon_overview = overview_demons(connection, when).await?;
 
         Ok(DemonlistOverview {
             admins,
@@ -107,17 +120,37 @@ impl DemonlistOverview {
             helpers,
             nations,
             demon_overview,
+            when,
         })
     }
 }
 
+#[derive(Deserialize)]
+pub struct TimeMachineData {
+    when: Option<NaiveDateTime>,
+}
+
 #[get("/demonlist/")]
-pub async fn index(state: PointercrateState) -> ViewResult<HttpResponse> {
+pub async fn index(state: PointercrateState, when: Query<TimeMachineData>) -> ViewResult<HttpResponse> {
+    /* static */
+    let EARLIEST_DATE: NaiveDateTime = NaiveDateTime::new(NaiveDate::from_ymd(2017, 8, 5), NaiveTime::from_hms(0, 0, 0));
+
     let mut connection = state.connection().await?;
+
+    let mut specified_when = when.into_inner().when;
+
+    if let Some(when) = specified_when {
+        if when < EARLIEST_DATE {
+            specified_when = Some(EARLIEST_DATE);
+        }
+        if when >= Utc::now().naive_utc() {
+            specified_when = None;
+        }
+    }
 
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(DemonlistOverview::load(&mut connection).await?.render().0))
+        .body(DemonlistOverview::load(&mut connection, specified_when).await?.render().0))
 }
 
 impl Page for DemonlistOverview {
@@ -141,12 +174,21 @@ impl Page for DemonlistOverview {
         let dropdowns = super::dropdowns(&self.demon_overview, None);
 
         html! {
+            (super::besides_sidebar_ad())
             (dropdowns)
 
             div.flex.m-center.container {
                 main.left {
                     (super::submission_panel(&self.demon_overview))
                     (super::stats_viewer(&self.nations))
+                    @if let Some(when) = self.when {
+                        div.panel.fade.blue.flex style="align-items: end; " {
+                             span style = "text-align: end"{"You are currently looking at the demonlist how it was on"
+                             br;
+                             b{(when)}}
+                             a.white.button href = "/demonlist/" style = "margin-left: 15px"{ b{"Go to present" }}
+                        }
+                    }
                     @for demon in &self.demon_overview {
                         @if demon.position <= config::extended_list_size() {
                             section.panel.fade style="overflow:hidden" {
@@ -155,9 +197,9 @@ impl Page for DemonlistOverview {
                                         div.thumb."ratio-16-9"."js-delay-css" style = "position: relative" data-property = "background-image" data-property-value = {"url('" (video::thumbnail(video)) "')"} {
                                             a.play href = (video) {}
                                         }
-                                        div style = "padding-left: 10px" {
+                                        div style = "padding-left: 15px" {
                                             h2 style = "text-align: left; margin-bottom: 0px" {
-                                                a href = {"/demonlist/" (demon.position)} {
+                                                a href = {"/demonlist/permalink/" (demon.id) "/"} {
                                                     "#" (demon.position) (PreEscaped(" &#8211; ")) (demon.name)
                                                 }
                                             }
@@ -177,12 +219,30 @@ impl Page for DemonlistOverview {
                                     }
                                 }
                             }
+                            // Place ad every 20th demon
+                            @if demon.position % 20 == 0 || demon.position == 1 {
+                                section.panel.fade {
+                                (PreEscaped(r#"
+                                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+                                    <ins class="adsbygoogle"
+                                         style="display:block"
+                                         data-ad-format="fluid"
+                                         data-ad-layout-key="-h1+40+4u-93+n"
+                                         data-ad-client="ca-pub-3064790497687357"
+                                         data-ad-slot="5157884729"></ins>
+                                    <script>
+                                         (adsbygoogle = window.adsbygoogle || []).push({});
+                                    </script>
+                                    "#))
+                                }
+                            }
                         }
                     }
                 }
 
                 aside.right {
                     (self.team_panel())
+                    (super::sidebar_ad())
                     (super::rules_panel())
                     (super::submit_panel())
                     (super::stats_viewer_panel())

@@ -32,8 +32,8 @@ a.link {
 }
 
 a.link:after {
-  font-family: FontAwesome;
-  font-weight: normal;
+  font-family: "Font Awesome 5 Free";
+  font-weight: 600;
   font-style: normal;
 
   display: inline-block;
@@ -44,7 +44,7 @@ a.link:after {
 }
 
 a.link:after {
-  content: "\f08e";
+  content: "\f35d";
   text-decoration: none;
 }
 
@@ -178,6 +178,9 @@ a {
   border-radius: 6px;
   padding: 10px;
   max-width: 600px;
+  overflow:auto;
+  max-height:100%;
+  box-sizing:border-box
 }
 
 .dialog p {
@@ -227,6 +230,10 @@ ul.roman li {
 }
 
 /* General Input Styles */
+
+input, textarea {
+  border-radius: 0;
+}
 
 textarea {
   background: rgba(0, 0, 0, 0);
@@ -375,9 +382,11 @@ textarea:invalid {
 
 .search:before,
 .search:after {
-  font-family: FontAwesome;
-  font-weight: normal;
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
   font-style: normal;
+
+  cursor: pointer;
 
   display: inline-block;
 

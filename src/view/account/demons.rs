@@ -1,4 +1,4 @@
-use crate::view::filtered_paginator;
+use crate::view::{demonlist, filtered_paginator};
 use maud::{html, Markup, PreEscaped};
 
 pub(super) fn page() -> Markup {
@@ -22,7 +22,7 @@ pub(super) fn page() -> Markup {
                                     "Demon #"
                                     i#demon-demon-id {}
                                     " - "
-                                    i.fa.fa-pencil.clickable#demon-name-pen aria-hidden = "true" {} (PreEscaped("&nbsp;")) i#demon-demon-name {}
+                                    i.fa.fa-pencil-alt.clickable#demon-name-pen aria-hidden = "true" {} (PreEscaped("&nbsp;")) i#demon-demon-name {}
                                 }
 
                                 iframe."ratio-16-9"#demon-video style="width:90%; margin: 15px 5%" allowfullscreen="" {"Verification Video"}
@@ -31,7 +31,7 @@ pub(super) fn page() -> Markup {
                                 div.stats-container.flex.space  {
                                     span{
                                         b {
-                                            i.fa.fa-pencil.clickable#demon-video-pen aria-hidden = "true" {} " Verification Video:"
+                                            i.fa.fa-pencil-alt.clickable#demon-video-pen aria-hidden = "true" {} " Verification Video:"
                                         }
                                         br;
                                         a.link#demon-video-link target = "_blank" {}
@@ -40,14 +40,14 @@ pub(super) fn page() -> Markup {
                                 div.stats-container.flex.space  {
                                     span{
                                         b {
-                                            i.fa.fa-pencil.clickable#demon-position-pen aria-hidden = "true" {} " Position:"
+                                            i.fa.fa-pencil-alt.clickable#demon-position-pen aria-hidden = "true" {} " Position:"
                                         }
                                         br;
                                         span#demon-position {}
                                     }
                                     span{
                                         b {
-                                            i.fa.fa-pencil.clickable#demon-requirement-pen aria-hidden = "true" {} " Requirement:"
+                                            i.fa.fa-pencil-alt.clickable#demon-requirement-pen aria-hidden = "true" {} " Requirement:"
                                         }
                                         br;
                                         span#demon-requirement {}
@@ -56,14 +56,14 @@ pub(super) fn page() -> Markup {
                                 div.stats-container.flex.space  {
                                     span{
                                         b {
-                                            i.fa.fa-pencil.clickable#demon-publisher-pen aria-hidden = "true" {} " Publisher:"
+                                            i.fa.fa-pencil-alt.clickable#demon-publisher-pen aria-hidden = "true" {} " Publisher:"
                                         }
                                         br;
                                         span#demon-publisher {}
                                     }
                                     span{
                                         b {
-                                            i.fa.fa-pencil.clickable#demon-verifier-pen aria-hidden = "true" {} " Verifier:"
+                                            i.fa.fa-pencil-alt.clickable#demon-verifier-pen aria-hidden = "true" {} " Verifier:"
                                         }
                                         br;
                                         span#demon-verifier {}
@@ -219,96 +219,36 @@ fn change_video_dialog() -> Markup {
 }
 
 fn change_verifier_dialog() -> Markup {
-    html! {
-        div.overlay.closable {
-            div.dialog#demon-verifier-dialog {
-                span.plus.cross.hover {}
-                h2.underlined.pad {
-                    "Change demon verifier:"
-                }
-                div.flex.viewer {
-                    (crate::view::filtered_paginator("demon-verifier-dialog-pagination", "/api/v1/players/"))
-                    div {
-                        p {
-                            "Change the verifier of this demon. If the player you want to change the verifier to already exists, search them up on the left and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to create a new player."
-                        }
-                        form.flex.col novalidate = "" {
-                            p.info-red.output {}
-                            p.info-green.output {}
-                            span.form-input#demon-verifier-name-edit {
-                                label for = "verifier" {"Verifier name:"}
-                                input name = "verifier" type="text" required = "";
-                                p.error {}
-                            }
-                            input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
-                        }
-                    }
-                }
-            }
-        }
-    }
+    demonlist::player_selection_dialog(
+        "demon-verifier-dialog",
+        "Change demon verifier:",
+        "Change the verifier of this demon. If the player you want to change the verifier to already exists, search them up on the left \
+         and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to \
+         create a new player.",
+        "Edit",
+    )
 }
 
 fn change_publisher_dialog() -> Markup {
-    html! {
-        div.overlay.closable {
-            div.dialog#demon-publisher-dialog {
-                span.plus.cross.hover {}
-                h2.underlined.pad {
-                    "Change demon publisher:"
-                }
-                div.flex.viewer {
-                    (crate::view::filtered_paginator("demon-publisher-dialog-pagination", "/api/v1/players/"))
-                    div {
-                        p {
-                            "Change the publisher of this demon. If the player you want to change the publisher to already exists, search them up on the left and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to create a new player."
-                        }
-                        form.flex.col novalidate = "" {
-                            p.info-red.output {}
-                            p.info-green.output {}
-                            span.form-input#demon-publisher-name-edit {
-                                label for = "publisher" {"Publisher name:"}
-                                input name = "publisher" type="text" required = "";
-                                p.error {}
-                            }
-                            input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
-                        }
-                    }
-                }
-            }
-        }
-    }
+    demonlist::player_selection_dialog(
+        "demon-publisher-dialog",
+        "Change demon publisher:",
+        "Change the publisher of this demon. If the player you want to change the publisher to already exists, search them up on the left \
+         and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to \
+         create a new player.",
+        "Edit",
+    )
 }
 
 fn add_creator_dialog() -> Markup {
-    html! {
-        div.overlay.closable {
-            div.dialog#demon-add-creator-dialog {
-                span.plus.cross.hover {}
-                h2.underlined.pad {
-                    "Add creator:"
-                }
-                div.flex.viewer {
-                    (crate::view::filtered_paginator("demon-add-creator-dialog-pagination", "/api/v1/players/"))
-                    div {
-                        p {
-                            "Select a creator to add to this demon. If the player you want to change the publisher to already exists, search them up on the left and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to create a new player."
-                        }
-                        form.flex.col novalidate = "" {
-                            p.info-red.output {}
-                            p.info-green.output {}
-                            span.form-input#demon-add-creator-name-edit {
-                                label for = "creator" {"Creator name:"}
-                                input name = "creator" type="text" required = "";
-                                p.error {}
-                            }
-                            input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value = "Add";
-                        }
-                    }
-                }
-            }
-        }
-    }
+    demonlist::player_selection_dialog(
+        "demon-add-creator-dialog",
+        "Add creator:",
+        "Select a creator to add to this demon. If the player you want to change the publisher to already exists, search them up on the \
+         left and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server \
+         to create a new player.",
+        "Add Creator",
+    )
 }
 
 fn demon_submitter() -> Markup {
@@ -343,18 +283,28 @@ fn demon_submitter() -> Markup {
                         input type = "number" name = "requirement" required="" min="0" max = "100";
                         p.error {}
                     }
-                    span.form-input.flex.col#demon-add-verifier {
-                        label for = "verifier" {
-                            "Verifier:"
+                    span.form-input.flex.col#demon-add-verifier data-type = "html" data-target-id = "selected-verifier" data-default = "None Selected" {
+                        label{"Verifier:"}
+                        br;
+                        span {
+                            b {
+                                i.fa.fa-pencil-alt.clickable#demon-add-verifier-pen aria-hidden = "true" {}
+                                " "
+                            }
+                            i#selected-verifier data-name = "verifier" {"None Selected"}
                         }
-                        input type = "text" name = "verifier" required="";
                         p.error {}
                     }
-                    span.form-input.flex.col#demon-add-publisher {
-                        label for = "publisher" {
-                            "Publisher:"
+                    span.form-input.flex.col#demon-add-publisher data-type = "html" data-target-id = "selected-publisher" data-default = "None Selected" {
+                        label {"Publisher:"}
+                        br;
+                        span {
+                            b {
+                                i.fa.fa-pencil-alt.clickable#demon-add-publisher-pen aria-hidden = "true" {}
+                                " "
+                            }
+                            i#selected-publisher data-name = "publisher" {"None Selected"}
                         }
-                        input type = "text" name = "publisher" required="";
                         p.error {}
                     }
                     span.form-input.flex.col#demon-add-video {
@@ -374,5 +324,21 @@ fn demon_submitter() -> Markup {
                 }
             }
         }
+        (demonlist::player_selection_dialog(
+            "demon-add-verifier-dialog",
+            "Set demon verifier:",
+            "Set the verifier of this demon. If the player you want to set as verifier already exists, search them up on the left \
+             and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to \
+             create a new player.",
+            "Select",
+        ))
+        (demonlist::player_selection_dialog(
+            "demon-add-publisher-dialog",
+            "Set demon publisher:",
+            "Set the publisher of this demon. If the player you want to set as publisher already exists, search them up on the left \
+             and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to \
+             create a new player.",
+            "Select",
+        ))
     }
 }

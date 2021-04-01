@@ -1,7 +1,7 @@
 use crate::{
     config,
     gd::GDIntegrationResult,
-    model::demonlist::demon::FullDemon,
+    model::demonlist::demon::{FullDemon, MinimalDemon},
     state::PointercrateState,
     video,
     view::{demonlist::overview::DemonlistOverview, Page},
@@ -29,10 +29,20 @@ pub struct Demonlist {
     integration: GDIntegrationResult,
 }
 
+#[get("/demonlist/permalink/{id}/")]
+pub async fn demon_permalink(state: PointercrateState, id: Path<i32>) -> ViewResult<HttpResponse> {
+    let mut connection = state.connection().await?;
+    let demon = MinimalDemon::by_id(id.into_inner(), &mut connection).await?;
+
+    Ok(actix_web::HttpResponse::Found()
+        .header(actix_web::http::header::LOCATION, format!("/demonlist/{}/", demon.position))
+        .finish())
+}
+
 #[get("/demonlist/{position}/")]
 pub async fn page(state: PointercrateState, position: Path<i16>) -> ViewResult<HttpResponse> {
     let mut connection = state.connection().await?;
-    let overview = DemonlistOverview::load(&mut connection).await?;
+    let overview = DemonlistOverview::load(&mut connection, None).await?;
     let demon = FullDemon::by_position(position.into_inner(), &mut connection).await?;
     let link_banned = sqlx::query!(
         r#"SELECT link_banned AS "link_banned!: bool" FROM players WHERE id = $1"#,
@@ -94,7 +104,7 @@ impl Demonlist {
         html! {
             section.panel.fade.js-scroll-anim data-anim = "fade" {
                 div.underlined {
-                    h1 style = "overflow: hidden"{
+                    h1#demon-heading style = "overflow: hidden"{
                         @if self.data.demon.base.position != 1 {
                             a href=(format!("/demonlist/{:?}", self.data.demon.base.position - 1)) {
                                 i class="fa fa-chevron-left" style="padding-right: 5%" {}
@@ -107,6 +117,11 @@ impl Demonlist {
                             }
                         }
                     }
+                    (PreEscaped(format!(r#"
+                    <script>
+                    document.getElementById("demon-heading").addEventListener('click', () => navigator.clipboard.writeText('https://pointercrate.com/demonlist/permalink/{}/'))
+                    </script>
+                    "#, self.data.demon.base.id)))
                     h3 {
                         @if self.data.creators.len() > 3 {
                             "by " (self.data.creators[0].name) " and "
@@ -140,9 +155,6 @@ impl Demonlist {
                 @else {
                     @if let Some(ref video) = self.data.demon.video {
                         @if let Some(embedded_video) = video::embed(video) {
-                            h3 {
-                                "Showcase video:"
-                            }
                             iframe."ratio-16-9"."js-delay-attr" style="width:90%; margin: 15px 5%" allowfullscreen="" data-attr = "src" data-attr-value = (embedded_video) {"Verification Video"}
                         }
                     }
@@ -297,6 +309,7 @@ impl Demonlist {
                         table {
                             tbody {
                                 tr {
+                                    th.dark-grey {}
                                     th.dark-grey {
                                         "Record Holder"
                                     }
@@ -309,6 +322,11 @@ impl Demonlist {
                                 }
                                 @for record in &self.data.records {
                                     tr style = { @if record.progress == 100 {"font-weight: bold"} @else {""} } {
+                                        td {
+                                            @if let Some(ref nationality) = record.nationality {
+                                                (nationality)
+                                            }
+                                        }
                                         td {
                                             @if let Some(ref video) = record.video {
                                                  a href = (video) target = "_blank"{
@@ -350,11 +368,11 @@ impl Page for Demonlist {
     }
 
     fn description(&self) -> String {
-        /*if let Some(CacheEntry::Cached(ref level, _)) = self.server_level {
-            if let Some(ref description) = level.base.description {
-                return format!("{}: {}", self.title(), description)
+        if let GDIntegrationResult::Success(ref level, ..) = self.integration {
+            if let Some(Thunk::Processed(ref description)) = level.description {
+                return format!("{}: {}", self.title(), description.0)
             }
-        }*/
+        }
         format!("{}: <No Description Provided>", self.title())
     }
 
@@ -395,10 +413,24 @@ impl Page for Demonlist {
         }
 
         html! {
+            (super::besides_sidebar_ad())
             (dropdowns)
 
             div.flex.m-center.container {
                 main.left {
+                    div.panel.fade style = "padding: 0px; height: 90px" {
+                        (PreEscaped(r#"
+                        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+                        <!-- Demonpage Banner ad -->
+                        <ins class="adsbygoogle"
+                             style="display:inline-block;width:728px;height:90px"
+                             data-ad-client="ca-pub-3064790497687357"
+                             data-ad-slot="4829214686"></ins>
+                        <script>
+                             (adsbygoogle = window.adsbygoogle || []).push({});
+                        </script>
+                        "#))
+                    }
                     (super::submission_panel(&self.overview.demon_overview))
                     (super::stats_viewer(&self.overview.nations))
                     (self.demon_panel())
@@ -422,6 +454,7 @@ impl Page for Demonlist {
             }
             aside.right {
                     (self.overview.team_panel())
+                    (super::sidebar_ad())
                     (super::rules_panel())
                     (super::submit_panel())
                     (super::rules_panel())

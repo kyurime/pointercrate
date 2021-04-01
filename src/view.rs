@@ -36,6 +36,20 @@ pub trait Page {
                         (self.title())
                     }
 
+                    script data-ad-client="ca-pub-3064790497687357" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" {}
+
+                    (PreEscaped(r#"
+                    <!-- Global site tag (gtag.js) - Google Analytics -->
+                    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2SGJ4S0TQM"></script>
+                    <script>
+                      window.dataLayer = window.dataLayer || [];
+                      function gtag(){dataLayer.push(arguments);}
+                      gtag('js', new Date());
+                    
+                      gtag('config', 'G-2SGJ4S0TQM');
+                    </script>
+                    "#));
+
                     meta property="og:site_name" content="pointercrate";
                     meta property="og:type" content="website";
                     meta property="og:title" content = (self.title());
@@ -66,7 +80,8 @@ pub trait Page {
                         script src = {(STATIC)(script)} type="module" {}
                     }
 
-                    link rel = "stylesheet" href = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css";
+                    link rel = "stylesheet" href = "/static2/fa/css/all.min.css";
+                    link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Noto+Sans&display=swap";
 
                     link rel = "stylesheet" href = {(STATIC) "css/core/icon.v2.css"};
                     link rel = "stylesheet" href = {(STATIC) "css/core/nav.v2.css"};
@@ -126,9 +141,12 @@ pub fn footer() -> Markup {
     html! {
         footer.center {
             span.overline.pad style="text-align:center" {
-                "pointercrate.com and the (1.9) Demonlist are in no way affiliated with RobTopGamesAB ®"
-                br;
                 "The 1.9 Demonlist is not affiliated with the official GD Demonlist"
+                br;
+                "Original code and copyright can be found on pointercrate.com"
+                br;
+                "All rights reserved"
+                br;
             }
             div.flex.no-stretch {
                 nav {
@@ -167,7 +185,7 @@ pub fn footer() -> Markup {
                 }
             }
             div style="display: flex; justify-content: flex-end; align-items: center" {
-                i class = "fa fa-twitter fa-2x" {}
+                i class = "fab fa-twitter fa-2x" {}
                 (PreEscaped("&nbsp;&nbsp;Tweet Us:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"))
                 a href="https://twitter.com/stadust1971" target="_blank" style = "color: #666" {
                     "Developer"
@@ -206,7 +224,7 @@ pub fn filtered_paginator(id: &str, endpoint: &str) -> Markup {
             div.search.seperated.no-stretch {
                 input placeholder = "Enter to search..." type = "text" style = "height: 1em";
             }
-            p.info-red.output style = "margin-top: 5px"{}
+            p.info-red.output style = "margin: 5px 0px"{}
             div style="min-height: 400px; position:relative; flex-grow:1" {
                 ul.selection-list style = "position: absolute; top: 0px; bottom:0px; left: 0px; right:0px" {}
             }
@@ -221,7 +239,7 @@ pub fn filtered_paginator(id: &str, endpoint: &str) -> Markup {
 pub fn dropdown(default_entry: &str, default_item: Markup, filter_items: impl Iterator<Item = Markup>) -> Markup {
     html! {
         div.dropdown-menu.js-search.no-stretch {
-            input type="text" data-default=(default_entry) style = "color: inherit; font-weight: bold;";
+            input type="text" data-default=(default_entry) autocomplete="off" style = "color: inherit; font-weight: bold;";
             div.menu {
                 ul {
                     (default_item)

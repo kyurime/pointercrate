@@ -127,19 +127,19 @@ export class EditorBackend {
 
   onError(response) {}
 
-  edit(data, successCallback, errorCallback, unchangedCallback) {
+  edit(data) {
     return patch(this.url(), this.headers(), data)
       .then((response) => {
         if (response.status == 304) {
-          unchangedCallback();
+          return true;
         } else {
           this.onSuccess(response);
-          successCallback(response);
+          return false;
         }
       })
       .catch((response) => {
         this.onError(response);
-        errorCallback(response);
+        throw response;
       });
   }
 }
@@ -199,67 +199,110 @@ export function setupDropdownEditor(
       data[field] = selected;
     }
 
-    backend.edit(
-      data,
-      () => output.setSuccess("Edit successful!"),
-      (response) => displayError(output)(response),
-      () => output.setSuccess("Nothing changed!")
-    );
+    backend.edit(data).then(was304 => {
+      if(was304) output.setSuccess("Nothing changed!"); else output.setSuccess("Edit successful!");
+    }).catch(response => displayError(output)(response));
   });
 
   return dropdown;
 }
 
-export function setupDialogEditor(backend, dialogId, buttonId, output) {
-  let dialog = document.getElementById(dialogId);
-  let button = document.getElementById(buttonId);
+export class Dialog {
+  constructor(dialogId) {
+    this.dialog = document.getElementById(dialogId);
 
-  button.addEventListener("click", () => $(dialog.parentNode).fadeIn(0));
+    this.reject = undefined;
+    this.resolve = undefined;
+    this.submissionPredicateFactory = (data) => new Promise(resolve => resolve(data));
 
-  return function (data) {
-    backend.edit(
-      data,
-      () => {
-        output.setSuccess("Edit successful!");
-        $(dialog.parentNode).fadeOut(0);
-      },
-      (response) => {
-        displayError(output)(response);
-        $(dialog.parentNode).fadeOut(0);
-      },
-      () => {
-        output.setSuccess("Nothing changed");
-        $(dialog.parentNode).fadeOut(0);
-      }
-    );
+    this.dialog.getElementsByClassName("cross")[0].addEventListener("click", () => {
+      this.reject(); // order important
+      this.close();
+    })
+  }
+
+  onSubmit(data) {
+    this.submissionPredicateFactory(data).then((data) => {
+      this.resolve(data);
+      this.close();
+    });
+  }
+
+  /**
+   * Opens this dialog, returning a promise that resolves if the dialog is closed succesfully (e.g. by submitting a form or making a selection) and that rejects when the dialog is closed by clicking the 'x'.
+   *
+   * @returns {Promise<unknown>}
+   */
+  open() {
+    if(this.reject !== undefined)
+      throw new Error("Dialog is already open");
+
+    $(this.dialog.parentNode).fadeIn(300);
+
+    return new Promise((resolve, reject) => {
+      this.reject = reject;
+      this.resolve = resolve;
+    });
+  }
+
+  /**
+   * Closes this dialog, resetting the stored promise.
+   *
+   * Note that no callbacks are actually called, since its impossible for this method to know whether or not the close happened because of successful reasons or not (or what data should be passed along in the success case).
+   */
+  close() {
+    $(this.dialog.parentNode).fadeOut(300);
+
+    this.reject = undefined;
+    this.resolve = undefined;
+  }
+}
+
+export class FormDialog extends Dialog {
+  constructor(dialogId) {
+    super(dialogId);
+
+    this.form = new Form(this.dialog.getElementsByTagName("form")[0]);
+    this.form.onSubmit(() => this.onSubmit(this.form.serialize()));
+  }
+}
+
+export class DropdownDialog extends Dialog {
+  constructor(dialogId, dropdownId) {
+    super(dialogId);
+
+    this.dropdown = new Dropdown( document.getElementById(dropdownId));
+    this.dropdown.addEventListener(selected => this.onSubmit(selected));
+  }
+}
+
+export function setupEditorDialog(dialog, buttonId, backend, output, dataTransform = x => x) {
+  document.getElementById(buttonId)
+      .addEventListener("click", () => dialog.open());
+
+  dialog.submissionPredicateFactory = (data) => {
+    return backend.edit(dataTransform(data))
+        .then(was304 => {
+          if(was304){
+            output.setSuccess("Nothing changed");
+          } else {
+            output.setSuccess("Edit successful!");
+          }
+        })
+        .catch(response => {
+          // FIXME: only works for form dialogs!
+          displayError(dialog.form)(response);
+          throw response;
+        });
   };
 }
 
 export function setupFormDialogEditor(backend, dialogId, buttonId, output) {
-  let dialog = document.getElementById(dialogId);
-  let button = document.getElementById(buttonId);
+  let editor = new FormDialog(dialogId);
 
-  button.addEventListener("click", () => $(dialog.parentNode).fadeIn(0));
+  setupEditorDialog(editor, buttonId, backend, output);
 
-  let form = new Form(dialog.getElementsByTagName("form")[0]);
-  form.onSubmit(() => {
-    backend.edit(
-      form.serialize(),
-      () => {
-        output.setSuccess("Edit successful!");
-        $(dialog.parentNode).fadeOut(0);
-      },
-      (response) => {
-        displayError(form)(response);
-      },
-      () => {
-        output.setSuccess("Nothing changed");
-        $(dialog.parentNode).fadeOut(0);
-      }
-    );
-  });
-
-  return form;
+  return editor.form;
 }
 
 export class Paginator extends Output {
@@ -719,12 +762,12 @@ export class HtmlFormInput extends FormInput {
     }
   }
 
-set value(value) {
+  set value(value) {
     if(this.input.type === "checkbox")
       this.input.checked = value;
     else
       this.input.value = value;
-}
+  }
 
   get name() {
     return this.input.name;
@@ -753,7 +796,10 @@ set value(value) {
     // weird super call lol
     super.errorText = value;
 
-    this.error.innerHTML = value;
+    if(this.error)
+      this.error.innerHTML = value;
+    else if(value !== "")
+      console.log("Unreportable error on input " + this.input + ": " + value);
     this.input.setCustomValidity(value);
   }
 }
@@ -811,6 +857,55 @@ export class DropdownFormInput extends FormInput {
   }
 }
 
+/**
+ * Input class that simply reads out the value of a specified tag
+ */
+export class HtmlInput extends FormInput {
+  constructor(input) {
+    super();
+
+    this.input = input;
+    this.default = input.dataset.default;
+    this.target = document.getElementById(input.dataset.targetId);
+
+    this.error = input.getElementsByTagName("p")[0];
+
+    let mutationObserver = new MutationObserver(() => this.errorText = "");
+    mutationObserver.observe(this.target, { attributes: true, childList: true, subtree: true });
+  }
+
+  clear() {
+    this.target.innerText = this.default;
+  }
+
+  get value() {
+    return this.target.innerText === this.default ? undefined : this.target.innerText;
+  }
+
+  set value(value) {
+    this.target.innerText = value;
+  }
+
+  get name() {
+    return this.target.dataset.name;
+  }
+
+  get id() {
+    return this.input.id;
+  }
+
+  get errorText() {
+    return this.error.innerHTML;
+  }
+
+  set errorText(value) {
+    // weird super call lol
+    super.errorText = value;
+
+    this.error.innerHTML = value;
+  }
+}
+
 export class Form extends Output {
   constructor(form) {
     super(form);
@@ -825,6 +920,8 @@ export class Form extends Output {
     for (var input of this.html.getElementsByClassName("form-input")) {
       if(input.dataset.type === 'dropdown')
         this.inputs.push(new DropdownFormInput(input));
+      else if(input.dataset.type === "html")
+        this.inputs.push(new HtmlInput(input))
       else
         this.inputs.push(new HtmlFormInput(input));
     }
@@ -877,7 +974,7 @@ export class Form extends Output {
     let data = {};
 
     for (let input of this.inputs) {
-      if (input.name !== null && (input.value !== null || !input.required)) {
+      if (input.name && (input.value !== null || !input.required)) {
         data[input.name] = input.value;
       }
     }
@@ -895,7 +992,7 @@ export class Form extends Output {
         if (errorCode in this._errorRedirects) {
           let input = this.input(this._errorRedirects[errorCode]);
           if (input) {
-            input.setError(message);
+            input.errorText = message;
           } else {
             this.errorOutput.style.display = "block";
             this.errorOutput.innerHTML = message;
@@ -969,6 +1066,8 @@ export function typeMismatch(input) {
 }
 
 export function valueMissing(input) {
+  if(input.input === undefined || input.input.validity === undefined)
+    return input.value !== undefined;
   return !input.input.validity.valueMissing;
 }
 

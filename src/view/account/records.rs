@@ -1,4 +1,7 @@
-use crate::view::{demonlist::OverviewDemon, dropdown, paginator};
+use crate::view::{
+    demonlist::{self, OverviewDemon},
+    dropdown, paginator,
+};
 use maud::{html, Markup};
 
 fn record_manager(demons: &[OverviewDemon]) -> Markup {
@@ -42,7 +45,7 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                         div.stats-container.flex.space  {
                             span {
                                 b {
-                                    i.fa.fa-pencil.clickable#record-video-pen aria-hidden = "true" {} " Video Link:"
+                                    i.fa.fa-pencil-alt.clickable#record-video-pen aria-hidden = "true" {} " Video Link:"
                                 }
                                 br;
                                 a.link#record-video-link target = "_blank" {}
@@ -51,14 +54,14 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                         div.stats-container.flex.space {
                             span {
                                 b {
-                                    i.fa.fa-pencil.clickable#record-demon-pen aria-hidden = "true" {} " Demon:"
+                                    i.fa.fa-pencil-alt.clickable#record-demon-pen aria-hidden = "true" {} " Demon:"
                                 }
                                 br;
                                 span#record-demon {}
                             }
                             span {
                                 b {
-                                    i.fa.fa-pencil.clickable#record-holder-pen aria-hidden = "true" {} " Record Holder:"
+                                    i.fa.fa-pencil-alt.clickable#record-holder-pen aria-hidden = "true" {} " Record Holder:"
                                 }
                                 br;
                                 span#record-holder {}
@@ -67,7 +70,7 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                         div.stats-container.flex.space {
                             span {
                                 b {
-                                    i.fa.fa-pencil.clickable#record-progress-pen aria-hidden = "true" {} " Progress:"
+                                    i.fa.fa-pencil-alt.clickable#record-progress-pen aria-hidden = "true" {} " Progress:"
                                 }
                                 br;
                                 span#record-progress {}
@@ -312,39 +315,19 @@ fn change_video_dialog() -> Markup {
 
 fn change_holder_dialog() -> Markup {
     html! {
-        div.overlay.closable {
-            div.dialog#record-holder-dialog style = "scroll=auto;max-height=100%;box-sizing:border-box"{
-                span.plus.cross.hover {}
-                h2.underlined.pad {
-                    "Change record holder:"
-                }
-                div.flex.viewer {
-                    (crate::view::filtered_paginator("record-holder-dialog-pagination", "/api/v1/players/"))
-                    div {
-                        p {
-                            "Change the player associated with this record. If the player you want to change this record to already exists, search them up on the left and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to create a new player."
-                        }
-                        form.flex.col novalidate = "" {
-                            p.info-red.output {}
-                            p.info-green.output {}
-                            span.form-input#record-holder-name-edit {
-                                label for = "player" {"Player name:"}
-                                input name = "player" type="text" required = "";
-                                p.error {}
-                            }
-                            input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
-                        }
-                    }
-                }
-            }
-        }
+        (demonlist::player_selection_dialog(
+            "record-holder-dialog",
+            "Change record holder:",
+            "Change the player associated with this record. If the player you want to change this record to already exists, search them up on the left and click them. In case the player does not exist, fill out only the text field on the right. This will prompt the server to create a new player.",
+            "Edit"
+        ))
     }
 }
 
 fn change_demon_dialog(demons: &[OverviewDemon]) -> Markup {
     html! {
         div.overlay.closable {
-            div.dialog#record-demon-dialog {
+            div.dialog#record-demon-dialog style="overflow: initial;" {
                 span.plus.cross.hover {}
                 h2.underlined.pad {
                     "Change record demon:"
@@ -353,16 +336,7 @@ fn change_demon_dialog(demons: &[OverviewDemon]) -> Markup {
                     p {
                         "Change the demon associated with this record. Search up the demon this record should be associated with below. Then click it to modify the record"
                     }
-                    div.dropdown-menu.js-search#edit-demon-record {
-                        input type="text" style = "color: inherit; font-weight: bold;";
-                        div.menu {
-                           ul {
-                                @for demon in demons {
-                                    li.white.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}
-                                }
-                            }
-                        }
-                    }
+                    (demonlist::demon_dropdown("edit-demon-record", demons.iter()))
                 }
             }
         }

@@ -12,7 +12,7 @@ import {
   findParentWithClass,
   FilteredPaginator,
   Viewer,
-  setupFormDialogEditor,
+  setupFormDialogEditor, FormDialog, setupEditorDialog,
 } from "./form.mjs";
 
 export function embedVideo(video) {
@@ -42,9 +42,12 @@ export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
 
   demon.addValidator(input => input.dropdown.selected !== undefined, "Please specify a demon");
 
-  player.addValidator(valueMissing, "Please specify a record holder");
+  let holderSelector = new PlayerSelectionDialog("submission-holder-dialog");
+  document.getElementById("record-submitter-holder-pen").addEventListener('click', () => holderSelector.open().then(data => player.value = data.player));
+
+  player.addValidator(input => input.value !== undefined, "Please specify a record holder");
   player.addValidator(
-    tooLong,
+    input => input.value === undefined || input.value.length <= 50,
     "Due to Geometry Dash's limitations I know that no player has such a long name"
   );
 
@@ -63,6 +66,7 @@ export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
   );
   video.addValidator(typeMismatch, "Please enter a valid URL");
 
+  submissionForm.onInvalid(() => gtag('event', 'record-submit-failure-frontend', {'event-category': 'demonlist'}));
   submissionForm.onSubmit(function () {
     let data = submissionForm.serialize();
     let headers = {};
@@ -75,6 +79,7 @@ export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
       .then(() => {
         submissionForm.setSuccess("Record successfully submitted");
         submissionForm.clear();
+        gtag('event', 'record-submit-success', {'event-category': 'demonlist'});
       })
       .catch((response) =>  {
         switch(response.data.code) {
@@ -97,6 +102,7 @@ export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
           default:
             submissionForm.setError(response.data.message)
         }
+        gtag('event', 'record-submit-failure-backend', {'event-category': 'demonlist'});
       }); // TODO: maybe specially handle some error codes
   });
 }
@@ -206,12 +212,11 @@ export class StatsViewer extends FilteredPaginator {
 
     let hardest = playerData.verified
       .concat(beaten.map((record) => record.demon))
-      .reduce((acc, next) => (acc.position > next.position ? next : acc), {
-        position: 34832834,
-        name: "None",
-      });
+      .reduce((acc, next) => (acc.position > next.position ? next : acc), {name: "None", position: 321321321321});
 
-    this._hardest.textContent = hardest.name || "None";
+    if(this._hardest.lastChild)
+      this._hardest.removeChild(this._hardest.lastChild);
+    this._hardest.appendChild(hardest.name === "None" ? document.createTextNode("None") : formatDemon(hardest, "/demonlist/permalink/" + hardest.id + "/"));
 
     let non100Records = playerData.records
       .filter((record) => record.progress != 100)
@@ -221,34 +226,26 @@ export class StatsViewer extends FilteredPaginator {
   }
 }
 
-export function setupPlayerSelectionEditor(
-  backend,
-  paginatorId,
-  buttonId,
-  output
-) {
-  let paginator = new FilteredPaginator(
-    paginatorId,
-    generatePlayer,
-    "name_contains"
-  );
+export class PlayerSelectionDialog extends FormDialog {
+  constructor(dialogId) {
+    super(dialogId);
 
-  let form = setupFormDialogEditor(
-    backend,
-    findParentWithClass(paginator.html, "dialog").id,
-    buttonId,
-    output
-  );
+    let paginator = new FilteredPaginator(
+        dialogId + "-pagination",
+        generatePlayer,
+        "name_contains"
+    );
 
-  let playerName = form.inputs[0];
+    let playerName = this.form.inputs[0];
 
-  playerName.addValidator(valueMissing, "Please provide a player name");
+    playerName.addValidator(valueMissing, "Please provide a player name");
 
-  paginator.initialize();
-  paginator.addSelectionListener((selected) => {
-    playerName.value = selected.name;
-    form.html.requestSubmit();
-  });
+    paginator.initialize();
+    paginator.addSelectionListener((selected) => {
+      playerName.value = selected.name;
+      this.form.html.requestSubmit();
+    });
+  }
 }
 
 export function generatePlayer(player) {
@@ -406,7 +403,7 @@ function formatDemonsInto(element, demons) {
   if (demons.length) {
     for (var demon of demons) {
       element.appendChild(
-        formatDemon(demon, "/demonlist/" + demon.position + "/")
+        formatDemon(demon, "/demonlist/permalink/" + demon.id + "/")
       );
       element.appendChild(document.createTextNode(" - "));
     }
@@ -421,11 +418,9 @@ function formatRecordsInto(element, records) {
     element.removeChild(element.lastChild);
   }
 
-  console.log("record thingy");
-
   if (records.length) {
     for (var record of records) {
-      let demon = formatDemon(record.demon, record.video);
+      let demon = formatDemon(record.demon, "/demonlist/permalink/" + record.demon.id + "/");
       if (record.progress != 100) {
         demon.appendChild(
           document.createTextNode(" (" + record.progress + "%)")

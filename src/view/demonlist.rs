@@ -1,12 +1,12 @@
 pub use self::{
-    demon_page::page,
+    demon_page::{demon_permalink, page},
     overview::{index, overview_demons, OverviewDemon},
 };
 use crate::{
     config,
     model::{demonlist::demon::Demon, nationality::Nationality},
 };
-use maud::{html, Markup, PreEscaped};
+use maud::{html, Markup, PreEscaped, Render};
 
 mod demon_page;
 mod overview;
@@ -75,7 +75,7 @@ fn dropdowns(all_demons: &[OverviewDemon], current: Option<&Demon>) -> Markup {
 fn dropdown(section: &ListSection, demons: &[OverviewDemon], current: Option<&Demon>) -> Markup {
     let format = |demon: &OverviewDemon| -> Markup {
         html! {
-            a href = {"/demonlist/" (demon.position)} {
+            a href = {"/demonlist/permalink/" (demon.id) "/"} {
                 @if section.numbered {
                     {"#" (demon.position) " - " (demon.name)}
                     br ;
@@ -126,6 +126,52 @@ fn dropdown(section: &ListSection, demons: &[OverviewDemon], current: Option<&De
     }
 }
 
+pub fn demon_dropdown<'a>(dropdown_id: &str, demons: impl Iterator<Item = &'a OverviewDemon>) -> Markup {
+    html! {
+        div.dropdown-menu.js-search#(dropdown_id) {
+            input type = "text" name = "demon" required="" autocomplete="off";
+            div.menu {
+               ul {
+                    @for demon in demons {
+                        li.white.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn player_selection_dialog(dialog_id: &str, headline: &str, description: &str, button_text: &str) -> Markup {
+    html! {
+        div.overlay.closable {
+            div.dialog#(dialog_id) {
+                span.plus.cross.hover {}
+                h2.underlined.pad {
+                    (headline)
+                }
+                div.flex.viewer {
+                    (crate::view::filtered_paginator(&format!("{}-pagination", dialog_id), "/api/v1/players/"))
+                    div {
+                        p {
+                            (description)
+                        }
+                        form.flex.col novalidate = "" {
+                            p.info-red.output {}
+                            p.info-green.output {}
+                            span.form-input#{(dialog_id)"-input"} {
+                                label for = "player" {"Player name:"}
+                                input name = "player" type="text" required = "";
+                                p.error {}
+                            }
+                            input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = (button_text);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 pub(super) fn submission_panel(demons: &[OverviewDemon]) -> Markup {
     html! {
         section.panel.fade.closable#submitter style = "display: none" {
@@ -144,28 +190,23 @@ pub(super) fn submission_panel(demons: &[OverviewDemon]) -> Markup {
                         "The demon the record was made on. Only demons in the top " (config::extended_list_size()) " are accepted. This excludes legacy demons!"
                     }
                     span.form-input data-type = "dropdown" {
-                        div.dropdown-menu.js-search#id_demon {
-                            input type = "text" name = "demon" required="";
-                            div.menu {
-                               ul {
-                                    @for demon in demons {
-                                        @if demon.position <= config::extended_list_size() {
-                                            li.white.hover data-value = (demon.id) data-display = (demon.name) {b{"#"(demon.position) " - " (demon.name)} br; {"by "(demon.publisher)}}
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        (demon_dropdown("id_demon", demons.iter().filter(|demon| demon.position <= config::extended_list_size())))
                         p.error {}
                     }
                     h3 {
                         "Holder:"
                     }
                     p {
-                        "The holder of the record. Please enter the holders Geometry Dash name here, even if their YouTube name differs!"
+                        "The holder of the record. Please enter the holders Geometry Dash name here, even if their YouTube name differs! Click the pencil to select a player!"
                     }
-                    span.form-input.flex.col#id_player {
-                        input type = "text" name = "player" required="" placeholder="e. g. 'Slypp, 'KrmaL'" maxlength="50" ;
+                    span.form-input.flex.col#id_player data-type = "html" data-target-id = "selected-holder" data-default = "None Selected" {
+                        span {
+                            b {
+                                i.fa.fa-pencil-alt.clickable#record-submitter-holder-pen aria-hidden = "true" {}
+                                " "
+                            }
+                            i#selected-holder data-name = "player" {"None Selected"}
+                        }
                         p.error {}
                     }
                     h3 {
@@ -206,6 +247,12 @@ pub(super) fn submission_panel(demons: &[OverviewDemon]) -> Markup {
                 }
             }
         }
+        (player_selection_dialog(
+            "submission-holder-dialog",
+            "Select player:",
+            "To select the player holding this record, search them up on the left to see if they already have records on the list and click them. In case the player does not exist, fill out only the text field on the right.",
+            "Select"
+        ))
     }
 }
 
@@ -333,6 +380,46 @@ fn stats_viewer(nations: &[Nationality]) -> Markup {
     }
 }
 
+fn sidebar_ad() -> Markup {
+    html! {
+        section.panel.fade.js-scroll-anim data-anim = "fade" style = "order: 1; padding: 0px" {
+            (PreEscaped(r#"
+            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+            <!-- Demonlist Sidebar Ad -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-3064790497687357"
+                 data-ad-slot="2559641548"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+            "#))
+        }
+    }
+}
+
+fn besides_sidebar_ad() -> Markup {
+    html! {
+        div#outofboundsad style="margin-left: calc(45% + 1072px/2);position: fixed;padding-left: 15px;padding-top: 15px; max-width: 200px" {
+            (PreEscaped(r#"
+                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+                <!-- Demonlist Sidebar Ad #2 -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-3064790497687357"
+                     data-ad-slot="3380750697"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            "#))
+        }
+    }
+}
+
 fn rules_panel() -> Markup {
     html! {
         section#rules.panel.fade.js-scroll-anim data-anim = "fade" {
@@ -455,6 +542,14 @@ fn discord_panel() -> Markup {
             p {
                 "Join the official 1.9 GDPS discord server, where you can get in touch with the team!"
             }
+        }
+    }
+}
+
+impl Render for Nationality {
+    fn render(&self) -> Markup {
+        html! {
+            span.flag-icon.{"flag-icon-"(self.iso_country_code.to_lowercase())} title = (self.nation) {}
         }
     }
 }

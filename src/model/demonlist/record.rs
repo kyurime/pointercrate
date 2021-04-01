@@ -28,7 +28,10 @@ pub use self::{
     post::Submission,
 };
 use crate::{
-    model::demonlist::{demon::MinimalDemon, player::DatabasePlayer, record::note::Note, submitter::Submitter},
+    model::{
+        demonlist::{demon::MinimalDemon, player::DatabasePlayer, record::note::Note, submitter::Submitter},
+        nationality::Nationality,
+    },
     state::PointercrateState,
     Result,
 };
@@ -42,6 +45,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+pub mod audit;
 mod delete;
 mod get;
 pub mod note;
@@ -147,7 +151,7 @@ impl Hash for FullRecord {
         self.status.hash(state);
         self.player.id.hash(state);
         self.demon.id.hash(state);
-        self.notes.hash(state)
+        // notes have sub-endpoint -> no hash
         // submitter cannot be patched -> no hash
     }
 }
@@ -181,6 +185,7 @@ pub struct MinimalRecordP {
     pub video: Option<String>,
     pub status: RecordStatus,
     pub player: DatabasePlayer,
+    pub nationality: Option<Nationality>,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
