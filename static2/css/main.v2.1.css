@@ -6,13 +6,24 @@ body {
   position: relative;
 
   min-width: 100%;
-  height: auto;
+  height: 100%;
   width: 100%;
 
   background-attachment: fixed;
   background-position: center;
   background-repeat: repeat;
   background-size: cover;
+
+  display: flex;
+  flex-direction: column;
+}
+
+body>:not(header):not(footer) {
+  flex: 1 0 auto;
+}
+
+footer {
+  flex-shrink: 0;
 }
 
 body {
