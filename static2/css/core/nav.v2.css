@@ -107,16 +107,27 @@ header nav .nav-hover-dropdown {
 }
 
 header nav .nav-group .nav-hover-dropdown {
+  background: rgba(34, 36, 37, .95);
+  border-radius: 0px 0px 12px 12px;
+  box-shadow: 4px 4px 12px 3px rgba(0, 0, 0, 0.2);
+
   position: absolute;
   top: 70px;
 
-  border: 1px solid rgba(211, 211, 211, 1);
   border-top: 0;
   display: none;
 }
 
 header nav .nav-group:hover .nav-hover-dropdown {
   display: block;
+}
+
+header nav .nav-group:hover .nav-hover-dropdown li:hover {
+  background-color: rgba(21, 22, 23, 0.5);
+}
+
+header nav .nav-group:hover .nav-hover-dropdown li:last-child {
+  border-radius: 0px 0px 12px 12px;
 }
 
 header nav .nav-hover-dropdown a {

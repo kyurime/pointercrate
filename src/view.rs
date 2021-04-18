@@ -101,15 +101,7 @@ pub fn nav_bar() -> Markup {
                     }
                 }
                 div.nav-group-right.nav-group {
-                    a.nav-item.hover.white href = "/documentation/" {
-                        span style ="display:flex; flex-direction:column;" {
-                            span style ="font-size: 50%" {"REST API"}
-                            span {"Documentation"}
-                        }
-                    }
-                }
-                div.nav-group {
-                    a.nav-item.hover.white href = "/demonlist/" {
+                    a.nav-item.hover.dark-grey href = "/demonlist/" {
                         span.flex.col {
                             span style ="font-size: 50%" {"Geometry Dash"}
                             span {"DEMONLIST"}
@@ -118,13 +110,13 @@ pub fn nav_bar() -> Markup {
                     }
                     ul.nav-hover-dropdown {
                         li {
-                            a.white.hover href = "/demonlist/?statsviewer=true" {"Stats Viewer"}
+                            a.hover href = "/demonlist/?statsviewer=true" {"Stats Viewer"}
                         }
                         li {
-                            a.white.hover href = "/demonlist/?submitter=true" {"Record Submitter"}
+                            a.hover href = "/demonlist/?submitter=true" {"Record Submitter"}
                         }
                         li {
-                            a.white.hover href = "/demonlist/?timemachine=true" { "Time Machine" }
+                            a.hover href = "/demonlist/?timemachine=true" { "Time Machine" }
                         }
                     }
                 }
