@@ -9,7 +9,8 @@ use crate::{
 };
 use actix_files::{Files, NamedFile};
 use actix_web::{
-    middleware::{Logger, NormalizePath},
+    http::ContentEncoding,
+    middleware::{Compress, Logger, NormalizePath},
     web,
     web::{route, scope, JsonConfig, PathConfig, QueryConfig},
     App, HttpRequest, HttpServer,
@@ -68,6 +69,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Etag)
             .wrap(Logger::default())
             .wrap(NormalizePath::default())
+            .wrap(Compress::new(ContentEncoding::Gzip))
             .app_data(application_state.clone())
             .service(Files::new("/static2", "./static2").use_etag(true))
             .route(
@@ -83,6 +85,7 @@ async fn main() -> std::io::Result<()> {
             .service(view::login::post)
             .service(view::login::register)
             .service(view::demonlist::demon_permalink)
+            .service(view::demonlist::stats_viewer2)
             .service(view::demonlist::page)
             .service(view::demonlist::index)
             .service(view::account::index)

@@ -3,6 +3,7 @@
 
 use crate::config;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
+use std::fmt::Display;
 
 pub mod account;
 pub mod demonlist;
@@ -79,7 +80,8 @@ pub trait Page {
                         link rel = "stylesheet" href = {(STATIC) (sheet)};
                     }
                 }
-                body {
+                body style = "z-index: -10"{
+                    div style={"width: 100%;height: 100%;position: fixed;top: 0;left: 0;background-size: cover;background-repeat: repeat-y;pointer-events: none; z-index:-1"} {}
                     (nav_bar())
                     (self.body())
                     (footer())
@@ -99,19 +101,39 @@ pub fn nav_bar() -> Markup {
                     }
                 }
                 div.nav-group-right.nav-group {
-                    a.nav-item.hover.dark-grey href = "/demonlist/" title = "Geometry Dash 1.9 Demonlist" {
+                    a.nav-item.hover.white href = "/documentation/" {
                         span style ="display:flex; flex-direction:column;" {
-                            span style ="font-size: 50%" {"Geometry Dash 1.9"}
-                            span {"DEMONLIST"}
+                            span style ="font-size: 50%" {"REST API"}
+                            span {"Documentation"}
                         }
                     }
-                    div.nav-item.collapse-button {
-                        div.hamburger.hover {
-                            input type="checkbox"{}
-                            span{}
-                            span{}
-                            span{}
+                }
+                div.nav-group {
+                    a.nav-item.hover.white href = "/demonlist/" {
+                        span.flex.col {
+                            span style ="font-size: 50%" {"Geometry Dash"}
+                            span {"DEMONLIST"}
                         }
+                        i.fas.fa-sort-down style = "height: 50%; padding-left: 5px" {}
+                    }
+                    ul.nav-hover-dropdown {
+                        li {
+                            a.white.hover href = "/demonlist/?statsviewer=true" {"Stats Viewer"}
+                        }
+                        li {
+                            a.white.hover href = "/demonlist/?submitter=true" {"Record Submitter"}
+                        }
+                        li {
+                            a.white.hover href = "/demonlist/?timemachine=true" { "Time Machine" }
+                        }
+                    }
+                }
+                div.nav-item.collapse-button {
+                    div.hamburger.hover {
+                        input type="checkbox"{}
+                        span{}
+                        span{}
+                        span{}
                     }
                 }
             }
@@ -231,6 +253,33 @@ pub fn dropdown(default_entry: &str, default_item: Markup, filter_items: impl It
                     (default_item)
                     @for item in filter_items {
                         (item)
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn simple_dropdown<T1: Display>(dropdown_id: &str, default: Option<T1>, items: impl Iterator<Item = T1>) -> Markup {
+    html! {
+        div.dropdown-menu.js-search.no-stretch#(dropdown_id) {
+            @match default {
+                Some(default) => {
+                    input type="text" required="" autocomplete="off" data-default=(default) style = "color: #444446; font-weight: bold;";
+                }
+                None => {
+                    input type="text" required="" autocomplete="off" style = "color: #444446; font-weight: bold;";
+                }
+            }
+
+            div.menu {
+                ul {
+                    @for item in items {
+                        li.white.hover data-value=(item) data-display = (item)  {
+                            b {
+                                (item)
+                            }
+                        }
                     }
                 }
             }

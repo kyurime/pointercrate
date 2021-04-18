@@ -4,7 +4,10 @@ use crate::{
     model::demonlist::demon::{FullDemon, MinimalDemon},
     state::PointercrateState,
     video,
-    view::{demonlist::overview::DemonlistOverview, Page},
+    view::{
+        demonlist::overview::{DemonlistOverview, OverviewQueryData},
+        Page,
+    },
     ViewResult,
 };
 use actix_web::{web::Path, HttpResponse};
@@ -42,7 +45,7 @@ pub async fn demon_permalink(state: PointercrateState, id: Path<i32>) -> ViewRes
 #[get("/demonlist/{position}/")]
 pub async fn page(state: PointercrateState, position: Path<i16>) -> ViewResult<HttpResponse> {
     let mut connection = state.connection().await?;
-    let overview = DemonlistOverview::load(&mut connection, None).await?;
+    let overview = DemonlistOverview::load(&mut connection, None, OverviewQueryData::default()).await?;
     let demon = FullDemon::by_position(position.into_inner(), &mut connection).await?;
     let link_banned = sqlx::query!(
         r#"SELECT link_banned AS "link_banned!: bool" FROM players WHERE id = $1"#,
@@ -417,8 +420,8 @@ impl Page for Demonlist {
 
             div.flex.m-center.container {
                 main.left {
-                    (super::submission_panel(&self.overview.demon_overview))
-                    (super::stats_viewer(&self.overview.nations))
+                    (super::submission_panel(&self.overview.demon_overview, false))
+                    (super::stats_viewer(&self.overview.nations, false))
                     (self.demon_panel())
                     (self.level_info_panel())
                     div.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
