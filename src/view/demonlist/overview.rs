@@ -147,7 +147,7 @@ pub struct OverviewQueryData {
 #[get("/demonlist/")]
 pub async fn index(request: HttpRequest, state: PointercrateState, query_data: Query<OverviewQueryData>) -> ViewResult<HttpResponse> {
     /* static */
-    let EARLIEST_DATE: DateTime<FixedOffset> = FixedOffset::east(0).from_utc_datetime(&NaiveDate::from_ymd(2017, 1, 4).and_hms(0, 0, 0));
+    let EARLIEST_DATE: DateTime<FixedOffset> = FixedOffset::east(0).from_utc_datetime(&NaiveDate::from_ymd(2019, 4, 19).and_hms(0, 0, 0));
 
     let mut connection = state.connection().await?;
 
@@ -203,7 +203,7 @@ impl Page for DemonlistOverview {
                     (super::submission_panel(&self.demon_overview, self.query_data.record_submitter_shown))
                     (super::stats_viewer(&self.nations, self.query_data.stats_viewer_shown))
                     @if let Some(when) = self.when {
-                        div.panel.fade.blue.flex style="align-items: center;" {
+                        div.panel.fade.dark-grey.flex style="align-items: center;" {
                              span style = "text-align: end"{
                                 "You are currently looking at the demonlist how it was on"
                                  br;
@@ -215,7 +215,7 @@ impl Page for DemonlistOverview {
                                      }
                                  }
                              }
-                             a.white.button href = "/demonlist/" onclick=r#"document.cookie = "when=""# style = "margin-left: 15px"{ b{"Go to present" }}
+                             a.dark-grey.button href = "/demonlist/" onclick=r#"document.cookie = "when=""# style = "margin-left: 15px"{ b{"Go to present" }}
                         }
                     }
                     @for demon in &self.demon_overview {
@@ -369,12 +369,12 @@ fn time_machine(visible: bool) -> Markup {
                     h2 {"Time Machine"}
                 }
                 p {
-                    "Enter the date you want to view the demonlist at below. For technical reasons, the earliest possible date is January 4th 2017. Note however that data before August 4th 2017 is only provided on a best-effort basis and not guaranteed to be 100% accurate. Particularly data from before April 4th 2017 contains significant errors!"
+                    "Enter the date you want to view the demonlist at below. For technical reasons, the earliest possible date is April 21st 2019."
                 }
                 div.flex {
                     span.form-input data-type = "dropdown" style = "max-width:33%" {
                         h3 {"Year:"}
-                        (crate::view::simple_dropdown("time-machine-year", None, 2017..=current_year))
+                        (crate::view::simple_dropdown("time-machine-year", None, 2019..=current_year))
                         p.error {}
                     }
                     span.form-input data-type = "dropdown" style = "max-width:33%"  {
@@ -405,7 +405,7 @@ fn time_machine(visible: bool) -> Markup {
                         p.error {}
                     }
                 }
-                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Let's goooo!";
+                input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Let's goooo!";
             }
         }
     }

@@ -257,17 +257,17 @@ pub fn simple_dropdown<T1: Display>(dropdown_id: &str, default: Option<T1>, item
         div.dropdown-menu.js-search.no-stretch#(dropdown_id) {
             @match default {
                 Some(default) => {
-                    input type="text" required="" autocomplete="off" data-default=(default) style = "color: #444446; font-weight: bold;";
+                    input type="text" required="" autocomplete="off" data-default=(default) style = "color: #b3b3b3; font-weight: bold;";
                 }
                 None => {
-                    input type="text" required="" autocomplete="off" style = "color: #444446; font-weight: bold;";
+                    input type="text" required="" autocomplete="off" style = "color: #b3b3b3; font-weight: bold;";
                 }
             }
 
             div.menu {
                 ul {
                     @for item in items {
-                        li.white.hover data-value=(item) data-display = (item)  {
+                        li.dark-grey.hover data-value=(item) data-display = (item)  {
                             b {
                                 (item)
                             }
