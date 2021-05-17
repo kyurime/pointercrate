@@ -37,6 +37,18 @@ pub trait Page {
                         (self.title())
                     }
 
+                    @if let Some(analytics_tag) = config::google_analytics_tag() {
+                        (PreEscaped(format!(
+r#"<script async src="https://www.googletagmanager.com/gtag/js?id={0}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){{dataLayer.push(arguments);}}
+gtag('js', new Date());
+
+gtag('config', '{0}');
+</script>"#,
+                        analytics_tag)));
+                    }
                     meta property="og:site_name" content="pointercrate";
                     meta property="og:type" content="website";
                     meta property="og:title" content = (self.title());
