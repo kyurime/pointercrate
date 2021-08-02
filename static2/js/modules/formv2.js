@@ -23,6 +23,26 @@ export class Dropdown {
       this.values[li.dataset.value] = li.dataset.display || li.innerHTML;
     }
 
+    const config = {attributes: false, childList: true, subtree: false};
+    const callback = (mutationList) => {
+      for(let mutation of mutationList) {
+        /*for(let addedLI of mutation.addedNodes) {
+          addedLI.addEventListener("click", () => this.select(addedLI.dataset.value));
+
+          this.values[addedLI.dataset.value] = addedLI.dataset.display || addedLI.innerHTML;
+        }*/
+        for(let removedLI of mutation.removedNodes) {
+          delete this.values[removedLI.dataset.value];
+        }
+      }
+    };
+
+    this.ul = this.html.getElementsByTagName("ul")[0];
+
+    const observer = new MutationObserver(callback);
+    observer.observe(this.ul, config);
+
+
     // in case some browser randomly decide to store text field values
     this.reset();
 
@@ -42,6 +62,26 @@ export class Dropdown {
     });
   }
 
+  // FIXME: horrible hack
+  addLI(li) {
+    this.ul.appendChild(li);
+
+    li.addEventListener("click", () => this.select(li.dataset.value));
+
+    this.values[li.dataset.value] = li.dataset.display || li.innerHTML;
+  }
+
+  /**
+   * Clears all dropdown options but the default one (which is selected)
+   */
+  clearOptions() {
+    this.reset();
+
+    // Kill all but the default entry
+    while(this.ul.childNodes.length > 1)
+      this.ul.removeChild(this.ul.lastChild);
+  }
+
   reset() {
     this.selected = this.input.dataset.default;
     if(this.values[this.selected] )
@@ -52,6 +92,9 @@ export class Dropdown {
 
   select(entry) {
     if (entry in this.values) {
+      if(entry === this.selected)
+        return;
+
       this.selected = entry;
       this.input.value = this.values[entry];
 
@@ -458,8 +501,16 @@ export class Paginator extends Output {
    * @memberof Paginator
    */
   updateQueryData(key, value) {
-    if (value === undefined) delete this.queryData[key];
-    else this.queryData[key] = value;
+    let obj = {};
+    obj[key] = value;
+    this.updateQueryData2(obj);
+  }
+
+  updateQueryData2(obj) {
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === undefined) delete this.queryData[key];
+      else this.queryData[key] = value;
+    }
 
     this.currentLink = this.endpoint + "?" + $.param(this.queryData);
     this.refresh();

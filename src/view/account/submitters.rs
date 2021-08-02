@@ -34,8 +34,10 @@ pub(super) fn page() -> Markup {
                                             "Banned:"
                                         }
                                         br;
-                                        div.dropdown-menu.js-search#edit-submitter-banned style = "max-width: 50px"{
-                                            input type="text" style = "color: inherit; font-weight: bold;";
+                                        div.dropdown-menu.js-search#edit-submitter-banned style = "max-width: 50px" {
+                                            div{
+                                                input type="text" style = "color: inherit; font-weight: bold;";
+                                            }
                                             div.menu {
                                                 ul {
                                                     li.dark-grey.hover data-value="true" {"yes"}

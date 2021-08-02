@@ -5,7 +5,7 @@
     top: 0;
     right: 0;
     left: 0;
-    bottom: calc(50vh - 40px);
+    bottom: calc(50vh - 60px);
     transition: filter .1s;
 }
 
@@ -34,3 +34,29 @@
     font-size: 70%;
     font-variant: small-caps;
 }
+
+#player-name {
+    display: flex;
+    justify-content: center;
+}
+
+#player-name span:first-child {
+    background-position: 100%;
+    flex-grow: 2;
+}
+
+#player-name span:last-child {
+    background-position: 0%;
+    flex-grow: 2;
+}
+
+
+.tooltip:hover .tooltiptext {
+    opacity: 1 !important;
+}
+
+/*
+ Flag styles, taken from https://github.com/lipis/flag-icon-css
+ */
+
+.flag-icon-background{background-size:contain;background-position:50%;background-repeat:no-repeat}.flag-icon{background-size:contain;background-position:50%;background-repeat:no-repeat;position:relative;display:inline-block;width:1.33333333em;line-height:1em}.flag-icon:before{content:'\00a0'}

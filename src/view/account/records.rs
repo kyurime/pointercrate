@@ -26,8 +26,10 @@ fn record_manager(demons: &[OverviewDemon]) -> Markup {
                             " Record #"
                             i#record-id {}
                             " - "
-                            div.dropdown-menu.js-search#edit-record-status style = "max-width: 220px"{
-                                input type="text" style = "color: inherit; font-weight: bold;";
+                            div.dropdown-menu.js-search#edit-record-status style = "max-width: 220px" {
+                                div{
+                                    input type="text" style = "color: inherit; font-weight: bold;";
+                                }
                                 div.menu {
                                     ul {
                                         li.dark-grey.hover data-value="approved" {"Approved"}

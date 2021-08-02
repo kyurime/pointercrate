@@ -1,4 +1,4 @@
-use std::{fmt::Debug, fs::File, io::Read, str::FromStr};
+use std::{fmt::Debug, fs::File, io::Read, net::IpAddr, str::FromStr};
 
 fn from_env_or_default<T: FromStr>(key: &str, default: T) -> T
 where
@@ -12,6 +12,10 @@ where
 
 pub fn documentation_location() -> String {
     from_env_or_default("DOCUMENTATION", format!("{}/documentation/", env!("OUT_DIR")))
+}
+
+pub fn ip_address() -> IpAddr {
+    from_env_or_default("IP_ADDRESS", IpAddr::from([127, 0, 0, 1]))
 }
 
 pub fn guidelines_location() -> String {

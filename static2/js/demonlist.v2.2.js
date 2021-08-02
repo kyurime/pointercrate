@@ -1,23 +1,11 @@
 import {
   initializeRecordSubmitter, initializeTimeMachine,
-  StatsViewer,
-} from "./modules/demonlist.mjs";
+} from "./modules/demonlistv2.js";
 
 $(document).ready(function () {
   initializePositionChart();
   initializeRecordSubmitter();
   initializeTimeMachine();
-
-  window.statsViewer = new StatsViewer(document.getElementById("statsviewer"));
-
-  if(window.location.toString().includes("statsviewer=true"))
-    window.statsViewer.initialize();
-  else
-    document
-      .getElementById("show-stats-viewer")
-      .addEventListener("click", () => {
-        window.statsViewer.initialize();
-      });
 });
 
 function initializePositionChart() {

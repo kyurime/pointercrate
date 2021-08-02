@@ -7,10 +7,10 @@
 
 pub use self::{
     auth::{AuthenticatedUser, Authorization, PatchMe, Registration},
-    paginate::UserPagination,
+    paginate::{ListedUser, UserPagination},
     patch::PatchUser,
 };
-use crate::{error::PointercrateError, permissions::Permissions, Result};
+use crate::{error::PointercrateError, etag::Taggable, model::demonlist::player::DatabasePlayer, permissions::Permissions, Result};
 use serde::Serialize;
 use sqlx::PgConnection;
 use std::{
@@ -18,13 +18,13 @@ use std::{
     hash::Hash,
 };
 
+#[macro_use]
+mod get;
 mod auth;
 mod delete;
-mod get;
 mod paginate;
 mod patch;
 
-// TODO: impl the nationality stuff already in the database
 /// Model representing a user in the database
 #[derive(Debug, Serialize, Hash, Eq, PartialEq)]
 pub struct User {
@@ -45,7 +45,12 @@ pub struct User {
 
     /// A user-customizable link to a [YouTube](https://youtube.com) channel
     pub youtube_channel: Option<String>,
+
+    /// The demonlist player claimed by this pointercrate account (not necessarily verified).
+    pub claimed_player: Option<DatabasePlayer>,
 }
+
+impl Taggable for User {}
 
 impl Display for User {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {

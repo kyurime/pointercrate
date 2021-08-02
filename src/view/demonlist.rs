@@ -1,13 +1,15 @@
 pub use self::{
     demon_page::{demon_permalink, page},
     overview::{index, overview_demons, OverviewDemon},
-    statsviewer::stats_viewer as stats_viewer2,
+    statsviewer::{
+        heatmap::heatmap_css, individual::stats_viewer as individual_statsviewer, nationbased::stats_viewer as nation_statsviewer,
+    },
 };
 use crate::{
     config,
     model::{demonlist::demon::Demon, nationality::Nationality},
 };
-use maud::{html, Markup, PreEscaped, Render};
+use maud::{html, Markup, Render};
 
 mod demon_page;
 mod overview;
@@ -131,7 +133,9 @@ fn dropdown(section: &ListSection, demons: &[OverviewDemon], current: Option<&De
 pub fn demon_dropdown<'a>(dropdown_id: &str, demons: impl Iterator<Item = &'a OverviewDemon>) -> Markup {
     html! {
         div.dropdown-menu.js-search#(dropdown_id) {
-            input type = "text" name = "demon" required="" autocomplete="off";
+            div {
+                input type = "text" name = "demon" required="" autocomplete="off";
+            }
             div.menu {
                ul {
                     @for demon in demons {
@@ -238,7 +242,7 @@ pub(super) fn submission_panel(demons: &[OverviewDemon], visible: bool) -> Marku
                     "Notes or comments: "
                 }
                 p {
-                    "Provide any additional notes you'd like to pass on to the list moderator receiving your submission. In particular, any required " b { "raw footage"} " goes here."
+                    "Provide any additional notes you'd like to pass on to the list moderator receiving your submission. In particular, any required " b { "raw footage"} " goes here. Any personal information possibly contained within raw footage (e.g. names, sensitive conversations) will be kept strictly confidential and will not be shared outside of the demonlist team. Conversely, you acknowledge that you might inadvertently share such information by providing raw footage. You have the right to request deletion of your record note by contacting a list administrator."
                 }
                 span.form-input.flex.col#submit-note {
                     textarea name = "note" placeholder = "Your dreams and hopes for this record... or something like that" {}
@@ -253,130 +257,6 @@ pub(super) fn submission_panel(demons: &[OverviewDemon], visible: bool) -> Marku
             "To select the player holding this record, search them up on the left to see if they already have records on the list and click them. In case the player does not exist, fill out only the text field on the right.",
             "Select"
         ))
-    }
-}
-
-fn stats_viewer(nations: &[Nationality], visible: bool) -> Markup {
-    html! {
-        section.panel.fade.closable#statsviewer  style=(if !visible {"display:none"} else {""}) {
-            span.plus.cross.hover {}
-            h2.underlined.pad {
-                "Stats Viewer - "
-                (super::dropdown("International",
-                    html! {
-                        li.dark-grey.hover.underlined data-value = "International" data-display = "International" {
-                            span.em.em-world_map {}
-                            (PreEscaped("&nbsp;"))
-                            b {"WORLD"}
-                            br;
-                            span style = "font-size: 90%; font-style: italic" { "International" }
-                        }
-                    },
-                    nations.iter().map(|nation| html! {
-                        li.dark-grey.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
-                            span class = {"flag-icon flag-icon-" (nation.iso_country_code.to_lowercase())} {}
-                            (PreEscaped("&nbsp;"))
-                            b {(nation.iso_country_code)}
-                            br;
-                            span style = "font-size: 90%; font-style: italic" {(nation.nation)}
-                        }
-                    })
-                ))
-            }
-            div.flex.viewer {
-                (super::filtered_paginator("stats-viewer-pagination", "/api/v1/players/ranking/"))
-                p.viewer-welcome {
-                    "Click on a player's name on the left to get started!"
-                }
-                div.viewer-content {
-                    div {
-                        div.flex.col {
-                            h3#player-name style = "font-size:1.4em; overflow: hidden" {}
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "List demons completed:"
-                                    }
-                                    br;
-                                    span#amount-beaten {}
-                                }
-                                span {
-                                    b {
-                                        "Legacy demons completed:"
-                                    }
-                                    br;
-                                    span#amount-legacy {}
-                                }
-                                span {
-                                    b {
-                                        "Demonlist score:"
-                                    }
-                                    br;
-                                    span#score {}
-                                }
-                            }
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "Demonlist rank:"
-                                    }
-                                    br;
-                                    span#rank {}
-                                }
-                                span {
-                                    b {
-                                        "Hardest demon:"
-                                    }
-                                    br;
-                                    span#hardest {}
-                                }
-                            }
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "Demons completed:"
-                                    }
-                                    br;
-                                    span#beaten {}
-                                }
-                            }
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "List demons created:"
-                                    }
-                                    br;
-                                    span#created {}
-                                }
-                                span {
-                                    b {
-                                        "List demons published:"
-                                    }
-                                    br;
-                                    span#published {}
-                                }
-                                span {
-                                    b {
-                                        "List demons verified:"
-                                    }
-                                    br;
-                                    span#verified {}
-                                }
-                            }
-                            div.stats-container.flex.space {
-                                span {
-                                    b {
-                                        "Progress on:"
-                                    }
-                                    br;
-                                    span#progress {}
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -489,7 +369,7 @@ fn stats_viewer_panel() -> Markup {
             p {
                 "Get an overview of all the players on the list, or just stare at the point leaderboards."
             }
-            a.dark-grey.hover.button.js-scroll#show-stats-viewer data-destination = "statsviewer" data-reveal = "true" {
+            a.dark-grey.hover.button#show-stats-viewer href = "/demonlist/statsviewer/ "{
                 "Open the stats viewer!"
             }
         }

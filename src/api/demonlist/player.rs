@@ -1,9 +1,9 @@
 use crate::{
+    etag::HttpResponseBuilderEtagExt,
     extractor::{auth::TokenAuth, if_match::IfMatch},
     model::demonlist::player::{PatchPlayer, Player, PlayerPagination, RankedPlayer, RankingPagination},
     permissions::Permissions,
     state::PointercrateState,
-    util::HttpResponseBuilderExt,
     ApiResult,
 };
 use actix_web::{
@@ -13,8 +13,16 @@ use actix_web::{
 use actix_web_codegen::{get, patch};
 
 #[get("/")]
-pub async fn paginate(state: PointercrateState, mut pagination: Query<PlayerPagination>) -> ApiResult<HttpResponse> {
+pub async fn paginate(
+    state: PointercrateState, user: ApiResult<TokenAuth>, mut pagination: Query<PlayerPagination>,
+) -> ApiResult<HttpResponse> {
     let mut connection = state.connection().await?;
+
+    let should_return_banned_players = user.as_ref().map(|user| user.0.inner().list_team_member()).unwrap_or(false);
+
+    if !should_return_banned_players {
+        pagination.0.banned = Some(false);
+    }
 
     let mut demons = pagination.page(&mut connection).await?;
     let (max_id, min_id) = Player::extremal_player_ids(&mut connection).await?;

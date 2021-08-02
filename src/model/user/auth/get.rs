@@ -10,15 +10,6 @@ use crate::{
 use log::{debug, info, warn};
 use sqlx::{Error, PgConnection};
 
-struct FetchedUser {
-    member_id: i32,
-    name: String,
-    permissions: i32,
-    display_name: Option<String>,
-    youtube_channel: Option<String>,
-    password_hash: String,
-}
-
 /// Enum representing a parsed `Authorization` header
 #[derive(Debug)]
 pub enum Authorization {
@@ -41,6 +32,7 @@ impl AuthenticatedUser {
                 password: Some(password),
                 display_name: None,
                 youtube_channel: None,
+                claimed_player: None,
             };
 
             warn!("Invalidating all access tokens for user {}", user.inner());
@@ -102,10 +94,10 @@ impl AuthenticatedUser {
     }
 
     async fn by_id(id: i32, connection: &mut PgConnection) -> Result<AuthenticatedUser> {
-        let row = sqlx::query_as!(
-            FetchedUser,
-            r#"SELECT member_id, name, permissions::integer as "permissions!: i32", display_name, youtube_channel::text, password_hash FROM members WHERE 
-             member_id = $1"#,
+        let row = sqlx::query!(
+            r#"SELECT member_id, members.name, permissions::integer, display_name, youtube_channel::text, password_hash, players.id as "cp_id?", 
+             players.name::text as cp_name, players.banned as "cp_banned?" FROM members LEFT OUTER JOIN players ON players.id = 
+             members.claimed_player WHERE member_id = $1"#,
             id
         )
         .fetch_one(connection)
@@ -116,22 +108,17 @@ impl AuthenticatedUser {
             Err(err) => Err(err.into()),
             Ok(row) =>
                 Ok(AuthenticatedUser {
-                    user: User {
-                        id,
-                        name: row.name,
-                        permissions: Permissions::from_bits_truncate(row.permissions as u16),
-                        display_name: row.display_name,
-                        youtube_channel: row.youtube_channel,
-                    },
+                    user: construct_from_row!(row),
                     password_hash: row.password_hash,
                 }),
         }
     }
 
     async fn by_name(name: &str, connection: &mut PgConnection) -> Result<AuthenticatedUser> {
-        let row = sqlx::query_as!(
-            FetchedUser,
-            r#"SELECT member_id, name, permissions::integer as "permissions!: i32", display_name, youtube_channel::text, password_hash FROM members WHERE name = $1"#,
+        let row = sqlx::query!(
+            r#"SELECT member_id, members.name, permissions::integer, display_name, youtube_channel::text, password_hash, players.id as "cp_id?", 
+             players.name::text as cp_name, players.banned as "cp_banned?" FROM members LEFT OUTER JOIN players ON players.id = 
+             members.claimed_player WHERE members.name = $1"#,
             name.to_string()
         )
         .fetch_one(connection)
@@ -142,13 +129,7 @@ impl AuthenticatedUser {
             Err(err) => Err(err.into()),
             Ok(row) =>
                 Ok(AuthenticatedUser {
-                    user: User {
-                        id: row.member_id,
-                        name: row.name,
-                        permissions: Permissions::from_bits_truncate(row.permissions as u16),
-                        display_name: row.display_name,
-                        youtube_channel: row.youtube_channel,
-                    },
+                    user: construct_from_row!(row),
                     password_hash: row.password_hash,
                 }),
         }

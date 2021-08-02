@@ -3,7 +3,7 @@ use crate::{
     error::PointercrateError,
     model::{
         demonlist::player::{DatabasePlayer, Player, RankedPlayer},
-        nationality::Nationality,
+        nationality::{Continent, Nationality},
     },
     util::{non_nullable, nullable},
     Result,
@@ -32,7 +32,7 @@ pub struct PlayerPagination {
     name_contains: Option<CiString>,
 
     #[serde(default, deserialize_with = "non_nullable")]
-    banned: Option<bool>,
+    pub banned: Option<bool>,
 
     #[serde(default, deserialize_with = "nullable")]
     nation: Option<Option<String>>,
@@ -76,6 +76,7 @@ impl PlayerPagination {
                     Some(Nationality {
                         iso_country_code: country_code,
                         nation: CiString(nation),
+                        subdivision: None, // dont include subdivision in pagination data
                     }),
                 _ => None,
             };
@@ -109,6 +110,13 @@ pub struct RankingPagination {
 
     #[serde(default, deserialize_with = "nullable")]
     nation: Option<Option<String>>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    continent: Option<Continent>,
+
+    #[serde(default, deserialize_with = "non_nullable")]
+    subdivision: Option<String>,
+
     #[serde(default, deserialize_with = "non_nullable")]
     name_contains: Option<CiString>,
 }
@@ -135,6 +143,8 @@ impl RankingPagination {
             .bind(self.name_contains.as_ref().map(|s| s.as_str()))
             .bind(&self.nation)
             .bind(self.nation == Some(None))
+            .bind(self.continent.as_ref().map(|c| c.to_sql()))
+            .bind(&self.subdivision)
             .bind(self.limit.unwrap_or(50) as i32 + 1)
             .fetch(connection);
 
@@ -148,6 +158,7 @@ impl RankingPagination {
                     Some(Nationality {
                         iso_country_code: country_code,
                         nation: CiString(nation),
+                        subdivision: None, // dont include subdivision in pagination data
                     }),
                 _ => None,
             };

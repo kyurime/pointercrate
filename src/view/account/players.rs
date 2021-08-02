@@ -5,7 +5,7 @@ pub(super) fn page(nationalities: &[Nationality]) -> Markup {
     html! {
         div.m-center.flex.tab-content.container data-tab-id = "4"{
             div.left {
-                div.panel.fade {
+                div.panel.fade style = "overflow: initial"{
                     h2.underlined.pad {
                         "Player Manager"
                     }
@@ -33,8 +33,10 @@ pub(super) fn page(nationalities: &[Nationality]) -> Markup {
                                             "Banned:"
                                         }
                                         br;
-                                        div.dropdown-menu.js-search#edit-player-banned style = "max-width: 50px"{
-                                            input type="text" style = "color: inherit; font-weight: bold;";
+                                        div.dropdown-menu.js-search#edit-player-banned style = "max-width: 50px" {
+                                            div {
+                                                input type="text" style = "color: inherit; font-weight: bold;";
+                                            }
                                             div.menu {
                                                 ul {
                                                     li.dark-grey.hover data-value="true" {"yes"}
@@ -48,20 +50,43 @@ pub(super) fn page(nationalities: &[Nationality]) -> Markup {
                                             "Nationality:"
                                         }
                                         br;
+                                        p {
+                                            "Note that this is to be understood as 'Country of legal residency' and nothing else. No exceptions. "
+                                        }
                                         div.dropdown-menu.js-search#edit-player-nationality data-default = "None" {
-                                            input type="text" style = "color: inherit; font-weight: bold;";
+                                            div {
+                                                input type="text" style = "color: inherit; font-weight: bold;";
+                                            }
                                             div.menu {
                                                 ul {
                                                     li.dark-grey.hover.underlined data-value = "None" {"None"}
                                                     @for nation in nationalities {
                                                         li.dark-grey.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
-                                                            span class = {"flag-icon flag-icon-" (nation.iso_country_code.to_lowercase())} {}
+                                                            span class = "flag-icon" style={"background-image: url(/static2/images/flags/" (nation.iso_country_code.to_lowercase()) ".svg"} {}
                                                             (PreEscaped("&nbsp;"))
                                                             b {(nation.iso_country_code)}
                                                             br;
                                                             span style = "font-size: 90%; font-style: italic" {(nation.nation)}
                                                         }
                                                     }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                div.stats-container.flex.space {
+                                    span {
+                                        b {
+                                            "Political Subdivision:"
+                                        }
+                                        br;
+                                        div.dropdown-menu.js-search#edit-player-subdivision data-default = "None" {
+                                            div{
+                                                input type="text" style = "color: #444446; font-weight: bold;";
+                                            }
+                                            div.menu {
+                                                ul {
+                                                    li.dark-grey.hover.underlined data-value = "None" {"None"}
                                                 }
                                             }
                                         }

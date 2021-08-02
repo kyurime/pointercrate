@@ -1,21 +1,21 @@
 use super::Page;
-use crate::{model::user::User, permissions::Permissions, state::PointercrateState, ViewResult};
+use crate::{model::user::ListedUser, permissions::Permissions, state::PointercrateState, ViewResult};
 use actix_web::HttpResponse;
 use actix_web_codegen::get;
 use maud::{html, Markup, PreEscaped};
 
 #[derive(Debug)]
 struct Homepage {
-    demonlist_team: Vec<User>,
-    pointercrate_team: Vec<User>,
+    demonlist_team: Vec<ListedUser>,
+    pointercrate_team: Vec<ListedUser>,
 }
 
 #[get("/")]
 pub async fn index(state: PointercrateState) -> ViewResult<HttpResponse> {
     let mut connection = state.connection().await?;
 
-    let demonlist_team = User::by_permission(Permissions::ListAdministrator, &mut connection).await?;
-    let pointercrate_team = User::by_permission(Permissions::Administrator, &mut connection).await?;
+    let demonlist_team = ListedUser::by_permission(Permissions::ListAdministrator, &mut connection).await?;
+    let pointercrate_team = ListedUser::by_permission(Permissions::Administrator, &mut connection).await?;
 
     Ok(HttpResponse::Ok().content_type("text/html; charset=utf-8").body(
         Homepage {
@@ -37,7 +37,7 @@ impl Page for Homepage {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/home.js", "js/modules/tab.mjs"]
+        vec!["js/home.js", "js/modules/tab.js"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {

@@ -109,7 +109,7 @@ i.fa.hover {
 }
 
 .hamburger.hover > span {
-  background: rgb(232, 230, 227);
+  background-color: rgb(255, 254, 251);
 }
 
 .hamburger.hover:hover,

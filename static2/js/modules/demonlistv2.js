@@ -13,7 +13,7 @@ import {
   FilteredPaginator,
   Viewer,
   setupFormDialogEditor, FormDialog, setupEditorDialog, get,
-} from "./form.mjs";
+} from "./formv2.js";
 
 export function embedVideo(video) {
   if (!video) return;
@@ -34,10 +34,10 @@ export function embedVideo(video) {
 
 export function initializeTimeMachine() {
   let formHtml = document.getElementById("time-machine-form");
-  
+
   if(formHtml === null)
     return;
-  
+
   var timeMachineForm = new Form(formHtml);
 
   var inputs = ['year', 'month', 'day', 'hour', 'minute', 'second'].map(name => timeMachineForm.input("time-machine-" + name));
@@ -151,206 +151,47 @@ export function initializeRecordSubmitter(csrf = null, submitApproved = false) {
   });
 }
 
-export class StatsViewer extends FilteredPaginator {
-  /**
-   * Constructs a new StatsViewer
-   *
-   * @param {HTMLElement} html The container element of this stats viewer instance
-   */
-  constructor(html) {
-    super(
-      "stats-viewer-pagination",
-      generateStatsViewerPlayer,
-      "name_contains"
-    );
+export function getCountryFlag(title, countryCode) {
+  let countrySpan = document.createElement("span");
+  countrySpan.classList.add("flag-icon");
+  countrySpan.title = title;
+  countrySpan.style.backgroundImage = "url(/static2/images/flags/" + countryCode.toLowerCase() + ".svg";
+  return countrySpan;
+}
 
-    // different from pagination endpoint here!
-    this.retrievalEndpoint = "/api/v1/players/";
+export function getSubdivisionFlag(title, countryCode, subdivisionCode) {
+  let stateSpan = document.createElement("span");
+  stateSpan.classList.add("flag-icon");
+  stateSpan.title = title;
+  stateSpan.style.backgroundImage = "url(/static2/images/flags/" + countryCode.toLowerCase() + "/" + subdivisionCode.toLowerCase() + ".svg";
+  return stateSpan;
+}
 
-    this.html = html;
-    this.output = new Viewer(
-      html.getElementsByClassName("viewer-content")[0],
-      this
-    );
+export function populateSubdivisionDropdown(dropdown, countryCode) {
+  dropdown.clearOptions();
 
-    this._name = document.getElementById("player-name");
-    this._created = document.getElementById("created");
-    this._beaten = document.getElementById("beaten");
-    this._verified = document.getElementById("verified");
-    this._published = document.getElementById("published");
-    this._hardest = document.getElementById("hardest");
-    this._score = document.getElementById("score");
-    this._rank = document.getElementById("rank");
-    this._amountBeaten = document.getElementById("amount-beaten");
-    this._amountLegacy = document.getElementById("amount-legacy");
-    this._welcome = html.getElementsByClassName("viewer-welcome")[0];
-    this._progress = document.getElementById("progress");
-    this._content = html.getElementsByClassName("viewer-content")[0];
+  return get("/api/v1/nationalities/" + countryCode + "/subdivisions/").then(result => {
+    for(let subdivision of result.data) {
+      let flag = getSubdivisionFlag(subdivision.name, countryCode, subdivision.iso_code);
 
-    try {
-      this.dropdown = new Dropdown(
-          html.getElementsByClassName("dropdown-menu")[0]
-      );
-      this.dropdown.addEventListener((selected) => {
-        if (selected == "International") {
-          this.updateQueryData("nation", undefined);
-        } else {
-          this.updateQueryData("nation", selected);
-        }
-      });
-    }catch (e) {
-      
+      flag.style.marginLeft = "-10px";
+      flag.style.paddingRight = "1em";
+
+      let li = document.createElement("li");
+
+      li.className = "white hover";
+      li.dataset.value = subdivision.iso_code;
+      li.dataset.display = subdivision.name;
+      li.appendChild(flag);
+      li.appendChild(document.createTextNode(subdivision.name));
+
+      dropdown.addLI(li);
     }
-  }
-
-  initialize() {
-    return get("/api/v1/list_information/").then(data => {
-      this.list_size = data.data['list_size'];
-      this.extended_list_size = data.data['extended_list_size'];
-
-      super.initialize()
-    });
-  }
-
-  onReceive(response) {
-    super.onReceive(response);
-
-    // Using currentlySelected is O.K. here, as selection via clicking li-elements is the only possibility!
-    this._rank.innerHTML = this.currentlySelected.dataset.rank;
-    this._score.innerHTML = this.currentlySelected.getElementsByTagName(
-      "i"
-    )[0].innerHTML;
-
-    var playerData = response.data.data;
-
-    if (playerData.nationality == null) {
-      this._name.textContent = playerData.name;
-    } else {
-      let flagClass =
-        "flag-icon-" + playerData.nationality.country_code.toLowerCase();
-
-      let span = document.createElement("span");
-      span.classList.add("flag-icon", flagClass);
-      span.title = playerData.nationality.nation;
-
-      while (this._name.lastChild) {
-        this._name.removeChild(this._name.lastChild);
-      }
-
-      this._name.textContent = playerData.name + " ";
-      this._name.appendChild(span);
-    }
-
-    this.formatDemonsInto(this._created, playerData.created);
-    this.formatDemonsInto(this._published, playerData.published);
-    this.formatDemonsInto(this._verified, playerData.verified);
-
-    let beaten = playerData.records.filter((record) => record.progress == 100);
-
-    beaten.sort((r1, r2) => r1.demon.name.localeCompare(r2.demon.name));
-
-    let legacy = beaten.filter(
-      (record) => record.demon.position > this.extended_list_size
-    ).length;
-    let extended = beaten.filter(
-      (record) =>
-        record.demon.position > this.list_size &&
-        record.demon.position <= this.extended_list_size
-    ).length;
-
-    let verifiedExtended = playerData.verified.filter(demon => demon.position <= this.extended_list_size && demon.position > this.list_size).length;
-    let verifiedLegacy = playerData.verified.filter(demon => demon.position > this.extended_list_size).length;
-
-    this.formatRecordsInto(this._beaten, beaten);
-
-    this._amountBeaten.textContent =
-      (beaten.length - legacy - extended + playerData.verified.length - verifiedExtended - verifiedLegacy) + " ( + " + (extended + verifiedExtended) + " )";
-    this._amountLegacy.textContent = legacy + verifiedLegacy;
-
-    let hardest = playerData.verified
-      .concat(beaten.map((record) => record.demon))
-      .reduce((acc, next) => (acc.position > next.position ? next : acc), {name: "None", position: 321321321321});
-
-    if(this._hardest.lastChild)
-      this._hardest.removeChild(this._hardest.lastChild);
-    this._hardest.appendChild(hardest.name === "None" ? document.createTextNode("None") : this.formatDemon(hardest, "/demonlist/permalink/" + hardest.id + "/"));
-
-    let non100Records = playerData.records
-      .filter((record) => record.progress != 100)
-      .sort((r1, r2) => r1.progress - r2.progress);
-
-    this.formatRecordsInto(this._progress, non100Records);
-  }
-
-  formatDemon(demon, link) {
-    var element;
-
-    if (demon.position <= this.list_size) {
-      element = document.createElement("b");
-    } else if (demon.position <= this.extended_list_size) {
-      element = document.createElement("span");
-    } else {
-      element = document.createElement("i");
-      element.style.opacity = ".5";
-    }
-
-    if (link) {
-      let a = document.createElement("a");
-      a.href = link;
-      a.textContent = demon.name;
-
-      element.appendChild(a);
-    } else {
-      element.textContent = demon.name;
-    }
-
-    return element;
-  }
-
-  formatDemonsInto(element, demons) {
-    while (element.lastChild) {
-      element.removeChild(element.lastChild);
-    }
-
-    if (demons.length) {
-      for (var demon of demons) {
-        element.appendChild(
-            this.formatDemon(demon, "/demonlist/permalink/" + demon.id + "/")
-        );
-        element.appendChild(document.createTextNode(" - "));
-      }
-      element.removeChild(element.lastChild);
-    } else {
-      element.appendChild(document.createTextNode("None"));
-    }
-  }
-
-  formatRecordsInto(element, records) {
-    while (element.lastChild) {
-      element.removeChild(element.lastChild);
-    }
-
-    if (records.length) {
-      for (var record of records) {
-        let demon = this.formatDemon(record.demon, "/demonlist/permalink/" + record.demon.id + "/");
-        if (record.progress != 100) {
-          demon.appendChild(
-              document.createTextNode(" (" + record.progress + "%)")
-          );
-        }
-        element.appendChild(demon);
-        element.appendChild(document.createTextNode(" - "));
-      }
-      element.removeChild(element.lastChild);
-    } else {
-      element.appendChild(document.createTextNode("None"));
-    }
-  }
-
+  });
 }
 
 export class PlayerSelectionDialog extends FormDialog {
-  constructor(dialogId) {
+  constructor(dialogId, selectionHandler) {
     super(dialogId);
 
     let paginator = new FilteredPaginator(
@@ -364,10 +205,14 @@ export class PlayerSelectionDialog extends FormDialog {
     playerName.addValidator(valueMissing, "Please provide a player name");
 
     paginator.initialize();
-    paginator.addSelectionListener((selected) => {
-      playerName.value = selected.name;
-      this.form.html.requestSubmit();
-    });
+    if(selectionHandler === undefined) {
+      paginator.addSelectionListener((selected) => {
+        playerName.value = selected.name;
+        this.form.html.requestSubmit();
+      });
+    } else {
+      paginator.addSelectionListener(selectionHandler);
+    }
   }
 }
 
@@ -460,35 +305,6 @@ export function generateRecord(record) {
     document.createTextNode(record.progress + "% on " + record.demon.name)
   );
   li.appendChild(document.createElement("br"));
-
-  return li;
-}
-
-function generateStatsViewerPlayer(player) {
-  var li = document.createElement("li");
-  var b = document.createElement("b");
-  var i = document.createElement("i");
-
-  li.className = "dark-grey hover";
-  li.dataset.id = player.id;
-  li.dataset.rank = player.rank;
-
-  b.appendChild(document.createTextNode("#" + player.rank + " "));
-  i.appendChild(document.createTextNode(player.score.toFixed(2)));
-
-  if (player.nationality) {
-    var span = document.createElement("span");
-
-    span.className =
-      "flag-icon flag-icon-" + player.nationality.country_code.toLowerCase();
-
-    li.appendChild(span);
-    li.appendChild(document.createTextNode(" "));
-  }
-
-  li.appendChild(b);
-  li.appendChild(document.createTextNode(player.name));
-  li.appendChild(i);
 
   return li;
 }

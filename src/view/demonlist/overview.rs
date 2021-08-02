@@ -1,6 +1,6 @@
 use crate::{
     config,
-    model::{nationality::Nationality, user::User},
+    model::{nationality::Nationality, user::ListedUser},
     permissions::Permissions,
     state::PointercrateState,
     video,
@@ -27,9 +27,9 @@ pub struct OverviewDemon {
 #[derive(Debug)]
 pub struct DemonlistOverview {
     pub demon_overview: Vec<OverviewDemon>,
-    pub admins: Vec<User>,
-    pub mods: Vec<User>,
-    pub helpers: Vec<User>,
+    pub admins: Vec<ListedUser>,
+    pub mods: Vec<ListedUser>,
+    pub helpers: Vec<ListedUser>,
     pub nations: Vec<Nationality>,
 
     pub when: Option<DateTime<FixedOffset>>,
@@ -60,7 +60,7 @@ pub async fn overview_demons(connection: &mut PgConnection, at: Option<DateTime<
 
 impl DemonlistOverview {
     pub(super) fn team_panel(&self) -> Markup {
-        let maybe_link = |user: &User| -> Markup {
+        let maybe_link = |user: &ListedUser| -> Markup {
             html! {
                 li {
                     @match user.youtube_channel {
@@ -113,9 +113,9 @@ impl DemonlistOverview {
     pub(super) async fn load(
         connection: &mut PgConnection, when: Option<DateTime<FixedOffset>>, query_data: OverviewQueryData,
     ) -> Result<DemonlistOverview> {
-        let admins = User::by_permission(Permissions::ListAdministrator, connection).await?;
-        let mods = User::by_permission(Permissions::ListModerator, connection).await?;
-        let helpers = User::by_permission(Permissions::ListHelper, connection).await?;
+        let admins = ListedUser::by_permission(Permissions::ListAdministrator, connection).await?;
+        let mods = ListedUser::by_permission(Permissions::ListModerator, connection).await?;
+        let helpers = ListedUser::by_permission(Permissions::ListHelper, connection).await?;
 
         let nations = Nationality::all(connection).await?;
         let demon_overview = overview_demons(connection, when).await?;
@@ -136,9 +136,6 @@ impl DemonlistOverview {
 pub struct OverviewQueryData {
     #[serde(rename = "timemachine", default)]
     time_machine_shown: bool,
-
-    #[serde(rename = "statsviewer", default)]
-    stats_viewer_shown: bool,
 
     #[serde(rename = "submitter", default)]
     record_submitter_shown: bool,
@@ -184,7 +181,7 @@ impl Page for DemonlistOverview {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/modules/form.mjs", "js/modules/demonlist.mjs", "js/demonlist.v2.2.js"]
+        vec!["js/modules/formv2.js", "js/modules/demonlistv2.js", "js/demonlist.v2.2.js"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -201,7 +198,6 @@ impl Page for DemonlistOverview {
                 main.left {
                     (time_machine(self.query_data.time_machine_shown))
                     (super::submission_panel(&self.demon_overview, self.query_data.record_submitter_shown))
-                    (super::stats_viewer(&self.nations, self.query_data.stats_viewer_shown))
                     @if let Some(when) = self.when {
                         div.panel.fade.dark-grey.flex style="align-items: center;" {
                              span style = "text-align: end"{
@@ -405,7 +401,7 @@ fn time_machine(visible: bool) -> Markup {
                         p.error {}
                     }
                 }
-                input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Let's goooo!";
+                input.button.dark-grey.hover type = "submit" style = "margin: 15px auto 0px;" value="Go!";
             }
         }
     }

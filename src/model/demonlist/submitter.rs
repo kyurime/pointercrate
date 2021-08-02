@@ -1,5 +1,5 @@
 pub use self::{paginate::SubmitterPagination, patch::PatchSubmitter};
-use crate::Result;
+use crate::{etag::Taggable, Result};
 use derive_more::Display;
 use serde::Serialize;
 use sqlx::PgConnection;
@@ -14,6 +14,8 @@ pub struct Submitter {
     pub id: i32,
     pub banned: bool,
 }
+
+impl Taggable for Submitter {}
 
 impl Submitter {
     /// Gets the maximal and minimal submitter id currently in use

@@ -2,11 +2,11 @@
 
 use crate::{
     error::{JsonError, PointercrateError},
+    etag::HttpResponseBuilderEtagExt,
     extractor::{auth::TokenAuth, if_match::IfMatch},
     model::user::{PatchUser, User, UserPagination},
     permissions::Permissions,
     state::PointercrateState,
-    util::HttpResponseBuilderExt,
     ApiResult,
 };
 use actix_web::{
@@ -23,7 +23,7 @@ pub async fn paginate(
 
     // Rule of thumb: If you can assign permissions, you can see all users that currently have those
     // permissions
-    if user.inner().permissions.assigns().is_empty() {
+    if user.inner().permissions.assigns().is_empty() && !user.inner().has_permission(Permissions::Moderator) {
         return Err(JsonError(PointercrateError::Forbidden))
     }
 
@@ -51,7 +51,7 @@ pub async fn get(TokenAuth(user): TokenAuth, state: PointercrateState, user_id: 
 
     // We are only allowed to retrieve users who already have permissions we can set.
     // We're also using that ListModerator implies ListHelper
-    if !user.inner().has_permission(Permissions::Administrator)
+    if !(user.inner().has_permission(Permissions::Administrator) || user.inner().has_permission(Permissions::Moderator))
         && !(user.inner().has_permission(Permissions::ListAdministrator) && gotten_user.has_permission(Permissions::ListHelper))
     {
         return Err(JsonError(PointercrateError::ModelNotFound {

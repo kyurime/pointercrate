@@ -1,4 +1,3 @@
-#![feature(proc_macro_hygiene)]
 #![allow(non_upper_case_globals)]
 #![deny(unused_imports)]
 
@@ -18,7 +17,7 @@ use actix_web::{
 use api::{
     auth,
     demonlist::{demon, misc, player, record, submitter},
-    user,
+    nationality, user,
 };
 use std::net::SocketAddr;
 
@@ -29,6 +28,7 @@ mod cistring;
 mod config;
 mod documentation;
 mod error;
+mod etag;
 mod extractor;
 mod gd;
 mod middleware;
@@ -85,7 +85,9 @@ async fn main() -> std::io::Result<()> {
             .service(view::login::post)
             .service(view::login::register)
             .service(view::demonlist::demon_permalink)
-            .service(view::demonlist::stats_viewer2)
+            .service(view::demonlist::individual_statsviewer)
+            .service(view::demonlist::nation_statsviewer)
+            .service(view::demonlist::heatmap_css)
             .service(view::demonlist::page)
             .service(view::demonlist::index)
             .service(view::account::index)
@@ -96,6 +98,12 @@ async fn main() -> std::io::Result<()> {
             .service(
                 scope("/api/v1")
                     .service(misc::list_information)
+                    .service(
+                        scope("/nationalities")
+                            .service(nationality::subdivisions)
+                            .service(nationality::ranking)
+                            .service(nationality::nation),
+                    )
                     .service(
                         scope("/auth")
                             .service(auth::register)
@@ -161,7 +169,7 @@ async fn main() -> std::io::Result<()> {
             )
             .default_service(route().to(api::handle_404_or_405))
     })
-    .bind(SocketAddr::from(([127, 0, 0, 1], config::port())))?
+    .bind(SocketAddr::from((config::ip_address(), config::port())))?
     .run()
     .await?;
 

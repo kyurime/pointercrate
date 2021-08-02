@@ -1,4 +1,4 @@
-import { generatePlayer } from "../modules/demonlist.mjs";
+import {generatePlayer, getSubdivisionFlag, populateSubdivisionDropdown} from "../modules/demonlistv2.js";
 import {
   displayError,
   Form,
@@ -7,8 +7,8 @@ import {
   setupFormDialogEditor,
   PaginatorEditorBackend,
   setupDropdownEditor,
-  Viewer,
-} from "../modules/form.mjs";
+  Viewer, get,
+} from "../modules/formv2.js";
 import { recordManager, initialize as initRecords } from "./records.js";
 
 export let playerManager;
@@ -41,6 +41,14 @@ class PlayerManager extends FilteredPaginator {
       { None: null }
     );
 
+    this._subdivision = setupDropdownEditor(
+        new PaginatorEditorBackend(this, csrfToken, true),
+        "edit-player-subdivision",
+        "subdivision",
+        this.output,
+        { None: null }
+    );
+
     this.initNameDialog(csrfToken);
   }
 
@@ -60,8 +68,17 @@ class PlayerManager extends FilteredPaginator {
       this._nationality.selectSilently(
         this.currentObject.nationality.country_code
       );
+
+      populateSubdivisionDropdown(this._subdivision, this.currentObject.nationality.country_code).then(() => {
+        if(!this.currentObject.nationality.subdivision) {
+          this._subdivision.selectSilently("None");
+        } else {
+          this._subdivision.selectSilently(this.currentObject.nationality.subdivision.iso_code);
+        }
+      });
     } else {
       this._nationality.selectSilently("None");
+      this._subdivision.selectSilently("None");
     }
   }
 

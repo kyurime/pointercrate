@@ -7,6 +7,7 @@ pub use self::{
 use crate::{
     cistring::{CiStr, CiString},
     error::PointercrateError,
+    etag::Taggable,
     model::demonlist::{player::DatabasePlayer, record::MinimalRecordP},
     Result,
 };
@@ -14,8 +15,12 @@ use derive_more::Display;
 use log::info;
 use serde::Serialize;
 use sqlx::PgConnection;
-use std::hash::{Hash, Hasher};
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
+#[macro_use]
 mod get;
 mod paginate;
 mod patch;
@@ -69,7 +74,7 @@ pub struct MinimalDemon {
 ///
 /// In addition to containing publisher/verifier information it also contains a list of the demon's
 /// creators and a list of accepted records
-#[derive(Debug, Serialize, Display, PartialEq, Eq)]
+#[derive(Debug, Serialize, Display, PartialEq, Eq, Hash)]
 #[display(fmt = "{}", demon)]
 pub struct FullDemon {
     #[serde(flatten)]
@@ -78,10 +83,11 @@ pub struct FullDemon {
     pub records: Vec<MinimalRecordP>,
 }
 
-impl Hash for FullDemon {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.demon.hash(state);
-        // creators have sub-endpoint -> no hash
+impl Taggable for FullDemon {
+    fn patch_part(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.demon.hash(&mut hasher);
+        hasher.finish()
     }
 }
 

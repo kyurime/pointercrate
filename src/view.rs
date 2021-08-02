@@ -36,19 +36,22 @@ pub trait Page {
                     title {
                         (self.title())
                     }
+                    (PreEscaped(format!(r#"<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={}" crossorigin="anonymous"></script>"#, config::adsense_publisher_id())))
 
                     @if let Some(analytics_tag) = config::google_analytics_tag() {
-                        (PreEscaped(format!(
-r#"<script async src="https://www.googletagmanager.com/gtag/js?id={0}"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){{dataLayer.push(arguments);}}
-gtag('js', new Date());
-
-gtag('config', '{0}');
-</script>"#,
-                        analytics_tag)));
+                        (PreEscaped(format!(r#"
+                        <!-- Global site tag (gtag.js) - Google Analytics -->
+                        <script async src="https://www.googletagmanager.com/gtag/js?id={0}"></script>
+                        <script>
+                        window.dataLayer = window.dataLayer || [];
+                        function gtag(){{dataLayer.push(arguments);}}
+                        gtag('js', new Date());
+                        
+                        gtag('config', '{0}');
+                        </script>
+                        "#, analytics_tag)));
                     }
+
                     meta property="og:site_name" content="pointercrate";
                     meta property="og:type" content="website";
                     meta property="og:title" content = (self.title());
@@ -122,7 +125,7 @@ pub fn nav_bar() -> Markup {
                     }
                     ul.nav-hover-dropdown {
                         li {
-                            a.hover href = "/demonlist/?statsviewer=true" {"Stats Viewer"}
+                            a.hover href = "/demonlist/statsviewer/" {"Stats Viewer"}
                         }
                         li {
                             a.hover href = "/demonlist/?submitter=true" {"Record Submitter"}
@@ -251,7 +254,9 @@ pub fn filtered_paginator(id: &str, endpoint: &str) -> Markup {
 pub fn dropdown(default_entry: &str, default_item: Markup, filter_items: impl Iterator<Item = Markup>) -> Markup {
     html! {
         div.dropdown-menu.js-search.no-stretch {
-            input type="text" data-default=(default_entry) autocomplete="off" style = "color: inherit; font-weight: bold;";
+            div {
+                input type="text" data-default=(default_entry) autocomplete="off" style = "color: inherit; font-weight: bold;";
+            }
             div.menu {
                 ul {
                     (default_item)
@@ -267,17 +272,26 @@ pub fn dropdown(default_entry: &str, default_item: Markup, filter_items: impl It
 pub fn simple_dropdown<T1: Display>(dropdown_id: &str, default: Option<T1>, items: impl Iterator<Item = T1>) -> Markup {
     html! {
         div.dropdown-menu.js-search.no-stretch#(dropdown_id) {
-            @match default {
-                Some(default) => {
-                    input type="text" required="" autocomplete="off" data-default=(default) style = "color: #b3b3b3; font-weight: bold;";
-                }
-                None => {
-                    input type="text" required="" autocomplete="off" style = "color: #b3b3b3; font-weight: bold;";
+            div {
+                @match default {
+                    Some(ref default) => {
+                        input type="text" autocomplete="off" data-default=(default) style = "color: #b3b3b3; font-weight: bold;";
+                    }
+                    None => {
+                        input type="text" autocomplete="off" style = "color: #b3b3b3; font-weight: bold;";
+                    }
                 }
             }
 
             div.menu {
                 ul {
+                    @if let Some(ref default) = default {
+                        li.white.underlined.hover data-value=(default) data-display=(default) {
+                            b {
+                                (default)
+                            }
+                        }
+                    }
                     @for item in items {
                         li.dark-grey.hover data-value=(item) data-display = (item)  {
                             b {

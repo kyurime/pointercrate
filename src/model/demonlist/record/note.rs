@@ -1,13 +1,17 @@
 pub use self::{get::notes_on, patch::PatchNote, post::NewNote};
+use crate::etag::Taggable;
 use serde::Serialize;
-use std::hash::{Hash, Hasher};
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
 mod delete;
 mod get;
 mod patch;
 mod post;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Hash)]
 pub struct Note {
     pub id: i32,
 
@@ -31,8 +35,10 @@ pub struct Note {
     pub editors: Vec<String>,
 }
 
-impl Hash for Note {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.content.hash(state)
+impl Taggable for Note {
+    fn patch_part(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.content.hash(&mut hasher);
+        hasher.finish()
     }
 }

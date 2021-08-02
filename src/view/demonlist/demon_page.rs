@@ -327,7 +327,7 @@ impl Demonlist {
                                     tr style = { @if record.progress == 100 {"font-weight: bold"} @else {""} } {
                                         td {
                                             @if let Some(ref nationality) = record.nationality {
-                                                (nationality)
+                                                (*nationality)
                                             }
                                         }
                                         td {
@@ -380,7 +380,7 @@ impl Page for Demonlist {
     }
 
     fn scripts(&self) -> Vec<&str> {
-        vec!["js/modules/form.mjs", "js/modules/demonlist.mjs", "js/demonlist.v2.2.js"]
+        vec!["js/modules/formv2.js", "js/modules/demonlistv2.js", "js/demonlist.v2.2.js"]
     }
 
     fn stylesheets(&self) -> Vec<&str> {
@@ -421,7 +421,6 @@ impl Page for Demonlist {
             div.flex.m-center.container {
                 main.left {
                     (super::submission_panel(&self.overview.demon_overview, false))
-                    (super::stats_viewer(&self.overview.nations, false))
                     (self.demon_panel())
                     (self.level_info_panel())
                     div.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
