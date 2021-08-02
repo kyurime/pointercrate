@@ -36,7 +36,6 @@ pub trait Page {
                     title {
                         (self.title())
                     }
-                    (PreEscaped(format!(r#"<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={}" crossorigin="anonymous"></script>"#, config::adsense_publisher_id())))
 
                     @if let Some(analytics_tag) = config::google_analytics_tag() {
                         (PreEscaped(format!(r#"
