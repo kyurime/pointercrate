@@ -18,7 +18,7 @@ export class Dropdown {
     this.values = {};
 
     for (let li of this.html.querySelectorAll("ul li")) {
-      li.addEventListener("click", () => this.select(li.dataset.value));
+      li.addEventListener("mousedown", () => this.select(li.dataset.value));
 
       this.values[li.dataset.value] = li.dataset.display || li.innerHTML;
     }
@@ -66,7 +66,7 @@ export class Dropdown {
   addLI(li) {
     this.ul.appendChild(li);
 
-    li.addEventListener("click", () => this.select(li.dataset.value));
+    li.addEventListener("mousedown", () => this.select(li.dataset.value));
 
     this.values[li.dataset.value] = li.dataset.display || li.innerHTML;
   }
