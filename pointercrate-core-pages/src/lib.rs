@@ -134,7 +134,10 @@ impl PageConfiguration {
                     div style={"width: 100%;height: 100%;position: fixed;top: 0;left: 0;background-size: cover;background-repeat: repeat-y;pointer-events: none; z-index:-1"} {}
 
                     (self.nav_bar)
-                    (fragment.body_fragment())
+
+                    div.grow {
+                        (fragment.body_fragment())
+                    }
                     (self.footer)
                 }
             }

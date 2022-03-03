@@ -195,6 +195,8 @@ footer {
   color: #ddd;
 
   border-top: 1px solid black;
+
+  flex-shrink: 0;
 }
 
 footer .flex {

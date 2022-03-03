@@ -10,6 +10,9 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+
+  display: flex;
+  flex-direction: column;
 }
 
 body > div:first-child{
@@ -20,6 +23,10 @@ body > div:first-child{
 
 body {
   font-family: "Montserrat", sans-serif;
+}
+
+body > :not(header):not(footer) {
+  flex: 1 0 auto;
 }
 
 /* input elements are weird about their font */
