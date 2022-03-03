@@ -99,6 +99,7 @@ h4 {
 
 iframe {
   border: none;
+  border-radius: 16px;
 }
 
 table {
@@ -111,7 +112,7 @@ ul {
 }
 
 a {
-  color: #222;
+  color: white;
   text-decoration: none;
   cursor: pointer;
 }

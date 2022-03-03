@@ -191,6 +191,8 @@ tr:nth-child(even) {
   min-width: 30%;
   background: black;
   background-size: cover;
+
+  border-radius: 8px;
 }
 
 /* copied from https://codepen.io/injms/pen/gemvi */

@@ -47,7 +47,7 @@ pub fn player_selection_dialog(dialog_id: &str, headline: &str, description: &st
                                 input name = "player" type="text" required = "";
                                 p.error {}
                             }
-                            input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = (button_text);
+                            input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = (button_text);
                         }
                     }
                 }

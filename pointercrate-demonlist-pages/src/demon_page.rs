@@ -282,66 +282,41 @@ impl DemonPage {
                         GDIntegrationResult::Success(level, level_data, song) => {
                             span {
                                 b {
-                                    "Level Password: "
+                                    "Password: "
                                 }
                                 br;
                                 (level_data.password)
                             }
                             span {
                                 b {
-                                    "Level ID: "
+                                    "ID: "
                                 }
                                 br;
                                 (level.level_id)
                             }
                             span {
                                 b {
-                                    "Level length: "
+                                    "Length: "
                                 }
                                 br;
                                 @match level_data.level_data {
                                     Thunk::Processed(ref objects) => {
                                         @let length_in_seconds = objects.length_in_seconds();
 
-                                        (format!("{}m:{:02}s", (length_in_seconds as i32)/ 60, (length_in_seconds as i32) % 60))
+                                        (format!("{}:{:02}", (length_in_seconds as i32)/ 60, (length_in_seconds as i32) % 60))
                                     }
                                     _ => "unreachable!()"
                                 }
                             }
                             span {
                                 b {
-                                    "Object count: "
+                                    "Objects: "
                                 }
                                 br;
                                 @match level_data.level_data {
                                     Thunk::Processed(ref objects) => (objects.objects.len()),
                                     _ => "unreachable!()"
                                 }
-                            }
-                            span {
-                                b {
-                                    "In-Game Difficulty: "
-                                }
-                                br;
-                                @match level.difficulty {
-                                    LevelRating::NotAvailable => "Unrated",
-                                    LevelRating::Demon(demon_rating) => @match demon_rating {
-                                        DemonRating::Easy => "Easy Demon",
-                                        DemonRating::Medium => "Medium Demon",
-                                        DemonRating::Hard => "Hard Demon",
-                                        DemonRating::Insane => "Insane Demon",
-                                        DemonRating::Extreme => "Extreme Demon",
-                                        _ => "???"
-                                    },
-                                    _ => "Level not rated demon, list mods fucked up"
-                                }
-                            }
-                            span {
-                                b {
-                                    "Created in:"
-                                }
-                                br;
-                                (level.gd_version)
                             }
                             @if let Some(song) = song {
                                 span style = "width: 100%"{

@@ -350,7 +350,7 @@ fn demon_submitter() -> Markup {
                         }
                         span#demon-add-creators {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Add Demon";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Add Demon";
                 }
             }
         }
