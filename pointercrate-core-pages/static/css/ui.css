@@ -709,7 +709,7 @@ ul.selection-list li {
   margin: 0.25rem;
   text-align: left;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 ul.selection-list li:first-child {
