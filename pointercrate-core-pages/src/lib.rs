@@ -84,19 +84,19 @@ impl PageConfiguration {
                         (fragment.title())
                     }
 
-                    (PreEscaped(format!(r#"<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={}" crossorigin="anonymous"></script>"#, config::adsense_publisher_id())))
-
-                    (PreEscaped(format!(r#"
-                    <!-- Global site tag (gtag.js) - Google Analytics -->
-                    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2SGJ4S0TQM"></script>
-                    <script>
-                      window.dataLayer = window.dataLayer || [];
-                      function gtag(){{dataLayer.push(arguments);}}
-                      gtag('js', new Date());
-                    
-                      gtag('config', '{}');
-                    </script>
-                    "#, config::google_analytics_tag())));
+                    @if let Some(analytics_tag) = config::google_analytics_tag() {
+                        (PreEscaped(format!(r#"
+                        <!-- Global site tag (gtag.js) - Google Analytics -->
+                        <script async src="https://www.googletagmanager.com/gtag/js?id={0}"></script>
+                        <script>
+                        window.dataLayer = window.dataLayer || [];
+                        function gtag(){{dataLayer.push(arguments);}}
+                        gtag('js', new Date());
+                        
+                        gtag('config', '{0}');
+                        </script>
+                        "#, analytics_tag)));
+                    }
 
                     meta property="og:site_name" content=(self.meta.site_name);
                     meta property="og:type" content="website";

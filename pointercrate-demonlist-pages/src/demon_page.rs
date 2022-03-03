@@ -142,25 +142,10 @@ impl PageFragment for DemonPage {
         }
 
         html! {
-            (super::besides_sidebar_ad())
             (dropdowns)
 
             div.flex.m-center.container {
                 main.left {
-                    div.panel.fade style = "padding: 0px; height: 90px" {
-                        (PreEscaped(format!(r#"
-                        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={0}"
-     crossorigin="anonymous"></script>
-<!-- Demonpage Banner ad -->
-<ins class="adsbygoogle"
-     style="display:inline-block;width:728px;height:90px"
-     data-ad-client="{0}"
-     data-ad-slot="4829214686"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({{}});
-</script>
-                        "#, page_config::adsense_publisher_id())))
-                    }
                     (RecordSubmitter::new(false, &self.demonlist))
                     (self.demon_panel())
                     div.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
@@ -203,7 +188,6 @@ impl PageFragment for DemonPage {
                 }
                 aside.right {
                     (self.team)
-                    (super::sidebar_ad())
                     (super::rules_panel())
                     (submit_panel())
                     (stats_viewer_panel())
