@@ -232,13 +232,17 @@ export function generatePlayer(player) {
   var b = document.createElement("b");
   var b2 = document.createElement("b");
 
-  li.className = "white";
+  li.className = "dark-gray";
 
   if (player.banned) {
-    li.style.backgroundColor = "rgba(255, 161, 174, .3)";
+    li.style.borderLeftColor = "rgba(255, 161, 174, .3)";
   } else {
-    li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
+    li.style.borderLeftColor = "rgba(164, 253, 106, .8)";
   }
+
+  li.style.borderLeftWidth = "4px";
+  li.style.borderLeftStyle = "solid";
+  li.style.paddingLeft = "0.75em";
 
   li.dataset.name = player.name;
   li.dataset.id = player.id;

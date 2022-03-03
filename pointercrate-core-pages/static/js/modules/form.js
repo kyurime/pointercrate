@@ -53,11 +53,11 @@ export class Dropdown {
       value = this.input.value;
       this.input.value = "";
       this.input.dispatchEvent(new Event("change"));
-      this.menu.fadeTo(300, 0.95);
+      this.menu.fadeIn(0);
     });
 
     this.input.addEventListener("focusout", () => {
-      this.menu.fadeOut(300);
+      this.menu.fadeOut(0);
       this.input.value = value;
     });
   }
