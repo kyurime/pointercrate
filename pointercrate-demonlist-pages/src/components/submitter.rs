@@ -130,7 +130,7 @@ pub(crate) fn submit_panel() -> Markup {
             p {
                 "Note: Please do not submit nonsense, it only makes it harder for us all and will get you banned. Also note that the form rejects duplicate submissions."
             }
-            a.blue.hover.button.js-scroll data-destination = "submitter" data-reveal = "true" {
+            a.purple.hover.button.js-scroll data-destination = "submitter" data-reveal = "true" {
                 "Submit a record!"
             }
         }

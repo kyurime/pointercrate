@@ -93,7 +93,7 @@ fn dropdown(section: &ListSection, demons: &[&Demon], current: Option<&Demon>) -
 
     html! {
         div {
-            div.button.white.hover.no-shadow.js-toggle data-toggle-group="0" onclick={"javascript:void(DropDown.toggleDropDown('" (section.id) "'))"} {
+            div.button.dark-gray.hover.no-shadow.js-toggle data-toggle-group="0" onclick={"javascript:void(DropDown.toggleDropDown('" (section.id) "'))"} {
                 (section.name)
             }
 
@@ -132,7 +132,7 @@ fn rules_panel() -> Markup {
             p {
                 "All demonlist operations are carried out in accordance to our guidelines. Be sure to check them before submitting a record to ensure a flawless experience!"
             }
-            a.blue.hover.button href = "/guidelines/" {
+            a.purple.hover.button href = "/guidelines/" {
                 "Read the guidelines!"
             }
         }

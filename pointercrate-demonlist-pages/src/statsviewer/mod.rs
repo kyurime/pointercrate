@@ -16,7 +16,7 @@ pub(crate) fn stats_viewer_panel() -> Markup {
             p {
                 "Get a detailed overview of who completed the most, created the most demons or beat the hardest demons! There is even a leaderboard to compare yourself to the very best!"
             }
-            a.blue.hover.button#show-stats-viewer href = "/demonlist/statsviewer/ "{
+            a.purple.hover.button#show-stats-viewer href = "/demonlist/statsviewer/ "{
                 "Open the stats viewer!"
             }
         }

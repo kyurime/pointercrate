@@ -6,7 +6,7 @@
 
 .fade {
   box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.1);
-  border: 1px lightgray dashed;
+  border: 1px solid black;
 }
 
 @media (min-width: 1072px) {
@@ -60,7 +60,7 @@
 
 .hover,
 .hover:hover:not(.disabled):not([disabled]) {
-  transition: all 0.8s ease;
+  transition: all 0.1s ease;
 }
 
 .hover.scale:hover:not(.disabled):not([disabled]) {
@@ -175,13 +175,18 @@
 }
 
 .medium-gray {
-  background: #404040;
+  background: #383838;
   color: white;
 }
 
 .medium-gray.hover:not(.disabled):not([disabled]):hover,
 .medium-gray.active {
   background: #303030;
+}
+
+.purple {
+  background: #9c4dcc;
+  color: white;
 }
 
 /* size modifying styles */
