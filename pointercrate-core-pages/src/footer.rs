@@ -2,14 +2,16 @@ use maud::{html, Markup, PreEscaped, Render};
 
 pub struct Footer {
     copyright_notice: Markup,
+    terms_of_use: Markup,
     columns: Vec<FooterColumn>,
     twitter_links: Vec<Link>,
 }
 
 impl Footer {
-    pub fn new(copyright_notice: Markup) -> Self {
+    pub fn new(copyright_notice: Markup, terms_of_use: Markup) -> Self {
         Footer {
             copyright_notice,
+            terms_of_use,
             columns: vec![],
             twitter_links: vec![],
         }
@@ -83,20 +85,25 @@ impl Render for Footer {
     fn render(&self) -> Markup {
         html! {
             footer.center {
-                span.overline.pad style="text-align:center" {
-                    (self.copyright_notice)
+                div.flex.no-stretch {
+                    div style="margin-left: 0.25rem; max-width: 35%; align-self: start;" {
+                        (self.terms_of_use)
+                    }
+                    div style="margin-right: 0.25rem; max-width: 35%; align-self: start;" {
+                        (self.copyright_notice)
+                    }
                 }
                 div.flex.no-stretch {
                     @for column in &self.columns {
                         (column)
                     }
                 }
-                div style="display: flex; justify-content: flex-end; align-items: center" {
+                div style="display: flex; justify-content: center; align-items: center" {
                     i class = "fab fa-twitter fa-2x" {}
                     (PreEscaped("&nbsp;&nbsp;Tweet Us:"))
                     @for link in &self.twitter_links {
                         (PreEscaped("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"))
-                        a href=(link.href) target="_blank" style = "color:#666" {(link.text)}
+                        a href=(link.href) target="_blank" style = "color:#ead2ff" {(link.text)}
                     }
                 }
             }
