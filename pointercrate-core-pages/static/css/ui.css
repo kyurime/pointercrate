@@ -643,7 +643,6 @@ h2 .dropdown-menu ul {
 
 .info-green {
   background: #181818;
-  border: 1px solid black;
   padding: 10px 15px;
   color: white;
   margin: 25px 0px;
@@ -651,6 +650,7 @@ h2 .dropdown-menu ul {
   border-radius: 8px;
 
   border-left-width: 2px;
+  border-left-style: solid;
   border-left-color: lightgreen;
 }
 
@@ -660,7 +660,6 @@ h2 .dropdown-menu ul {
 
 .info-yellow {
   background: #181818;
-  border: 1px solid black;
   padding: 10px 15px;
   color: white;
   margin: 25px 0px;
@@ -668,12 +667,12 @@ h2 .dropdown-menu ul {
   border-radius: 8px;
 
   border-left-width: 2px;
+  border-left-style: solid;
   border-left-color: yellow;
 }
 
 .info-red {
   background: #181818;
-  border: 1px solid black;
   padding: 10px 15px;
   color: white;
   margin: 25px 0px;
@@ -681,6 +680,7 @@ h2 .dropdown-menu ul {
   border-radius: 8px;
 
   border-left-width: 2px;
+  border-left-style: solid;
   border-left-color: red;
 }
 
