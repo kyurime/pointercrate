@@ -163,7 +163,7 @@ fn change_name_dialog() -> Markup {
                         input name = "name" type = "text" required = "";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }
@@ -189,7 +189,7 @@ fn change_requirement_dialog() -> Markup {
                         input name = "requirement" type = "number" min = "0" max="100" required = "";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }
@@ -215,7 +215,7 @@ fn change_position_dialog() -> Markup {
                         input name = "position" type = "number" min = "1" required = "";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }
@@ -241,7 +241,7 @@ fn change_video_dialog() -> Markup {
                         input name = "video" type = "url";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }

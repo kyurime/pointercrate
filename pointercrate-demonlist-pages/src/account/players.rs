@@ -188,7 +188,7 @@ fn change_name_dialog() -> Markup {
                         input name = "name" type = "text" required = "";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }

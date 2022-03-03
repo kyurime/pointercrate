@@ -119,7 +119,7 @@ impl Render for Tardis {
                             p.error {}
                         }
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Go!";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Go!";
                 }
             }
         }

@@ -83,7 +83,7 @@ function generate_claim(csrfToken, claim) {
 
 function makeButton(faClass) {
     let a = document.createElement("a");
-    a.classList.add("button", "blue", "hover");
+    a.classList.add("button", "purple", "hover");
 
     let i = document.createElement("i");
     i.classList.add("fas", "fa-" + faClass);
