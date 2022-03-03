@@ -235,7 +235,7 @@ export function generatePlayer(player) {
   li.className = "dark-gray";
 
   if (player.banned) {
-    li.style.borderLeftColor = "rgba(255, 161, 174, .3)";
+    li.style.borderLeftColor = "rgba(221, 54, 78, .8)";
   } else {
     li.style.borderLeftColor = "rgba(164, 253, 106, .8)";
   }
