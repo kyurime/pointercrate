@@ -288,25 +288,29 @@ export function generateRecord(record) {
   var li = document.createElement("li");
   var recordId = document.createElement("b");
 
-  li.className = "white";
+  li.className = "dark-gray";
   li.dataset.id = record.id;
 
   switch (record.status) {
     case "approved":
-      li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
+      li.style.borderLeftColor = "rgba(164, 253, 106, .8)";
       break;
     case "rejected":
-      li.style.backgroundColor = "rgba(255, 161, 174, .3)";
+      li.style.borderLeftColor = "rgba(221, 54, 78, .8)";
       break;
     case "submitted":
-      li.style.backgroundColor = "rgba(255, 255, 161, .3)";
+      li.style.borderLeftColor = "rgba(255, 255, 0, 1)";
       break;
     case "under consideration":
-      li.style.backgroundColor = "rgba(142, 230, 230, .3)";
+      li.style.borderLeftColor = "rgba(142, 230, 230, .8)";
       break;
     default:
       break;
   }
+
+  li.style.borderLeftWidth = "4px";
+  li.style.borderLeftStyle = "solid";
+  li.style.paddingLeft = "0.75em";
 
   recordId.appendChild(document.createTextNode("Record #" + record.id));
 
