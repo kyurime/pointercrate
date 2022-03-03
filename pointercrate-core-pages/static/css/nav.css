@@ -104,8 +104,15 @@ header nav .nav-group .nav-hover-dropdown {
   position: absolute;
   top: 70px;
 
-  border: 1px solid rgba(211, 211, 211, 1);
-  border-top: 0;
+  border: 1px solid black;
+  border-top: 0px;
+
+  border-radius: 16px;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+
+  overflow: hidden;
+
   display: none;
 }
 

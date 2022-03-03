@@ -86,7 +86,7 @@
 .hamburger input:checked ~ span {
   opacity: 1;
   transform: rotate(45deg) translate(-1px, -1px);
-  background: #232323;
+  background: white;
 }
 
 .hamburger input:checked ~ span:nth-last-child(2) {
@@ -111,7 +111,7 @@ i.fa.hover {
 }
 
 .hamburger.hover > span {
-  background: #333;
+  background: white;
 }
 
 .hamburger.hover:hover,
