@@ -1,3 +1,5 @@
+
+
 /* Default Button style */
 
 .button {
@@ -9,6 +11,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  border-radius: 8px 8px 8px 8px;
 }
 
 .button.disabled,
@@ -438,10 +441,6 @@ textarea:invalid {
 }
 
 @media (min-width: 768px) {
-  body > div:first-child{
-    background-image: url(/static/images/squares3.png);
-  }
-
   .viewer .paginator {
     max-width: 35%;
   }
@@ -607,7 +606,7 @@ h2 .dropdown-menu ul {
       rgba(0, 0, 0, 0) 100%
     )
     1;*/
-  border-bottom: 1px solid rgba(211, 211, 211, 1);
+  border-bottom: 1px solid #121212;
 }
 
 .underlined.pad {
@@ -733,5 +732,5 @@ ul.selection-list li {
 }
 
 .tab-active {
-  color: #0881c6;
+  color: #cccccc;
 }

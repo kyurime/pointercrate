@@ -10,7 +10,8 @@ header nav {
 
   z-index: 999;
 
-  background: white;
+  background: #12121277;
+  backdrop-filter: blur(12px);
 
   font-size: 1.2em;
   font-weight: 600;

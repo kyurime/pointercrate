@@ -164,6 +164,26 @@
   background: #5ba324;
 }
 
+.dark-gray {
+  background: #121212;
+  color: white;
+}
+
+.colorless {
+  background: transparent;
+  color: white;
+}
+
+.medium-gray {
+  background: #404040;
+  color: white;
+}
+
+.medium-gray.hover:not(.disabled):not([disabled]):hover,
+.medium-gray.active {
+  background: #303030;
+}
+
 /* size modifying styles */
 
 .large {

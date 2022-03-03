@@ -1,5 +1,5 @@
 body {
-  color: #444446;
+  color: white;
 
   position: relative;
 
@@ -12,11 +12,11 @@ body {
   background-size: cover;
 }
 
-@media (max-width: 767px) {
-  body {
-    background-image: none;
-  }
+body > div:first-child{
+  /* gradient from: https://www.gradientmagic.com/collection/lightbg/gradient/1599333717161 */
+  background-image: repeating-linear-gradient(45deg, rgb(9,9,9) 0px, rgb(9,9,9) 10px,transparent 10px, transparent 11px),repeating-linear-gradient(135deg, rgb(9,9,9) 0px, rgb(9,9,9) 10px,transparent 10px, transparent 11px),linear-gradient(90deg, rgb(32,32,32),rgb(32,32,32));
 }
+
 
 body {
   font-family: "Montserrat", sans-serif;

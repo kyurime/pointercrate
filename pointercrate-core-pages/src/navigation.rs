@@ -44,7 +44,7 @@ impl Render for &TopLevelNavigationBarItem {
     fn render(&self) -> Markup {
         html! {
             div.nav-group {
-                a.nav-item.hover.white href = (self.item.link) {
+                a.nav-item.hover.colorless href = (self.item.link) {
                     (self.item.content)
                     @if !self.sub_levels.is_empty() {
                         i.fas.fa-sort-down style = "height: 50%; padding-left: 5px" {}
@@ -54,7 +54,7 @@ impl Render for &TopLevelNavigationBarItem {
                     ul.nav-hover-dropdown {
                         @for sub_item in &self.sub_levels {
                             li {
-                                a.white.hover href = (sub_item.link) { (sub_item.content)}
+                                a.dark-gray.hover href = (sub_item.link) { (sub_item.content)}
                             }
                         }
                     }
@@ -68,7 +68,7 @@ impl Render for NavigationBar {
     fn render(&self) -> Markup {
         html! {
             header {
-                nav.center.collapse.underlined.see-through {
+                nav.center.collapse.underlined {
                     div.nav-icon style = "margin-right: auto" {
                         a href = "/" {
                             img src = (self.logo_path) style="height:15px";
