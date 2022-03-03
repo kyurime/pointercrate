@@ -143,7 +143,7 @@ impl AccountPageTab for ProfileTab {
                         }
                         input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Invalidate";
                     }
-                    a.blue.hover.button#invalidate-token {
+                    a.purple.hover.button#invalidate-token {
                         "Invalidate all access tokens"
                     }
                 }

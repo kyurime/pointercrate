@@ -19,9 +19,37 @@
 }
 
 .tab-active {
-  background-color: #ddd;
-  color: #222224;
+  background-color: #2c2c2c;
 }
+
+.tab-selection.fade {
+  border: 0px;
+}
+
+.tab-selection .button.tab {
+  border-top-right-radius: 0px;
+  border-top-left-radius: 0px;
+
+  border: 1px solid black;
+  border-top: 0px;
+}
+
+.tab-selection div.button.tab:first-of-type {
+  border-bottom-right-radius: 0px;
+  border-right: 0px;
+}
+
+.tab-selection div.button.tab:not(:first-of-type):not(:last-of-type) {
+  border-radius: 0px;
+  border-left: 0px;
+  border-right: 0px;
+}
+
+.tab-selection div.button.tab:last-of-type {
+  border-bottom-left-radius: 0px;
+  border-left: 0px;
+}
+
 
 form {
   text-align: left;

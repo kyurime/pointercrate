@@ -135,18 +135,18 @@
 }
 
 .red {
-  background: #ff003c;
+  background: #cf2816;
   color: white;
 }
 
 .red.hover:not(.disabled):not([disabled]):hover,
 .red.active {
-  background: #ff2457;
+  background: #ad2212;
 }
 
 .red.hover:not(.disabled):not([disabled]):active,
 .red.active {
-  background: #f21347;
+  background: #ad2212;
 }
 
 .green {
@@ -187,6 +187,11 @@
 .purple {
   background: #9c4dcc;
   color: white;
+}
+
+.purple.hover:not(.disabled):not([disabled]):hover,
+.purple.active {
+  background: #8f25d1;
 }
 
 /* size modifying styles */
