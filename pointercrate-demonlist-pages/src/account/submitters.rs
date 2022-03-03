@@ -76,7 +76,7 @@ impl AccountPageTab for SubmittersPage {
                                         }
                                     }
                                 }
-                                span.button.blue.hover#submitter-list-records style = "margin: 15px auto 0px" {"Show records in record manager"};
+                                span.button.purple.hover#submitter-list-records style = "margin: 15px auto 0px" {"Show records in record manager"};
                             }
                         }
                     }
@@ -106,7 +106,7 @@ fn submitter_selector() -> Markup {
                     input required = "" type = "number" name = "id" min = "0" style="width:93%";
                     p.error {}
                 }
-                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
+                input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
             }
         }
     }

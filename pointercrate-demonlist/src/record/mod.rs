@@ -191,7 +191,7 @@ impl FullRecord {
     ///
     /// The returned tuple is of the form (max, min)
     pub async fn extremal_record_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!(r#"SELECT MAX(id) AS "max_id!: i32", MIN(id) AS "min_id!: i32" FROM records"#)
+        let row = sqlx::query!(r#"SELECT COALESCE(MAX(id), 0) AS "max_id!: i32", COALESCE(MIN(id), 0) AS "min_id!: i32" FROM records"#)
             .fetch_one(connection)
             .await?; // FIXME: crashes on empty table
         Ok((row.max_id, row.min_id))

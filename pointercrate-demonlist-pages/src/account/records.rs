@@ -261,7 +261,7 @@ fn player_selector() -> Markup {
                     input required = "" type = "number" name = "id" min = "0" style="width:93%"; // FIXME: I have no clue why the input thinks it's a special snowflake and fucks up its width, but I dont have the time to fix it
                     p.error {}
                 }
-                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
+                input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
             }
             form.flex.col#record-filter-by-player-name-form novalidate = "" {
                 p.info-red.output {}
@@ -270,7 +270,7 @@ fn player_selector() -> Markup {
                     input required = "" type = "text" name = "name";
                     p.error {}
                 }
-                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by name";
+                input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by name";
             }
         }
     }
@@ -292,7 +292,7 @@ fn record_selector() -> Markup {
                     input required = "" type = "number" name = "id" min = "0" style="width:93%"; // FIXME: I have no clue why the input thinks it's a special snowflake and fucks up its width, but I dont have the time to fix it
                     p.error {}
                 }
-                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
+                input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
             }
         }
     }
@@ -302,7 +302,7 @@ fn note_adder() -> Markup {
     html! {
         div.panel.fade.closable#add-record-note style = "display: none" {
             span.plus.cross.hover {}
-            div.button.blue.hover.small style = "width: 100px; margin-bottom: 10px"{
+            div.button.purple.hover.small style = "width: 100px; margin-bottom: 10px"{
                 "Add"
             }
             p.info-red.output {}
@@ -330,7 +330,7 @@ fn change_progress_dialog() -> Markup {
                         input name = "progress" type = "number" min = "0" max="100" required = "";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }
@@ -356,7 +356,7 @@ fn change_video_dialog() -> Markup {
                         input name = "video" type = "url";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }

@@ -163,7 +163,7 @@ fn player_selector() -> Markup {
                     input required = "" type = "number" name = "id" min = "0" style="width:93%";
                     p.error {}
                 }
-                input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
+                input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
             }
         }
     }

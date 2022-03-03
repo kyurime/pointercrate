@@ -137,7 +137,7 @@ pub(super) fn submit_panel() -> Markup {
                     "Add Demon:"
                 }
             }
-            a.blue.hover.button.js-scroll data-destination = "demon-submitter" data-reveal = "true" {
+            a.purple.hover.button.js-scroll data-destination = "demon-submitter" data-reveal = "true" {
                 "Add a demon!"
             }
         }
