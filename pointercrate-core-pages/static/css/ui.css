@@ -471,11 +471,18 @@ textarea:invalid {
   max-height: 400px;
   overflow-y: scroll;
 
-  background: #121212;
+  background: #1f1f1f;
 
   border: 1px solid black;
+  border-radius: 16px;
 
   z-index: 100;
+
+  margin-top: 1.5rem;
+}
+
+.dropdown-menu input[type="text"]:focus:invalid {
+  border-color: black;
 }
 
 h1 .dropdown-menu ul,
@@ -502,17 +509,12 @@ h2 .dropdown-menu ul {
   border: 1px solid black;
 }
 
-.dropdown-menu div:focus-within + .menu {
-  /*opacity: 0.95;*/
-  border-top: none;
-}
-
 .dropdown-menu .menu ul {
   margin: 0;
 }
 
 .dropdown-menu .menu ul li {
-  padding: 3px 10px;
+  padding: 0.75rem;
   text-align: left;
   cursor: pointer;
 }
