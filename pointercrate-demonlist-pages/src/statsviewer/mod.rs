@@ -47,9 +47,8 @@ fn hide_subdivision_panel() -> Markup {
                 "Whether the map should display political subdivisions"
             }
             div.cb-container.flex.no-stretch style="margin-bottom:10px" {
-                i {"Show political subdivisions"}
                 input#show-subdivisions-checkbox type = "checkbox" checked="";
-                span.checkmark {}
+                i {"Show political subdivisions"}
             }
         }
     }
@@ -80,7 +79,7 @@ fn stats_viewer_html(nations: Option<&[Nationality]>, rows: Vec<StatsViewerRow>)
                     " - "
                     (dropdown("International",
                         html! {
-                            li.white.hover.underlined data-value = "International" data-display = "International" {
+                            li.colorless.hover.underlined data-value = "International" data-display = "International" {
                                 span.em.em-world_map {}
                                 (PreEscaped("&nbsp;"))
                                 b {"WORLD"}
@@ -89,7 +88,7 @@ fn stats_viewer_html(nations: Option<&[Nationality]>, rows: Vec<StatsViewerRow>)
                             }
                         },
                         nations.iter().map(|nation| html! {
-                            li.white.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
+                            li.colorless.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
                                 span class = "flag-icon" style={"background-image: url(/static/demonlist/images/flags/" (nation.iso_country_code.to_lowercase()) ".svg"} {}
                                 (PreEscaped("&nbsp;"))
                                 b {(nation.iso_country_code)}

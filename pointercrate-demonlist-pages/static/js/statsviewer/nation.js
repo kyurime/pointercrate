@@ -162,7 +162,7 @@ function generateStatsViewerNation(nation) {
     var b = document.createElement("b");
     var i = document.createElement("i");
 
-    li.className = "white hover";
+    li.className = "dark-gray hover";
     li.dataset.id = nation.country_code;
     li.dataset.rank = nation.rank;
 

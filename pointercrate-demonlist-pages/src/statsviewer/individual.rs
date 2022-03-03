@@ -40,10 +40,10 @@ impl PageFragment for IndividualStatsViewer {
     fn body_fragment(&self) -> Markup {
         html! {
             nav.flex.wrap.m-center.fade#statsviewers style="text-align: center;" {
-                a.button.white.hover.no-shadow href="/demonlist/statsviewer/"{
+                a.button.dark-gray.hover.no-shadow href="/demonlist/statsviewer/"{
                     b {"Individual"}
                 }
-                a.button.white.hover.no-shadow href="/demonlist/statsviewer/nations/" {
+                a.button.dark-gray.hover.no-shadow href="/demonlist/statsviewer/nations/" {
                     b {"Nations"}
                 }
             }
@@ -70,7 +70,7 @@ impl PageFragment for IndividualStatsViewer {
                             }
                             div.menu {
                                 ul {
-                                    li.white.hover.underlined data-value = "None" {"None"}
+                                    li.colorless.hover.underlined data-value = "None" {"None"}
                                 }
                             }
                         }

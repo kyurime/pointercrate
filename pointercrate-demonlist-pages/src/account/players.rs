@@ -126,13 +126,13 @@ impl AccountPageTab for PlayersPage {
                                             }
                                             div.menu {
                                                 ul {
-                                                    li.white.hover.underlined data-value = "None" {"None"}
+                                                    li.colorless.hover.underlined data-value = "None" {"None"}
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                span.button.blue.hover#player-list-records style = "margin: 15px auto 0px" {"Show records in record manager"};
+                                span.button.purple.hover#player-list-records style = "margin: 15px auto 0px" {"Show records in record manager"};
                             }
                         }
                     }

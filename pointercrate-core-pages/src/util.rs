@@ -71,14 +71,14 @@ pub fn simple_dropdown<T1: Display>(dropdown_id: &str, default: Option<T1>, item
             div.menu {
                 ul {
                     @if let Some(ref default) = default {
-                        li.dark-gray.underlined.hover data-value=(default) data-display=(default) {
+                        li.colorless.underlined.hover data-value=(default) data-display=(default) {
                             b {
                                 (default)
                             }
                         }
                     }
                     @for item in items {
-                        li.dark-gray.hover data-value=(item) data-display = (item)  {
+                        li.colorless.hover data-value=(item) data-display = (item)  {
                             b {
                                 (item)
                             }
