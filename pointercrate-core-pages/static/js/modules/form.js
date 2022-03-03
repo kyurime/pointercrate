@@ -280,7 +280,7 @@ export class Dialog {
     if(this.reject !== undefined)
       throw new Error("Dialog is already open");
 
-    $(this.dialog.parentNode).fadeIn(300);
+    $(this.dialog.parentNode).fadeIn(0);
 
     return new Promise((resolve, reject) => {
       this.reject = reject;
@@ -294,7 +294,7 @@ export class Dialog {
    * Note that no callbacks are actually called, since its impossible for this method to know whether or not the close happened because of successful reasons or not (or what data should be passed along in the success case).
    */
   close() {
-    $(this.dialog.parentNode).fadeOut(300);
+    $(this.dialog.parentNode).fadeOut(0);
 
     this.reject = undefined;
     this.resolve = undefined;
