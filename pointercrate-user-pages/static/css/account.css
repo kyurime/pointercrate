@@ -62,7 +62,7 @@ form {
 
 #record-notes > div {
   text-align: left;
-  padding: 5px;
+  padding: 0.75rem;
   position: relative;
   font-size: 80%;
   display: flex;
@@ -71,5 +71,4 @@ form {
 
 #record-notes-container > div:first-child {
   padding: 15px;
-  border-bottom: 1px lightgray dashed;
 }

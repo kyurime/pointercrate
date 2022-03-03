@@ -186,7 +186,7 @@ class RecordManager extends Paginator {
 function createNoteHtml(note, csrfToken) {
   let noteDiv = document.createElement("div");
 
-  noteDiv.classList.add("white");
+  noteDiv.classList.add("dark-gray");
   noteDiv.classList.add("hover");
 
   // only add option to delete notes if you're list admin (and yes, server sided validation is also in place. I am just too lazy to write permission error handling)
@@ -199,7 +199,7 @@ function createNoteHtml(note, csrfToken) {
     closeX.classList.add("plus");
     closeX.classList.add("cross");
 
-    closeX.style.transform = "scale(0.75)";
+    closeX.style.transform = "scale(0.75) translate(0.5rem, -0.75rem)";
 
     closeX.addEventListener("click", () => {
       if (confirm("This action will irrevocably delete this note. Proceed?")) {

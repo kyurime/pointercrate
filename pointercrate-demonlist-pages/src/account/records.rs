@@ -60,7 +60,7 @@ impl AccountPageTab for RecordsPage {
                 (record_manager(&demons[..]))
                 (note_adder())
                 div.panel.fade#record-notes-container style = "display:none" {
-                    div.white.hover.clickable#add-record-note-open {
+                    div.medium-gray.hover.clickable#add-record-note-open {
                         b {"Add Note"}
                     }
                     div#record-notes {} // populated by javascript when a record is clicked
@@ -87,9 +87,9 @@ fn record_manager(demons: &[Demon]) -> Markup {
             h2.underlined.pad {
                 "Record Manager - "
                 (dropdown("All", html! {
-                    li.white.hover.underlined data-value = "All"
+                    li.colorless.hover.underlined data-value = "All"
                      {"All Demons"}
-                }, demons.into_iter().map(|demon| html!(li.white.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
+                }, demons.into_iter().map(|demon| html!(li.colorless.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
             }
             div.flex.viewer {
                 (paginator("record-pagination", "/api/v1/records/"))
@@ -105,14 +105,14 @@ fn record_manager(demons: &[Demon]) -> Markup {
                             " - "
                             div.dropdown-menu.js-search#edit-record-status style = "max-width: 220px" {
                                 div{
-                                    input type="text" style = "color: #444446; font-weight: bold;";
+                                    input type="text" style = "font-weight: bold;";
                                 }
                                 div.menu {
                                     ul {
-                                        li.white.hover data-value="approved" {"Approved"}
-                                        li.white.hover data-value="rejected" {"Rejected"}
-                                        li.white.hover data-value="under consideration" {"Under Consideration"}
-                                        li.white.hover data-value="submitted" {"Submitted"}
+                                        li.colorless.hover data-value="approved" {"Approved"}
+                                        li.colorless.hover data-value="rejected" {"Rejected"}
+                                        li.colorless.hover data-value="under consideration" {"Under Consideration"}
+                                        li.colorless.hover data-value="submitted" {"Submitted"}
                                     }
                                 }
                             }
@@ -217,16 +217,16 @@ fn status_selector() -> Markup {
     // FIXME: no vec
     let dropdown_items = vec![
         html! {
-            li.white.hover data-value = "approved" {"Approved"}
+            li.colorless.hover data-value = "approved" {"Approved"}
         },
         html! {
-            li.white.hover data-value = "submitted" {"Submitted"}
+            li.colorless.hover data-value = "submitted" {"Submitted"}
         },
         html! {
-            li.white.hover data-value = "rejected" {"Rejected"}
+            li.colorless.hover data-value = "rejected" {"Rejected"}
         },
         html! {
-            li.white.hover data-value = "under consideration" {"Under Consideration"}
+            li.colorless.hover data-value = "under consideration" {"Under Consideration"}
         },
     ];
 
@@ -239,7 +239,7 @@ fn status_selector() -> Markup {
                 "Filter by record status"
             }
             (dropdown("All", html! {
-                li.white.hover.underlined data-value = "All" {"All"}
+                li.colorless.hover.underlined data-value = "All" {"All"}
             }, dropdown_items.into_iter()))
         }
     }

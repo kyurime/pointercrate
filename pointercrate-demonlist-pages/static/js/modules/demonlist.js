@@ -190,7 +190,7 @@ export function populateSubdivisionDropdown(dropdown, countryCode) {
 
       let li = document.createElement("li");
 
-      li.className = "white hover";
+      li.className = "colorless hover";
       li.dataset.value = subdivision.iso_code;
       li.dataset.display = subdivision.name;
       li.appendChild(flag);
