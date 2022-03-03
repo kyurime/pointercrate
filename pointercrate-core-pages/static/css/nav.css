@@ -191,10 +191,10 @@ footer {
   font-weight: 300;
   text-align: center;
 
-  background: #171921;
+  background: #121212;
   color: #ddd;
 
-  box-shadow: 0px -1px 10px 6px #171921;
+  border-top: 1px solid black;
 }
 
 footer .flex {
