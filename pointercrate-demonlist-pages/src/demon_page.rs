@@ -148,6 +148,7 @@ impl PageFragment for DemonPage {
                 main.left {
                     (RecordSubmitter::new(false, &self.demonlist))
                     (self.demon_panel())
+                    (self.level_info_panel())
                     div.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
                         h2.underlined.pad {
                             "Position History"
@@ -257,6 +258,38 @@ impl DemonPage {
                     }
                 }
                 div.underlined.pad.flex.wrap#level-info {
+                    @if position <= list_config::extended_list_size() {
+                        span {
+                            b {
+                                "Demonlist score (100%): "
+                            }
+                            br;
+                            (format!("{:.2}", score100))
+                        }
+                    }
+                    @if position <= list_config::list_size(){
+                        span {
+                            b {
+                                "Demonlist score (" (self.data.demon.requirement) "%): "
+                            }
+                            br;
+                            (format!("{:.2}", score_requirement))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn level_info_panel(&self) -> Markup {
+        html! {
+            section.records.panel.fade.js-scroll-anim data-anim = "fade" {
+                div.underlined.pad {
+                    h2 {
+                        "Level Info"
+                    }
+                }
+                div.underlined.pad.flex.wrap#level-info {
                     @match &self.integration {
                         GDIntegrationResult::DemonNotFoundByName => {
                             p.info-red {
@@ -329,24 +362,6 @@ impl DemonPage {
                                     }
                                 }
                             }
-                        }
-                    }
-                    @if position <= list_config::extended_list_size() {
-                        span {
-                            b {
-                                "Demonlist score (100%): "
-                            }
-                            br;
-                            (format!("{:.2}", score100))
-                        }
-                    }
-                    @if position <= list_config::list_size(){
-                        span {
-                            b {
-                                "Demonlist score (" (self.data.demon.requirement) "%): "
-                            }
-                            br;
-                            (format!("{:.2}", score_requirement))
                         }
                     }
                 }
