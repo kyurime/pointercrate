@@ -126,7 +126,7 @@ fn dropdown(section: &ListSection, demons: &[&Demon], current: Option<&Demon>) -
 fn discord_panel() -> Markup {
     html! {
         section.panel.fade.js-scroll-anim#discord data-anim = "fade" {
-            iframe.js-delay-attr style = "width: 100%; height: 400px;" allowtransparency="true" frameborder = "0" data-attr = "src" data-attr-value = "https://discordapp.com/widget?id=395654171422097420&theme=light" {}
+            iframe.js-delay-attr style = "width: 100%; height: 400px;" allowtransparency="true" frameborder = "0" data-attr = "src" data-attr-value = "https://discord.com/widget?id=897576716334141460" {}
             p {
                 "Join the official Demonlist discord server, where you can get in touch with the demonlist team!"
             }
