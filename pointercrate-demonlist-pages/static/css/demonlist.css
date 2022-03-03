@@ -109,8 +109,11 @@ tr:nth-child(even) {
 }
 
 .dropdown {
-  background: white;
+  background: #121212;
   text-align: center;
+
+  margin-top: 1rem;
+  border-radius: 16px;
 }
 
 .dropdown li {

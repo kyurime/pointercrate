@@ -50,7 +50,7 @@
 }
 
 .see-through {
-  opacity: 0.95;
+  backdrop-filter: blur(16px);
 }
 
 .disabled,
@@ -167,6 +167,16 @@
 .dark-gray {
   background: #121212;
   color: white;
+}
+
+.dark-gray.hover:not(.disabled):not([disabled]):hover,
+.dark-gray.active {
+  background: #181818;
+}
+
+.dark-gray.hover:not(.disabled):not([disabled]):active,
+.dark-gray.active {
+  background: #161616;
 }
 
 .colorless {
