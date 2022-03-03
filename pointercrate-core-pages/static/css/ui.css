@@ -300,17 +300,6 @@ textarea:invalid {
   cursor: pointer;
 }
 
-/* Hide the browser's default checkbox */
-.cb-container input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  left: 0;
-  top: 0;
-  margin-top: 2px;
-  z-index: 100;
-}
-
 /* Create a custom checkbox */
 .checkmark {
   position: absolute;
@@ -361,10 +350,6 @@ textarea:invalid {
 
 .search {
   padding: 0px 4px;
-
-  border: 1px solid #999;
-  border-radius: 0px;
-
   display: flex;
   justify-content: space-between;
 }
@@ -402,13 +387,9 @@ textarea:invalid {
 
 .search input {
   margin: 5px;
-  border: 0;
   flex-grow: 2;
-}
-
-.search.seperated input {
-  border-left: 1px solid #888;
-  border-right: 1px solid #888;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 /*
@@ -706,10 +687,14 @@ form .output {
 }
 
 ul.selection-list {
-  overflow-y: scroll;
-  border: 1px solid #999;
+  overflow-y: auto;
+  border: 1px solid black;
   font-size: 80%;
   margin: 10px 0px;
+  border-radius: 16px;
+  background: #1f1f1f;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
 }
 
 ul.selection-list li {

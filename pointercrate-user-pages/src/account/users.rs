@@ -89,11 +89,10 @@ impl AccountPageTab for UsersTab {
                                             @let name_in_snake_case = permission.name().to_lowercase().replace(" ", "-");
 
                                             label.cb-container.form-input#(name_in_snake_case) for = (name_in_snake_case) data-bit = (permission.bit()) {
+                                                input type = "checkbox" name = (name_in_snake_case);
                                                 i {
                                                     (permission.name())
                                                 }
-                                                input type = "checkbox" name = (name_in_snake_case);
-                                                span.checkmark {}
                                             }
                                         }
                                     }
@@ -102,7 +101,7 @@ impl AccountPageTab for UsersTab {
                                     @if user.has_permission(ADMINISTRATOR) {
                                         input.button.red.hover#delete-user type = "button" style = "margin: 15px auto 0px;" value="Delete user";
                                     }
-                                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Edit user";
+                                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Edit user";
                                 }
                             }
                         }
@@ -125,7 +124,7 @@ impl AccountPageTab for UsersTab {
                             input required = "" type = "number" name = "id" min = "0" style="width:93%"; // FIXME: I have no clue why the input thinks it's a special snowflake and fucks up its width, but I dont have the time to fix it
                             p.error {}
                         }
-                        input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
+                        input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Find by ID";
                     }
                 }
             }
