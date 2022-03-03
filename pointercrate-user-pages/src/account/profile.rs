@@ -180,7 +180,7 @@ fn edit_display_name_dialog() -> Markup {
                         input type = "password" minlength = "10" required = "";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Edit";
                 }
             }
         }
@@ -211,7 +211,7 @@ fn edit_youtube_link_dialog() -> Markup {
                         input type = "password" minlength = "10" required = "";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Edit";
                 }
             }
         }
