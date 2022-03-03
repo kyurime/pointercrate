@@ -71,7 +71,7 @@ impl Render for NavigationBar {
                 nav.center.collapse.underlined {
                     div.nav-icon style = "margin-right: auto" {
                         a href = "/" {
-                            img src = (self.logo_path) style="height:15px";
+                            img src = (self.logo_path) style="height:50px" alt="1.9 Demonlist";
                         }
                     }
                     @for item in &self.items {
