@@ -63,14 +63,14 @@ impl AccountPageTab for SubmittersPage {
                                             "Banned:"
                                         }
                                         br;
-                                        div.dropdown-menu.js-search#edit-submitter-banned style = "max-width: 50px" {
+                                        div.dropdown-menu.js-search#edit-submitter-banned style = "max-width: 7rem" {
                                             div{
                                                 input type="text" style = "font-weight: bold;";
                                             }
                                             div.menu {
                                                 ul {
-                                                    li.white.hover data-value="true" {"yes"}
-                                                    li.white.hover data-value="false" {"no"}
+                                                    li.colorless.hover data-value="true" {"yes"}
+                                                    li.colorless.hover data-value="false" {"no"}
                                                 }
                                             }
                                         }

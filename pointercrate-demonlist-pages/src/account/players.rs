@@ -73,14 +73,14 @@ impl AccountPageTab for PlayersPage {
                                             "Banned:"
                                         }
                                         br;
-                                        div.dropdown-menu.js-search#edit-player-banned style = "max-width: 50px" {
+                                        div.dropdown-menu.js-search#edit-player-banned style = "max-width: 7rem" {
                                             div {
                                                 input type="text" style = "font-weight: bold;";
                                             }
                                             div.menu {
                                                 ul {
-                                                    li.white.hover data-value="true" {"yes"}
-                                                    li.white.hover data-value="false" {"no"}
+                                                    li.colorless.hover data-value="true" {"yes"}
+                                                    li.colorless.hover data-value="false" {"no"}
                                                 }
                                             }
                                         }
@@ -99,9 +99,9 @@ impl AccountPageTab for PlayersPage {
                                             }
                                             div.menu {
                                                 ul {
-                                                    li.white.hover.underlined data-value = "None" {"None"}
+                                                    li.colorless.hover.underlined data-value = "None" {"None"}
                                                     @for nation in nationalities {
-                                                        li.white.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
+                                                        li.colorless.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
                                                             span class = "flag-icon" style={"background-image: url(/static/demonlist/images/flags/" (nation.iso_country_code.to_lowercase()) ".svg"} {}
                                                             (PreEscaped("&nbsp;"))
                                                             b {(nation.iso_country_code)}

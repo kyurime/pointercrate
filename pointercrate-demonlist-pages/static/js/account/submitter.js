@@ -15,15 +15,19 @@ function generateSubmitter(submitter) {
   var li = document.createElement("li");
   var b = document.createElement("b");
 
-  li.className = "white";
+  li.className = "dark-gray";
 
   li.dataset.id = submitter.id;
 
   if (submitter.banned) {
-    li.style.backgroundColor = "rgba(255, 161, 174, .3)";
+    li.style.borderLeftColor = "rgba(221, 54, 78, .8)";
   } else {
-    li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
+    li.style.borderLeftColor = "rgba(164, 253, 106, .8)";
   }
+
+  li.style.borderLeftWidth = "4px";
+  li.style.borderLeftStyle = "solid";
+  li.style.paddingLeft = "0.75em";
 
   b.innerText = "Submitter #" + submitter.id;
 
