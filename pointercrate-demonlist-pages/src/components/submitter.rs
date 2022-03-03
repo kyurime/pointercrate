@@ -103,9 +103,6 @@ impl Render for RecordSubmitter<'_> {
                         textarea name = "note" placeholder = "Your dreams and hopes for this record... or something like that" {}
                         p.error {}
                     }
-                    p {
-                        "By submitting the record you acknowledge the " a.link href = "/guidelines" {"submission guidelines"} "."
-                    }
                     input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Submit record";
                 }
             }

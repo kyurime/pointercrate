@@ -123,22 +123,6 @@ fn dropdown(section: &ListSection, demons: &[&Demon], current: Option<&Demon>) -
     }
 }
 
-fn rules_panel() -> Markup {
-    html! {
-        section#rules.panel.fade.js-scroll-anim data-anim = "fade" {
-            h2.underlined.pad.clickable {
-                "Guidelines:"
-            }
-            p {
-                "All demonlist operations are carried out in accordance to our guidelines. Be sure to check them before submitting a record to ensure a flawless experience!"
-            }
-            a.purple.hover.button href = "/guidelines/" {
-                "Read the guidelines!"
-            }
-        }
-    }
-}
-
 fn discord_panel() -> Markup {
     html! {
         section.panel.fade.js-scroll-anim#discord data-anim = "fade" {

@@ -185,7 +185,6 @@ impl PageFragment for OverviewPage {
 
                 aside.right {
                     (self.team)
-                    (super::rules_panel())
                     (submit_panel())
                     (stats_viewer_panel())
                     (super::discord_panel())

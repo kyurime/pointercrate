@@ -188,7 +188,6 @@ impl PageFragment for DemonPage {
                 }
                 aside.right {
                     (self.team)
-                    (super::rules_panel())
                     (submit_panel())
                     (stats_viewer_panel())
                     (super::discord_panel())
