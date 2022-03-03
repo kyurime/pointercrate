@@ -55,7 +55,7 @@ impl PageFragment for LoginPage {
                                 p.error {}
                             }
                             div.grow {}
-                            input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Log in";
+                            input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Log in";
                         }
                     }
                     div.flex.col {
@@ -81,7 +81,7 @@ impl PageFragment for LoginPage {
                                 p.error {}
                             }
                             div.grow {}
-                            input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Register";
+                            input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Register";
                         }
                     }
                 }

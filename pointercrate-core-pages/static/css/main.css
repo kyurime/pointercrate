@@ -33,6 +33,7 @@ body > :not(header):not(footer) {
 input {
   font-family: inherit;
   font-size: inherit;
+  color: white;
 }
 
 .b3 {

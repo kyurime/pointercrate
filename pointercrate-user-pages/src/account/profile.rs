@@ -92,7 +92,7 @@ impl AccountPageTab for ProfileTab {
                     }
                     div.flex.no-stretch {
                         input.button.red.hover#delete-account type = "button" style = "margin: 15px auto 0px;" value="Delete My Account";
-                        input.button.blue.hover#change-password type = "button" style = "margin: 15px auto 0px;" value="Change Password";
+                        input.button.purple.hover#change-password type = "button" style = "margin: 15px auto 0px;" value="Change Password";
                     }
                 }
             }
@@ -114,13 +114,13 @@ impl AccountPageTab for ProfileTab {
                             input required = "" type = "password" name = "password" minlength = "10";
                             p.error {}
                         }
-                        input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Log in";
+                        input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Log in";
                     }
                     div.overlined.pad#token-area style = "display: none" {
                         b {"Your access token is:"}
                         textarea#access-token readonly="" style = "resize: none; width: 100%; margin-top: 8px; min-height:75px" {}
                     }
-                    a.blue.hover.button#get-token {
+                    a.purple.hover.button#get-token {
                         "Get access token"
                     }
                 }
@@ -141,7 +141,7 @@ impl AccountPageTab for ProfileTab {
                             input required = "" type = "password" name = "password" minlength = "10";
                             p.error {}
                         }
-                        input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value="Invalidate";
+                        input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Invalidate";
                     }
                     a.blue.hover.button#invalidate-token {
                         "Invalidate all access tokens"
