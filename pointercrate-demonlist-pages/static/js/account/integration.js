@@ -46,15 +46,16 @@ function generate_claim(csrfToken, claim) {
     leftDiv.appendChild(playerSpan);
 
     li.appendChild(leftDiv);
+    li.classList.add("dark-gray");
 
     let rightDiv = document.createElement("div");
 
     rightDiv.classList.add("flex");
 
     if (claim.verified) {
-        li.style.backgroundColor = "rgba( 198, 255, 161, .3)";
+        li.style.borderLeftColor = "rgba(164, 253, 106, .8)";
     } else {
-        li.style.backgroundColor = "rgba(142, 230, 230, .3)";
+        li.style.borderLeftColor = "rgba(142, 230, 230, .8)";
         let button = makeButton("check");
         button.style.marginRight = "5px";
 
@@ -65,6 +66,10 @@ function generate_claim(csrfToken, claim) {
 
         rightDiv.appendChild(button);
     }
+
+    li.style.borderLeftWidth = "4px";
+    li.style.borderLeftStyle = "solid";
+    li.style.paddingLeft = "0.75em";
 
     let deleteButton = makeButton("trash-alt");
 
