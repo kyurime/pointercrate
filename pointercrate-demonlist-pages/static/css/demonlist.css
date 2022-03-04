@@ -1,6 +1,6 @@
 table {
-  width: 90%;
-  margin: 0 5%;
+  width: 99%;
+  margin: 0 0.5%;
 }
 
 th {
@@ -13,6 +13,8 @@ th {
 td {
   line-height: 2em;
   text-indent: 5px;
+
+  padding: 0.5rem;
 }
 
 tr {
@@ -31,20 +33,19 @@ tr:hover {
   font-weight: bold;
 }
 
-/*
-#history-table tr:not(:first-child) {
-  background: #fffadd;
-  color: #4d4707;
+
+#history-table tr:not(:first-child) td:nth-child(2) {
+  color: #ffeb75;
 }
 
-#history-table tr.moved-up {
-  border-left-color: #ddffdd;
+#history-table tr.moved-up td:nth-child(2) {
+  color: #4eff4e;
 }
 
-#history-table tr.moved-down {
-  border-left-color: #fdd;
+#history-table tr.moved-down td:nth-child(2) {
+  color: #fb8080;
 }
-*/
+
 #editors li {
   display: inline-block;
   margin: 2px;
