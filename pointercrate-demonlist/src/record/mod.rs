@@ -116,11 +116,10 @@ impl<'de> Deserialize<'de> for RecordStatus {
             "submitted" => Ok(RecordStatus::Submitted),
             "rejected" => Ok(RecordStatus::Rejected),
             "under consideration" => Ok(RecordStatus::UnderConsideration),
-            _ =>
-                Err(serde::de::Error::invalid_value(
-                    serde::de::Unexpected::Str(&string),
-                    &"'approved', 'submitted', 'under consideration' or 'rejected'",
-                )),
+            _ => Err(serde::de::Error::invalid_value(
+                serde::de::Unexpected::Str(&string),
+                &"'approved', 'submitted', 'under consideration' or 'rejected'",
+            )),
         }
     }
 }

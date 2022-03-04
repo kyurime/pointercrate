@@ -33,7 +33,7 @@ pub async fn paginate(mut auth: TokenAuth, query: Query<RecordPagination>) -> Re
 
     if !auth.has_permission(LIST_HELPER) {
         if pagination.status.is_some() && pagination.status != Some(RecordStatus::Approved) {
-            return Err(CoreError::Unauthorized.into())
+            return Err(CoreError::Unauthorized.into());
         }
 
         pagination.status = Some(RecordStatus::Approved);
@@ -54,11 +54,11 @@ pub async fn unauthed_pagination(
     let mut pagination = query.0;
 
     if pagination.submitter.is_some() {
-        return Err(CoreError::Unauthorized.into())
+        return Err(CoreError::Unauthorized.into());
     }
 
     if pagination.status.is_some() && pagination.status != Some(RecordStatus::Approved) {
-        return Err(CoreError::Unauthorized.into())
+        return Err(CoreError::Unauthorized.into());
     }
 
     pagination.status = Some(RecordStatus::Approved);
@@ -150,7 +150,7 @@ pub async fn get(record_id: i32, auth: Option<TokenAuth>, pool: &State<Pointercr
         record.notes.clear();
 
         if record.status != RecordStatus::Approved {
-            return Err(DemonlistError::RecordNotFound { record_id }.into())
+            return Err(DemonlistError::RecordNotFound { record_id }.into());
         }
     }
 
@@ -164,7 +164,7 @@ pub async fn audit(record_id: i32, mut auth: TokenAuth) -> Result<Json<Vec<Audit
     let log = pointercrate_demonlist::record::audit::audit_log_for_record(record_id, &mut auth.connection).await?;
 
     if log.is_empty() {
-        return Err(DemonlistError::RecordNotFound { record_id }.into())
+        return Err(DemonlistError::RecordNotFound { record_id }.into());
     }
 
     Ok(Json(log))
@@ -189,9 +189,7 @@ pub async fn patch(
 
     auth.commit().await?;
 
-    tokio::spawn(execute_webhook(
-        webhook_status_embed(&record)
-    ));
+    tokio::spawn(execute_webhook(webhook_status_embed(&record)));
 
     Ok(Tagged(record))
 }
@@ -274,7 +272,7 @@ async fn validate(record_id: i32, video: String, body: serde_json::Value, mut co
         Ok(response) => {
             let status = response.status().as_u16();
 
-            if status >= 200 && status < 400 {
+            if (200..400).contains(&status) {
                 debug!("GET request yielded some sort of successful response, executing webhook");
 
                 execute_webhook(body).await;

@@ -7,7 +7,7 @@ use pointercrate_core::{error::PointercrateError, permission::PermissionsManager
 use pointercrate_core_pages::{
     error::ErrorFragment,
     util::{dropdown, paginator},
-    PageFragment, Script,
+    PageFragment,
 };
 use pointercrate_demonlist::{
     demon::{current_list, Demon},
@@ -45,13 +45,14 @@ impl AccountPageTab for RecordsPage {
     async fn content(&self, _user: &User, _permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup {
         let demons = match current_list(connection).await {
             Ok(demons) => demons,
-            Err(err) =>
+            Err(err) => {
                 return ErrorFragment {
                     status: err.status_code(),
                     reason: "Internal Server Error".to_string(),
                     message: err.to_string(),
                 }
-                .body_fragment(),
+                .body_fragment()
+            },
         };
 
         html! {
@@ -89,7 +90,7 @@ fn record_manager(demons: &[Demon]) -> Markup {
                 (dropdown("All", html! {
                     li.colorless.hover.underlined data-value = "All"
                      {"All Demons"}
-                }, demons.into_iter().map(|demon| html!(li.colorless.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
+                }, demons.iter().map(|demon| html!(li.colorless.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
             }
             div.flex.viewer {
                 (paginator("record-pagination", "/api/v1/records/"))

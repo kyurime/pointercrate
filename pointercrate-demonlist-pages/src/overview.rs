@@ -7,7 +7,7 @@ use crate::{
     statsviewer::stats_viewer_panel,
 };
 use maud::{html, Markup, PreEscaped};
-use pointercrate_core_pages::{config as page_config, PageFragment, Script};
+use pointercrate_core_pages::{PageFragment, Script};
 use pointercrate_demonlist::{
     config as list_config,
     demon::{Demon, TimeShiftedDemon},
@@ -169,7 +169,7 @@ impl PageFragment for OverviewPage {
                         Tardis::Activated { demons, ..} => {
                             @for TimeShiftedDemon {current_demon, position_now} in demons {
                                 @if current_demon.base.position <= list_config::extended_list_size() {
-                                    (demon_panel(&current_demon, Some(*position_now)))
+                                    (demon_panel(current_demon, Some(*position_now)))
                                 }
                             }
                         },

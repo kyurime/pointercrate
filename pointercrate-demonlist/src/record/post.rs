@@ -46,7 +46,7 @@ impl Submission {
 
         // Banned submitters cannot submit records
         if submitter.banned {
-            return Err(DemonlistError::BannedFromSubmissions)
+            return Err(DemonlistError::BannedFromSubmissions);
         }
 
         // validate video
@@ -61,25 +61,25 @@ impl Submission {
 
         // Banned player can't have records on the list
         if player.banned {
-            return Err(DemonlistError::PlayerBanned)
+            return Err(DemonlistError::PlayerBanned);
         }
 
         // Cannot submit records for the legacy list (it is possible to directly add them for list mods)
         if demon.position > crate::config::extended_list_size() && self.status == RecordStatus::Submitted {
-            return Err(DemonlistError::SubmitLegacy)
+            return Err(DemonlistError::SubmitLegacy);
         }
 
         // Can only submit 100% records for the extended list (it is possible to directly add them for list
         // mods)
         if demon.position > crate::config::list_size() && self.progress != 100 && self.status == RecordStatus::Submitted {
-            return Err(DemonlistError::Non100Extended)
+            return Err(DemonlistError::Non100Extended);
         }
 
         let requirement = demon.requirement(&mut *connection).await?;
 
         // Check if the record meets the record requirement for this demon
         if self.progress > 100 || self.progress < requirement {
-            return Err(DemonlistError::InvalidProgress { requirement })
+            return Err(DemonlistError::InvalidProgress { requirement });
         }
 
         debug!("Submission is valid, checking for duplicates!");
@@ -95,7 +95,7 @@ impl Submission {
                 return Err(DemonlistError::SubmissionExists {
                     existing: row.id,
                     status: RecordStatus::from_sql(&row.status_),
-                })
+                });
             }
         }
 
@@ -113,7 +113,7 @@ impl Submission {
             return Err(DemonlistError::SubmissionExists {
                 existing: row.id,
                 status: RecordStatus::from_sql(&row.status_),
-            })
+            });
         }
 
         match self.raw_footage {
@@ -127,7 +127,7 @@ impl Submission {
                     .await?;
 
                 if !has_records.value {
-                    return Err(DemonlistError::RawRequiredForFirstTime)
+                    return Err(DemonlistError::RawRequiredForFirstTime);
                 }
             },
             _ => (),

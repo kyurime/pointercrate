@@ -7,12 +7,12 @@ use crate::{
 };
 use chrono::NaiveDateTime;
 use maud::{html, Markup, PreEscaped, Render};
-use pointercrate_core_pages::{config as page_config, util::simple_dropdown, PageFragment, Script};
+use pointercrate_core_pages::{PageFragment, Script};
 use pointercrate_demonlist::{
     config as list_config,
     demon::{Demon, FullDemon},
 };
-use pointercrate_integrate::gd::{DemonRating, GDIntegrationResult, LevelRating, Thunk};
+use pointercrate_integrate::gd::{GDIntegrationResult, Thunk};
 use url::Url;
 
 #[derive(Debug)]
@@ -41,7 +41,7 @@ impl PageFragment for DemonPage {
     fn description(&self) -> String {
         if let GDIntegrationResult::Success(ref level, ..) = self.integration {
             if let Some(Thunk::Processed(ref description)) = level.description {
-                return format!("{}: {}", self.title(), description.0)
+                return format!("{}: {}", self.title(), description.0);
             }
         }
         format!("{}: <No Description Provided>", self.title())

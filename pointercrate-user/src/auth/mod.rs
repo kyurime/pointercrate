@@ -48,7 +48,7 @@ impl AuthenticatedUser {
 
     pub fn validate_password(password: &str) -> Result<()> {
         if password.len() < 10 {
-            return Err(UserError::InvalidPassword)
+            return Err(UserError::InvalidPassword);
         }
 
         Ok(())
@@ -154,8 +154,6 @@ impl AuthenticatedUser {
 mod b64 {
     use std::collections::HashMap;
 
-    use base64;
-
     use lazy_static::lazy_static;
 
     // Decoding table from bcrypt base64 to standard base64 and standard -> bcrypt
@@ -245,7 +243,7 @@ mod b64 {
         if hash.len() % 4 > 0 {
             let padding = 4 - hash.len() % 4;
             for _ in 0..padding {
-                res.push_str("=");
+                res.push('=');
             }
         }
 

@@ -88,35 +88,34 @@ pub async fn demon_page(position: i16, pool: &State<PointercratePool>, gd: &Stat
 
     let mut modifications = audit_log
         .iter()
-        .filter_map(|entry| {
-            match entry.r#type {
-                AuditLogEntryType::Modification(ref modification) =>
-                    match modification.position {
-                        Some(old_position) if old_position > 0 =>
-                            Some(DemonMovement {
-                                from_position: old_position,
-                                at: entry.time,
-                            }),
-                        _ => None,
-                    },
-                AuditLogEntryType::Addition => {
-                    addition_time = Some(entry.time);
-
-                    None
-                },
+        .filter_map(|entry| match entry.r#type {
+            AuditLogEntryType::Modification(ref modification) => match modification.position {
+                Some(old_position) if old_position > 0 => Some(DemonMovement {
+                    from_position: old_position,
+                    at: entry.time,
+                }),
                 _ => None,
-            }
+            },
+            AuditLogEntryType::Addition => {
+                addition_time = Some(entry.time);
+
+                None
+            },
+            _ => None,
         })
         .collect::<Vec<_>>();
 
     if let Some(addition) = addition_time {
-        modifications.insert(0, DemonMovement {
-            from_position: modifications
-                .first()
-                .map(|m| m.from_position)
-                .unwrap_or(full_demon.demon.base.position),
-            at: addition,
-        });
+        modifications.insert(
+            0,
+            DemonMovement {
+                from_position: modifications
+                    .first()
+                    .map(|m| m.from_position)
+                    .unwrap_or(full_demon.demon.base.position),
+                at: addition,
+            },
+        );
     }
 
     Ok(Page(DemonPage {

@@ -80,7 +80,7 @@ impl User {
 
     pub fn validate_name(name: &str) -> Result<()> {
         if name.len() < 3 || name != name.trim() {
-            return Err(UserError::InvalidUsername)
+            return Err(UserError::InvalidUsername);
         }
 
         Ok(())
@@ -97,9 +97,11 @@ impl User {
     ///
     /// The returned tuple is of the form (max, min)
     pub async fn extremal_member_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!(r#"SELECT COALESCE(MAX(member_id), 0) AS "max_id!: i32", COALESCE(MIN(member_id), 0) AS "min_id!: i32" FROM members"#)
-            .fetch_one(connection)
-            .await?; // FIXME: crashes on empty table
+        let row = sqlx::query!(
+            r#"SELECT COALESCE(MAX(member_id), 0) AS "max_id!: i32", COALESCE(MIN(member_id), 0) AS "min_id!: i32" FROM members"#
+        )
+        .fetch_one(connection)
+        .await?; // FIXME: crashes on empty table
         Ok((row.max_id, row.min_id))
     }
 }

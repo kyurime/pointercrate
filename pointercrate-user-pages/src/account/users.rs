@@ -1,7 +1,7 @@
 use crate::account::AccountPageTab;
 use maud::{html, Markup, PreEscaped};
 use pointercrate_core::permission::{Permission, PermissionsManager};
-use pointercrate_core_pages::{util::filtered_paginator, Script};
+use pointercrate_core_pages::util::filtered_paginator;
 use pointercrate_user::{sqlx::PgConnection, User, ADMINISTRATOR};
 
 pub struct UsersTab(pub Vec<Permission>);
@@ -11,7 +11,7 @@ impl AccountPageTab for UsersTab {
     fn should_display_for(&self, user: &User, permissions: &PermissionsManager) -> bool {
         for perm in &self.0 {
             if permissions.require_permission(user.permissions, *perm).is_ok() {
-                return true
+                return true;
             }
         }
 

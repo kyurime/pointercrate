@@ -44,7 +44,7 @@ impl AccountPageConfig {
         };
 
         for tab_config in &self.tabs {
-            if tab_config.should_display_for(&page.user, &permissions) {
+            if tab_config.should_display_for(&page.user, permissions) {
                 let tab = tab_config.tab();
                 let content = tab_config.content(&page.user, permissions, connection).await;
 
