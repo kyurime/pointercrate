@@ -93,7 +93,7 @@ impl AccountPageTab for ListIntegrationTab {
                                     b {
                                         "Geolocate nationality:"
                                     }
-                                    a.button.blue.hover#claims-geolocate-nationality {
+                                    a.button.purple.hover#claims-geolocate-nationality {
                                         "Go"
                                     }
                                 }

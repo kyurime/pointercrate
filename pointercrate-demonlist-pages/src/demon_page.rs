@@ -160,16 +160,16 @@ impl PageFragment for DemonPage {
                             table#history-table{
                                 tbody#history-table-body {
                                     tr {
-                                        th.blue {
+                                        th.medium-gray {
                                             "Date"
                                         }
-                                        th.blue {
+                                        th.medium-gray {
                                             "Change"
                                         }
-                                        th.blue {
+                                        th.medium-gray {
                                             "New Position"
                                         }
-                                        th.blue {
+                                        th.medium-gray {
                                             "Reason"
                                         }
                                     }
@@ -415,14 +415,14 @@ impl DemonPage {
                         table {
                             tbody {
                                 tr {
-                                    th.blue {}
-                                    th.blue {
+                                    th.medium-gray {}
+                                    th.medium-gray {
                                         "Record Holder"
                                     }
-                                    th.blue {
+                                    th.medium-gray {
                                         "Progress"
                                     }
-                                    th.video-link.blue {
+                                    th.video-link.medium-gray {
                                         "Video Proof"
                                     }
                                 }

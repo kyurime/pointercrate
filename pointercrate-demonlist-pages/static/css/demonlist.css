@@ -16,18 +16,22 @@ td {
 }
 
 tr {
-  background: #fefeff;
+  background: #00000066;
 }
 
 tr:nth-child(even) {
-  background: #e6eeff;
+  background: #00000040;
+}
+
+tr:hover {
+  background: #00000090;
 }
 
 #history-table {
   font-weight: bold;
 }
 
-#history-table tr {
+#history-table tr:not(:first-child) {
   background: #fffadd;
   color: #4d4707;
 }
