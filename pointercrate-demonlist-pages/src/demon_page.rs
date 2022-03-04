@@ -314,13 +314,6 @@ impl DemonPage {
                         GDIntegrationResult::Success(level, level_data, song) => {
                             span {
                                 b {
-                                    "Password: "
-                                }
-                                br;
-                                (level_data.password)
-                            }
-                            span {
-                                b {
                                     "ID: "
                                 }
                                 br;
