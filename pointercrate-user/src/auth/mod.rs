@@ -48,7 +48,7 @@ impl AuthenticatedUser {
 
     pub fn validate_password(password: &str) -> Result<()> {
         if password.len() < 10 {
-            return Err(UserError::InvalidPassword);
+            return Err(UserError::InvalidPassword)
         }
 
         Ok(())

@@ -41,7 +41,7 @@ impl PageFragment for DemonPage {
     fn description(&self) -> String {
         if let GDIntegrationResult::Success(ref level, ..) = self.integration {
             if let Some(Thunk::Processed(ref description)) = level.description {
-                return format!("{}: {}", self.title(), description.0);
+                return format!("{}: {}", self.title(), description.0)
             }
         }
         format!("{}: <No Description Provided>", self.title())

@@ -53,10 +53,11 @@ impl AuthenticatedUser {
         match row {
             Err(Error::RowNotFound) => Err(CoreError::Unauthorized.into()),
             Err(err) => Err(err.into()),
-            Ok(row) => Ok(AuthenticatedUser {
-                user: construct_from_row!(row),
-                password_hash: row.password_hash,
-            }),
+            Ok(row) =>
+                Ok(AuthenticatedUser {
+                    user: construct_from_row!(row),
+                    password_hash: row.password_hash,
+                }),
         }
     }
 
@@ -71,10 +72,11 @@ impl AuthenticatedUser {
         match row {
             Err(Error::RowNotFound) => Err(CoreError::Unauthorized.into()),
             Err(err) => Err(err.into()),
-            Ok(row) => Ok(AuthenticatedUser {
-                user: construct_from_row!(row),
-                password_hash: row.password_hash,
-            }),
+            Ok(row) =>
+                Ok(AuthenticatedUser {
+                    user: construct_from_row!(row),
+                    password_hash: row.password_hash,
+                }),
         }
     }
 }

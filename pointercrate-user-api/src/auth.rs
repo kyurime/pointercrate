@@ -61,21 +61,20 @@ impl<'r> FromRequest<'r> for Auth<true> {
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         // No auth header set, forward to the request handler that doesnt require authorization
         if request.headers().get_one("Authorization").is_none() && request.cookies().get("access_token").is_none() {
-            return Outcome::Forward(());
+            return Outcome::Forward(())
         }
 
         let pool = request.guard::<&State<PointercratePool>>().await;
         let permission_manager = match request.guard::<&State<PermissionsManager>>().await {
             Outcome::Success(manager) => manager.inner().clone(),
-            Outcome::Failure(err) => {
+            Outcome::Failure(err) =>
                 return Outcome::Failure((
                     Status::InternalServerError,
                     CoreError::InternalServerError {
                         message: format!("PermissionManager not retrievable from rocket state: {:?}", err),
                     }
                     .into(),
-                ))
-            },
+                )),
             Outcome::Forward(_) => unreachable!(), // by impl FromRequest for State
         };
 
@@ -90,7 +89,7 @@ impl<'r> FromRequest<'r> for Auth<true> {
                         message: format!("PointercratePool not retrievable from rocket state: {:?}", err),
                     }
                     .into(),
-                ));
+                ))
             },
             Outcome::Forward(_) => unreachable!(), // by impl FromRequest for State
         };
@@ -107,7 +106,7 @@ impl<'r> FromRequest<'r> for Auth<true> {
                     connection,
                     permissions: permission_manager,
                     secret: token.to_string(),
-                });
+                })
             }
         }
 
@@ -129,7 +128,7 @@ impl<'r> FromRequest<'r> for Auth<true> {
                     connection,
                     permissions: permission_manager,
                     secret: access_token.to_string(),
-                });
+                })
             }
 
             debug!("Non-GET request, testing X-CSRF-TOKEN header");
@@ -155,7 +154,7 @@ impl<'r> FromRequest<'r> for Auth<true> {
                     connection,
                     permissions: permission_manager,
                     secret: access_token.to_string(),
-                });
+                })
             } else {
                 warn!("Cookie based authentication was used, but no CSRF-token was provided. This might be a CSRF attack!");
             }
@@ -172,21 +171,20 @@ impl<'r> FromRequest<'r> for Auth<false> {
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         // No auth header set, forward to the request handler that doesnt require authorization
         if request.headers().get_one("Authorization").is_none() {
-            return Outcome::Forward(());
+            return Outcome::Forward(())
         }
 
         let pool = request.guard::<&State<PointercratePool>>().await;
         let permission_manager = match request.guard::<&State<PermissionsManager>>().await {
             Outcome::Success(manager) => manager.inner().clone(),
-            Outcome::Failure(err) => {
+            Outcome::Failure(err) =>
                 return Outcome::Failure((
                     Status::InternalServerError,
                     CoreError::InternalServerError {
                         message: format!("PermissionManager not retrievable from rocket state: {:?}", err),
                     }
                     .into(),
-                ))
-            },
+                )),
             Outcome::Forward(_) => unreachable!(), // by impl FromRequest for State
         };
 
@@ -201,7 +199,7 @@ impl<'r> FromRequest<'r> for Auth<false> {
                         message: format!("PointercratePool not retrievable from rocket state: {:?}", err),
                     }
                     .into(),
-                ));
+                ))
             },
             Outcome::Forward(_) => unreachable!(), // by impl FromRequest for State
         };
@@ -227,7 +225,7 @@ impl<'r> FromRequest<'r> for Auth<false> {
                         connection,
                         permissions: permission_manager,
                         secret: password.to_string(),
-                    });
+                    })
                 }
             }
         }

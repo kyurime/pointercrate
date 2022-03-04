@@ -15,11 +15,12 @@ impl PlayerClaim {
             .fetch_one(connection)
             .await
         {
-            Ok(row) => Ok(Some(PlayerClaim {
-                user_id: row.member_id,
-                player_id,
-                verified: true,
-            })),
+            Ok(row) =>
+                Ok(Some(PlayerClaim {
+                    user_id: row.member_id,
+                    player_id,
+                    verified: true,
+                })),
             Err(sqlx::Error::RowNotFound) => Ok(None),
             Err(err) => Err(err.into()),
         }
@@ -50,11 +51,12 @@ impl PlayerClaim {
 
     pub async fn get(member_id: i32, player_id: i32, connection: &mut PgConnection) -> Result<PlayerClaim> {
         match PlayerClaim::by_user(member_id, connection).await? {
-            Some(claim) if claim.player.id == player_id => Ok(PlayerClaim {
-                user_id: member_id,
-                player_id,
-                verified: claim.verified,
-            }),
+            Some(claim) if claim.player.id == player_id =>
+                Ok(PlayerClaim {
+                    user_id: member_id,
+                    player_id,
+                    verified: claim.verified,
+                }),
             _ => Err(DemonlistError::ClaimNotFound { member_id, player_id }),
         }
     }

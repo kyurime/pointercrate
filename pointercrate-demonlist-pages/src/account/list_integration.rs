@@ -34,14 +34,13 @@ impl AccountPageTab for ListIntegrationTab {
     async fn content(&self, user: &User, permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup {
         let player_claim = match PlayerClaim::by_user(user.id, connection).await {
             Ok(player_claim) => player_claim,
-            Err(err) => {
+            Err(err) =>
                 return ErrorFragment {
                     status: err.status_code(),
                     reason: "Internal Server Error".to_string(),
                     message: err.to_string(),
                 }
-                .body_fragment()
-            },
+                .body_fragment(),
         };
         let is_moderator = permissions.require_permission(user.permissions, MODERATOR).is_ok();
 
