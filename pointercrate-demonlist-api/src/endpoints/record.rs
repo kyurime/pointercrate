@@ -189,6 +189,10 @@ pub async fn patch(
 
     auth.commit().await?;
 
+    tokio::spawn(execute_webhook(
+        webhook_status_embed(&record)
+    ));
+
     Ok(Tagged(record))
 }
 
@@ -330,7 +334,7 @@ fn webhook_embed(record: &FullRecord) -> serde_json::Value {
                     "url": record.video
                 },
                 "thumbnail": {
-                    "url": "https://cdn.discordapp.com/avatars/277391246035648512/b03c85d94dc02084c413a7fdbe2cea79.webp?size=1024"
+                    "url": "https://cdn.discordapp.com/emojis/561867333476286464.png?size=1024"
                 },
             }
         ]
@@ -344,6 +348,25 @@ fn webhook_embed(record: &FullRecord) -> serde_json::Value {
             }]
         };
     }
+
+    payload
+}
+
+fn webhook_status_embed(record: &FullRecord) -> serde_json::Value {
+    let payload = serde_json::json!({
+        "content": format!("**Record edited! ID: {}**", record.id),
+        "embeds": [
+            {
+                "type": "rich",
+                "title": format!("{}% on {}", record.progress, record.demon.name),
+                "description": format!("{}'s record's status has been set to `{}`!", record.player.name, record.status),
+                "author": {
+                    "name": format!("Owner: {} (ID: {})", record.player.name, record.player.id),
+                    "url": record.video
+                },
+            }
+        ]
+    });
 
     payload
 }
