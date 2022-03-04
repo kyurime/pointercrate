@@ -11,7 +11,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 8px 8px 8px 8px;
+  border-radius: 4px 4px 4px 4px;
 }
 
 .button.disabled,
@@ -99,7 +99,7 @@ h4 {
 
 iframe {
   border: none;
-  border-radius: 16px;
+  border-radius: 4px;
 }
 
 table {
@@ -195,7 +195,7 @@ a {
   overflow:auto;
   max-height:100%;
   box-sizing:border-box;
-  border-radius: 16px;
+  border-radius: 4px;
 }
 
 .dialog p {
@@ -215,7 +215,7 @@ a {
   text-align: center;
 
   position: relative;
-  border-radius: 16px 16px 16px 16px;
+  border-radius: 4px 4px 4px 4px;
 
   flex-grow: 1;
   overflow: hidden;
@@ -269,7 +269,7 @@ textarea {
   background: #1f1f1f;
   box-sizing: border-box;
 
-  border-radius: 8px;
+  border-radius: 4px;
 
   color: white;
 }
@@ -492,7 +492,7 @@ textarea:invalid {
   background: #1f1f1f;
 
   border: 1px solid black;
-  border-radius: 16px;
+  border-radius: 4px;
 
   z-index: 100;
 
@@ -573,7 +573,7 @@ h2 .dropdown-menu ul {
   padding: 5px;
   margin: 5px;
 
-  border-radius: 16px;
+  border-radius: 4px;
 
   position: absolute;
 }
@@ -719,7 +719,7 @@ ul.selection-list {
   border: 1px solid black;
   font-size: 80%;
   margin: 10px 0px;
-  border-radius: 16px;
+  border-radius: 4px;
   background: #1f1f1f;
 }
 

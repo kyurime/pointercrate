@@ -115,7 +115,7 @@ tr:hover {
   text-align: center;
 
   margin-top: 1rem;
-  border-radius: 16px;
+  border-radius: 4px;
 }
 
 .dropdown li {
@@ -201,7 +201,7 @@ tr:hover {
   background: black;
   background-size: cover;
 
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 /* copied from https://codepen.io/injms/pen/gemvi */
