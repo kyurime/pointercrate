@@ -47,9 +47,6 @@ impl PageFragment for IndividualStatsViewer {
                     b {"Nations"}
                 }
             }
-            div#world-map-wrapper {
-                object#world-map data="/static/demonlist/images/world.svg" type="image/svg+xml" {}
-            }
             div.flex.m-center.container {
                 main.left {
                     (stats_viewer_html(Some(&self.nationalities_in_use), super::standard_stats_viewer_rows()))

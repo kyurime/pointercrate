@@ -49,9 +49,6 @@ impl PageFragment for NationBasedStatsViewer {
                     b {"Nations"}
                 }
             }
-            div#world-map-wrapper {
-                object#world-map data="/static/demonlist/images/world.svg" type="image/svg+xml" {}
-            }
             div.flex.m-center.container {
                 main.left {
                     (stats_viewer_html(None, rows))

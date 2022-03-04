@@ -152,56 +152,7 @@ export function formatInto(parent, childs) {
 
 export class InteractiveWorldMap {
     constructor() {
-        this.wrapper = document.getElementById("world-map-wrapper");
-        this.map = document.getElementById("world-map");
-        this.svg = this.map.contentDocument.children[0];
-
-        this.selectionListeners = [];
-        this.deselectionListeners = [];
-
-        this.zoom = 1;
-        this.translate = {x: 0, y: 0};
-
-        this.isDragging = false;
-        this.dragDistance = 0; // approximate line integral of mouse movement
-
-        this.relativeMousePosition = {x: 0, y: 0};
-        this.lastTouchPosition = {x: 0, y: 0};
-
-        this.setupTouchHandlers();
-        this.setupMouseHandlers();
-
-        this.currentlySelected = undefined;
-
-        for (let subdivision of this.map.contentDocument.querySelectorAll(".land-with-states .state")) {
-            subdivision.addEventListener('click', event => {
-                // states are overlaid over the .land-with-states. We need to stop propagation as otherwise the
-                // event handler on the .land-with-states is also run and it would select the entire country.
-                event.stopPropagation();
-
-                if(!findParentWithClass(subdivision, "continent").classList.contains("selectable"))
-                    return;
-
-                if (this.currentlySelected === subdivision) {
-                    this._deselect();
-                } else {
-                    this._select(subdivision);
-                }
-            });
-        }
-
-        for (let clickable of this.map.contentDocument.querySelectorAll(".land, .island, .land-with-states")) {
-            clickable.addEventListener('click', () => {
-                if(!findParentWithClass(clickable, "continent").classList.contains("selectable"))
-                    return;
-
-                if(this.currentlySelected === clickable) {
-                    this._deselect();
-                }  else {
-                    this._select(clickable);
-                }
-            })
-        }
+        return;
     }
 
     /**
@@ -210,213 +161,64 @@ export class InteractiveWorldMap {
      * @param listener callback (object, object?) -> void taking a nation and optionally a subdivision (both as objects with 'name' and 'code' fields)
      */
     addSelectionListener(listener) {
-        this.selectionListeners.push(listener);
+        return;
     }
 
     addDeselectionListener(listener) {
-        this.deselectionListeners.push(listener);
+        return;
     }
 
     highlightContinent(continentName) {
-        if(continentName === undefined) {
-            for(let continent of this.svg.getElementsByClassName("continent")) {
-                continent.classList.add("selectable");
-            }
-        } else {
-            for(let continent of this.svg.getElementsByClassName("continent")) {
-                if(continent.id !== continentName.toLowerCase().replaceAll(' ', "-")) {
-                    continent.classList.remove("selectable");
-                } else {
-                    continent.classList.add("selectable");
-                }
-            }
-        }
+        return;
     }
 
     resetContinentHighlight() {
-        this.highlightContinent(undefined);
+        return;
     }
 
     select(nation, subdivision) {
-        let elementId = nation.toUpperCase();
-
-        if(subdivision !== undefined)
-            elementId += "-" + subdivision.toUpperCase();
-
-        let element = this.svg.getElementById(elementId) || this.svg.getElementById(elementId.toLowerCase());
-
-        if(element !== undefined)
-            this._select(element, false);
+        return;
     }
 
     deselectSubdivision() {
-        if (this.currentlySelected === undefined || !this.currentlySelected.id.contains("-"))
-            return;
-
-        this.select(this.currentlySelected.id.substring(0, 2));
+        return;
     }
 
     deselect() {
-        this._deselect(false);
+        return;
     }
 
     showSubdivisions() {
-        for(let divided of this.map.contentDocument.querySelectorAll(".land-with-states")) {
-            divided.classList.add("subdivided");
-        }
+        return;
     }
 
     hideSubdivisions() {
-        for(let divided of this.map.contentDocument.querySelectorAll(".land-with-states.subdivided")) {
-            divided.classList.remove("subdivided");
-        }
+        return;
     }
 
     // private
 
     _select(clicked, fireEvents = true) {
-        if(this.isDragging)
-            return;
-
-        if (this.currentlySelected !== undefined)
-            this.currentlySelected.classList.remove("selected");
-
-        this.currentlySelected = clicked;
-        this.currentlySelected.classList.add("selected");
-
-        let subdivisionCode = clicked.id.substring(3);
-        let countryCode = clicked.id.substring(0, 2);
-
-        if(fireEvents)
-            for(let listener of this.selectionListeners)
-                listener(countryCode.toUpperCase(), subdivisionCode === "" ? undefined : subdivisionCode.toUpperCase());
+        return;
     }
 
     _deselect(fireEvents = true) {
-        if(this.isDragging)
-            return
-
-        if(this.currentlySelected === undefined)
-            return;
-
-        this.currentlySelected.classList.remove("selected");
-        this.currentlySelected = undefined;
-
-        if(fireEvents)
-            for(let listener of this.deselectionListeners)
-                listener();
+        return;
     }
 
     setLastPosFromTouchEvent(event) {
-        this.lastTouchPosition.x = event.touches[0].pageX;
-        this.lastTouchPosition.y = event.touches[0].pageY;
+        return;
     }
 
     doDrag(deltaX, deltaY) {
-        if(deltaX === undefined || deltaY === undefined)
-            return;
-
-        this.translate.x += deltaX / this.zoom;
-        this.translate.y += deltaY / this.zoom;
-
-        // TODO(patrick): pretty sure this is nonsense?
-        this.dragDistance += Math.sqrt(this.translate.x * this.translate.x + this.translate.y * this.translate.y);
-
-        this.svg.style.transform = "scale(" + this.zoom + ") translate(" + this.translate.x + "px, " + this.translate.y + "px)";
+        return;
     }
 
     setupTouchHandlers() {
-        this.svg.addEventListener("touchstart", event => {
-            this.isDragging = event.touches.length === 1;
-
-            if(this.isDragging) {
-                this.setLastPosFromTouchEvent(event);
-
-                event.preventDefault();
-            }
-        });
-
-        this.svg.addEventListener("touchend", event => {
-            this.isDragging = event.touches.length !== 1;
-
-            if(this.isDragging) {
-                this.setLastPosFromTouchEvent(event);
-
-                event.preventDefault();
-            }
-        });
-
-        this.svg.addEventListener("touchmove", event => {
-            if(this.isDragging) {
-                this.doDrag(event.touches[0].pageX - this.lastTouchPosition.x, event.touches[0].pageY - this.lastTouchPosition.y);
-
-                this.setLastPosFromTouchEvent(event);
-
-                event.preventDefault();
-            }
-        });
+        return;
     }
 
     setupMouseHandlers() {
-        document.addEventListener('scroll', () => {
-            let scrollRatio = window.scrollY / this.wrapper.clientHeight;
-
-            this.wrapper.style.filter = "blur(" + (scrollRatio * .25) + "rem)";
-        });
-
-        this.svg.addEventListener("mousedown", event => {
-            this.isDragging = true;
-        });
-
-        this.svg.addEventListener("mousemove", event => {
-            if (this.isDragging)
-                this.doDrag(event.movementX, event.movementY);
-
-            this.relativeMousePosition.x = event.clientX - this.svg.getBoundingClientRect().left + this.translate.x * this.zoom;
-            this.relativeMousePosition.y = event.clientY - this.svg.getBoundingClientRect().top + this.translate.y * this.zoom;
-        });
-
-        this.svg.addEventListener("mouseleave", event => {
-            this.isDragging = false;
-        });
-
-        this.svg.addEventListener("mouseup", event => {
-            this.isDragging = false;
-
-            if (this.dragDistance >= 5) {
-                let captureClick = event => {
-                    event.stopPropagation();
-                    this.svg.removeEventListener('click', captureClick, true);
-                };
-
-                this.svg.addEventListener(
-                    'click',
-                    captureClick,
-                    true
-                );
-            }
-
-            this.dragDistance = 0;
-        });
-
-        this.svg.addEventListener('wheel', event => {
-            if (event.shiftKey) {
-                let unzoomedMouseX = this.relativeMousePosition.x / this.zoom;
-                let unzoomedMouseY = this.relativeMousePosition.y / this.zoom;
-
-                if(this.zoom - event.deltaY / Math.abs(event.deltaY) * .1 < 0.2)
-                    return;
-
-                this.zoom -= event.deltaY / Math.abs(event.deltaY) * .1;
-
-                let rezoomedMouseX = this.relativeMousePosition.x / this.zoom;
-                let rezoomedMouseY = this.relativeMousePosition.y / this.zoom;
-
-                this.translate.x += (rezoomedMouseX - unzoomedMouseX);
-                this.translate.y += (rezoomedMouseY - unzoomedMouseY);
-
-                this.svg.style.transform = "scale(" + this.zoom + ") translate(" + this.translate.x + "px, " + this.translate.y + "px)";
-            }
-        })
+        return;
     }
 }
