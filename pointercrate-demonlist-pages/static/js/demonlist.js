@@ -11,6 +11,10 @@ $(document).ready(function () {
 });
 
 function initializeHistoryTable() {
+  if (!window.demon_id) {
+    return;
+  }
+
   get("/api/v2/demons/" + window.demon_id + "/audit/movement/").then(response => {
     let data = response.data;
     let tableBody = document.getElementById("history-table-body");
