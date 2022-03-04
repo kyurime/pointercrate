@@ -209,7 +209,7 @@ impl DemonPage {
         html! {
             section.panel.fade.js-scroll-anim data-anim = "fade" {
                 div.underlined {
-                    h1#demon-heading style = "overflow: hidden"{
+                    h1#demon-heading style = "overflow: hidden; text-overflow: ellipsis;"{
                         @if self.data.demon.base.position != 1 {
                             a href=(format!("/demonlist/{:?}", self.data.demon.base.position - 1)) {
                                 i class="fa fa-chevron-left" style="padding-right: 5%" {}

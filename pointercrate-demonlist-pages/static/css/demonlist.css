@@ -123,6 +123,10 @@ tr:hover {
   min-width: 200px;
   width: 200px;
   flex-grow: 1;
+
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .dropdown i {
