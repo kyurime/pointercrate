@@ -5,7 +5,7 @@ use std::fmt::Display;
 
 pub fn paginator(id: &str, endpoint: &str) -> Markup {
     html! {
-        div.flex.col.paginator#(id) data-endpoint = (endpoint) {
+        div.flex.col.paginator #(id) data-endpoint = (endpoint) {
             p.info-red.output {}
             div style="min-height: 450px; position:relative; flex-grow:1" {
                 ul.selection-list style = "position: absolute; top: 0px; bottom:0px; left: 0px; right:0px" {}
@@ -20,7 +20,7 @@ pub fn paginator(id: &str, endpoint: &str) -> Markup {
 
 pub fn filtered_paginator(id: &str, endpoint: &str) -> Markup {
     html! {
-        div.flex.col.paginator#(id) data-endpoint=(endpoint) {
+        div.flex.col.paginator #(id) data-endpoint=(endpoint) {
             div.search.seperated.no-stretch {
                 input placeholder = "Enter to search..." type = "text" style = "height: 1em";
             }
@@ -56,7 +56,7 @@ pub fn dropdown(default_entry: &str, default_item: Markup, filter_items: impl It
 
 pub fn simple_dropdown<T1: Display>(dropdown_id: &str, default: Option<T1>, items: impl Iterator<Item = T1>) -> Markup {
     html! {
-        div.dropdown-menu.js-search.no-stretch#(dropdown_id) {
+        div.dropdown-menu.js-search.no-stretch #(dropdown_id) {
             div {
                 @match default {
                     Some(ref default) => {

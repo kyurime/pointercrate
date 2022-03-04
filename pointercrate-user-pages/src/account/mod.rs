@@ -96,8 +96,8 @@ impl PageFragment for AccountPage {
 
     fn body_fragment(&self) -> Markup {
         html! {
-            span#chicken-salad-red-fish style = "display:none" {(self.csrf_token)}
-            div.tab-display#account-tabber {
+            span #chicken-salad-red-fish style = "display:none" {(self.csrf_token)}
+            div.tab-display #account-tabber {
                 div.tab-selection.flex.wrap.m-center.fade style="text-align: center;" {
                     @for (i, (tab, _, _, id)) in self.tabs.iter().enumerate() {
                         @if i == 0 {

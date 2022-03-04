@@ -76,9 +76,9 @@ impl Render for Tardis {
                 },
                 _ => {}
             }
-            section.panel.fade.closable#time-machine  style=(if !self.visible() {"display:none;overflow: initial"} else {"overflow: initial"}) {
+            section.panel.fade.closable #time-machine  style=(if !self.visible() {"display:none;overflow: initial"} else {"overflow: initial"}) {
                 span.plus.cross.hover {}
-                form#time-machine-form novalidate = "" {
+                form #time-machine-form novalidate = "" {
                     div.underlined {
                         h2 {"Time Machine"}
                     }

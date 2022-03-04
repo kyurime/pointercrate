@@ -58,7 +58,7 @@ fn dropdowns(all_demons: &[&Demon], current: Option<&Demon>) -> Markup {
     };
 
     html! {
-        nav.flex.wrap.m-center.fade#lists style="text-align: center;" {
+        nav.flex.wrap.m-center.fade #lists style="text-align: center;" {
             // The drop down for the main list:
             (dropdown(&MAIN_SECTION, main, current))
             // The drop down for the extended list:
@@ -97,7 +97,7 @@ fn dropdown(section: &ListSection, demons: &[&Demon], current: Option<&Demon>) -
                 (section.name)
             }
 
-            div.see-through.fade.dropdown#(section.id) {
+            div.see-through.fade.dropdown #(section.id) {
                 div.search.js-search.seperated style = "margin: 10px" {
                     input placeholder = "Filter..." type = "text" {}
                 }
@@ -125,7 +125,7 @@ fn dropdown(section: &ListSection, demons: &[&Demon], current: Option<&Demon>) -
 
 fn discord_panel() -> Markup {
     html! {
-        section.panel.fade.js-scroll-anim#discord data-anim = "fade" {
+        section.panel.fade.js-scroll-anim #discord data-anim = "fade" {
             iframe.js-delay-attr style = "width: 100%; height: 400px;" allowtransparency="true" frameborder = "0" data-attr = "src" data-attr-value = "https://discord.com/widget?id=897576716334141460" {}
             p {
                 "Join the official Demonlist discord server, where you can get in touch with the demonlist team!"

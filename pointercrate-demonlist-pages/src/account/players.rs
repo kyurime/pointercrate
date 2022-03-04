@@ -58,9 +58,9 @@ impl AccountPageTab for PlayersPage {
                             div.flex.col{
                                 h3 style = "font-size:1.1em; margin: 10px 0" {
                                     "Player #"
-                                    i#player-player-id {}
+                                    i #player-player-id {}
                                     " - "
-                                    i.fa.fa-pencil-alt.clickable#player-name-pen aria-hidden = "true" {} (PreEscaped("&nbsp;")) i#player-player-name {}
+                                    i.fa.fa-pencil-alt.clickable #player-name-pen aria-hidden = "true" {} (PreEscaped("&nbsp;")) i #player-player-name {}
                                 }
                                 p {
                                     "Welcome to the player manager. Here you can ban or unban players. Banning a player will delete all records of theirs which are in the submitted or under consideration state. All approved records will instead be set to rejected."
@@ -73,7 +73,7 @@ impl AccountPageTab for PlayersPage {
                                             "Banned:"
                                         }
                                         br;
-                                        div.dropdown-menu.js-search#edit-player-banned style = "max-width: 7rem" {
+                                        div.dropdown-menu.js-search #edit-player-banned style = "max-width: 7rem" {
                                             div {
                                                 input type="text" style = "font-weight: bold;";
                                             }
@@ -93,7 +93,7 @@ impl AccountPageTab for PlayersPage {
                                         p {
                                             "Note that this is to be understood as 'Country of legal residency' and nothing else. No exceptions. "
                                         }
-                                        div.dropdown-menu.js-search#edit-player-nationality data-default = "None" {
+                                        div.dropdown-menu.js-search #edit-player-nationality data-default = "None" {
                                             div {
                                                 input type="text" style = "font-weight: bold;";
                                             }
@@ -120,7 +120,7 @@ impl AccountPageTab for PlayersPage {
                                             "Political Subdivision:"
                                         }
                                         br;
-                                        div.dropdown-menu.js-search#edit-player-subdivision data-default = "None" {
+                                        div.dropdown-menu.js-search #edit-player-subdivision data-default = "None" {
                                             div{
                                                 input type="text" style = "font-weight: bold;";
                                             }
@@ -132,7 +132,7 @@ impl AccountPageTab for PlayersPage {
                                         }
                                     }
                                 }
-                                span.button.purple.hover#player-list-records style = "margin: 15px auto 0px" {"Show records in record manager"};
+                                span.button.purple.hover #player-list-records style = "margin: 15px auto 0px" {"Show records in record manager"};
                             }
                         }
                     }
@@ -156,9 +156,9 @@ fn player_selector() -> Markup {
             p {
                 "Players can be uniquely identified by ID. Entering a players's ID below will select it on the left (provided the player exists)"
             }
-            form.flex.col#player-search-by-player-id-form novalidate = "" {
+            form.flex.col #player-search-by-player-id-form novalidate = "" {
                 p.info-red.output {}
-                span.form-input#search-player-id {
+                span.form-input #search-player-id {
                     label for = "id" {"Player ID:"}
                     input required = "" type = "number" name = "id" min = "0" style="width:93%";
                     p.error {}
@@ -172,7 +172,7 @@ fn player_selector() -> Markup {
 fn change_name_dialog() -> Markup {
     html! {
         div.overlay.closable {
-            div.dialog#player-name-dialog {
+            div.dialog #player-name-dialog {
                 span.plus.cross.hover {}
                 h2.underlined.pad {
                     "Change player name:"
@@ -183,7 +183,7 @@ fn change_name_dialog() -> Markup {
                 form.flex.col novalidate = "" {
                     p.info-red.output {}
                     p.info-green.output {}
-                    span.form-input#player-name-edit {
+                    span.form-input #player-name-edit {
                         label for = "name" {"Name:"}
                         input name = "name" type = "text" required = "";
                         p.error {}

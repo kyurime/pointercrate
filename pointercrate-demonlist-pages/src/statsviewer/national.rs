@@ -41,7 +41,7 @@ impl PageFragment for NationBasedStatsViewer {
         rows.push(StatsViewerRow(vec![("Unbeaten demons", "unbeaten")]));
 
         html! {
-            nav.flex.wrap.m-center.fade#statsviewers style="text-align: center;" {
+            nav.flex.wrap.m-center.fade #statsviewers style="text-align: center;" {
                 a.button.dark-gray.hover.no-shadow href="/demonlist/statsviewer/"{
                     b {"Individual"}
                 }

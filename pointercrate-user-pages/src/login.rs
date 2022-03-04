@@ -36,20 +36,20 @@ impl PageFragment for LoginPage {
                 p {
                     "By using pointercrate accounts you agree to cookies. If you don't then I formally request you to stop using the internet as you obviously have no idea what you're talking about. "
                 }
-                div.flex#login {
+                div.flex #login {
                     div.flex.col {
                         h2 {"Login"}
                         p {
                             "Log in to an existing pointercrate account. You have 3 login attempts by 30 minutes. If you do not have an account yet, register on the right or below. "
                         }
-                        form.flex.col.grow#login-form novalidate = "" {
+                        form.flex.col.grow #login-form novalidate = "" {
                             p.info-red.output {}
-                            span.form-input#login-username {
+                            span.form-input #login-username {
                                 label for = "username" {"Username:"}
                                 input required = "" type = "text" name = "username" minlength = "3";
                                 p.error {}
                             }
-                            span.form-input#login-password {
+                            span.form-input #login-password {
                                 label for = "password" {"Password:"}
                                 input required = "" type = "password" name = "password" minlength = "10";
                                 p.error {}
@@ -63,19 +63,19 @@ impl PageFragment for LoginPage {
                         p {
                             "Not registered yet? Create a new pointercrate account below."
                         }
-                        form.flex.col.grow#register-form novalidate = "" {
+                        form.flex.col.grow #register-form novalidate = "" {
                             p.info-red.output {}
-                            span.form-input#register-username {
+                            span.form-input #register-username {
                                 label for = "name" {"Username:"}
                                 input required = "" type = "text" name = "name";
                                 p.error {}
                             }
-                            span.form-input#register-password {
+                            span.form-input #register-password {
                                 label for = "password" {"Password:"}
                                 input required = "" type = "password" name = "password" minlength = "10";
                                 p.error {}
                             }
-                            span.form-input#register-password-repeat {
+                            span.form-input #register-password-repeat {
                                 label for = "password2" {"Repeat Password:"}
                                 input required = "" type = "password" name = "password2" minlength = "10";
                                 p.error {}

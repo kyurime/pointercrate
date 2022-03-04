@@ -39,7 +39,7 @@ impl PageFragment for IndividualStatsViewer {
 
     fn body_fragment(&self) -> Markup {
         html! {
-            nav.flex.wrap.m-center.fade#statsviewers style="text-align: center;" {
+            nav.flex.wrap.m-center.fade #statsviewers style="text-align: center;" {
                 a.button.dark-gray.hover.no-shadow href="/demonlist/statsviewer/"{
                     b {"Individual"}
                 }
@@ -60,7 +60,7 @@ impl PageFragment for IndividualStatsViewer {
                         p {
                             "For the " i {"United States of America"} ", " i {"The United Kingdom of Great Britain and Northern Ireland"} ", " i{"Australia"} " and " i{"Canada"} " you can select a state/province from the dropdown below to focus the stats viewer to that state/province."
                         }
-                        div.dropdown-menu.js-search#subdivision-dropdown data-default = "None" {
+                        div.dropdown-menu.js-search #subdivision-dropdown data-default = "None" {
                             div{
                                 input type="text" style = "font-weight: bold;";
                             }

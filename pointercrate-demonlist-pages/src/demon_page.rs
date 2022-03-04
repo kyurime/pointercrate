@@ -152,13 +152,13 @@ impl PageFragment for DemonPage {
                     div.panel.fade.js-scroll-anim.js-collapse data-anim = "fade" {
                         h2.underlined.pad {
                             "Position History"
-                            span.arrow.hover#history-trigger {}
+                            span.arrow.hover #history-trigger {}
                         }
                         div.js-collapse-content style="display:none"  {
-                            div.ct-chart.ct-perfect-fourth#position-chart style="display:none"{}
+                            div.ct-chart.ct-perfect-fourth #position-chart style="display:none"{}
 
-                            table#history-table{
-                                tbody#history-table-body {
+                            table #history-table{
+                                tbody #history-table-body {
                                     tr {
                                         th.medium-gray {
                                             "Date"
@@ -201,7 +201,7 @@ impl DemonPage {
         html! {
             section.panel.fade.js-scroll-anim data-anim = "fade" {
                 div.underlined {
-                    h1#demon-heading style = "overflow: hidden; text-overflow: ellipsis;"{
+                    h1 #demon-heading style = "overflow: hidden; text-overflow: ellipsis;"{
                         @if self.data.demon.base.position != 1 {
                             a href=(format!("/demonlist/{:?}", self.data.demon.base.position - 1)) {
                                 i class="fa fa-chevron-left" style="padding-right: 5%" {}
@@ -249,7 +249,7 @@ impl DemonPage {
                         iframe."ratio-16-9"."js-delay-attr" style="width:90%; margin: 15px 5%" allowfullscreen="" data-attr = "src" data-attr-value = (embedded_video) {"Verification Video"}
                     }
                 }
-                div.underlined.pad.flex.wrap#level-info {
+                div.underlined.pad.flex.wrap #level-info {
                     @if position <= list_config::extended_list_size() {
                         span {
                             b {
@@ -281,7 +281,7 @@ impl DemonPage {
                         "Level Info"
                     }
                 }
-                div.underlined.pad.flex.wrap#level-info {
+                div.underlined.pad.flex.wrap #level-info {
                     @match &self.integration {
                         GDIntegrationResult::DemonNotFoundByName => {
                             p.info-red {
