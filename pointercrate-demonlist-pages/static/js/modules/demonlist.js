@@ -267,6 +267,8 @@ export function generatePlayer(player) {
     span.className =
       "flag-icon flag-icon-" + player.nationality.country_code.toLowerCase();
 
+    span.style.backgroundImage = `url(/static/demonlist/images/flags/${player.nationality.country_code.toLowerCase()}.svg`;
+
     li.appendChild(span);
     li.appendChild(document.createTextNode(" "));
   }
