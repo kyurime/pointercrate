@@ -30,6 +30,7 @@ function initializeHistoryTable() {
       }
 
       cells[0].innerText = entry["time"].split("T")[0];
+      cells[0].style.whiteSpace = "nowrap";
 
       let positionChange = entry["new_position"] - lastPosition;
 
@@ -45,13 +46,13 @@ function initializeHistoryTable() {
         }
 
         if(entry["new_position"] > window.extended_list_length || lastPosition > window.extended_list_length) {
-          cells[1].appendChild(document.createTextNode("Legacy"));
+          cells[3].appendChild(document.createTextNode("Legacy"));
         } else {
-          cells[1].appendChild(arrow);
-          cells[1].appendChild(document.createTextNode(" " + Math.abs(positionChange)));
+          cells[3].appendChild(arrow);
+          cells[3].appendChild(document.createTextNode(" " + Math.abs(positionChange)));
         }
       } else {
-        cells[1].innerText = "-";
+        cells[3].innerText = "-";
       }
 
       if (entry["new_position"] !== undefined) {
@@ -87,7 +88,7 @@ function initializeHistoryTable() {
         }
       }
 
-      cells[3].innerText = reason;
+      cells[1].innerText = reason;
 
       lastPosition = entry["new_position"];
 

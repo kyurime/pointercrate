@@ -164,13 +164,13 @@ impl PageFragment for DemonPage {
                                             "Date"
                                         }
                                         th.medium-gray {
-                                            "Change"
-                                        }
-                                        th.medium-gray {
-                                            "New Position"
-                                        }
-                                        th.medium-gray {
                                             "Reason"
+                                        }
+                                        th.medium-gray {
+                                            "Position"
+                                        }
+                                        th.medium-gray {
+                                            "Change"
                                         }
                                     }
                                 }

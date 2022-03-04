@@ -33,16 +33,18 @@ tr:hover {
   font-weight: bold;
 }
 
-
-#history-table tr:not(:first-child) td:nth-child(2) {
+#history-table tr:not(:first-child) td:nth-child(4),
+#history-table tr:not(:first-child) td:nth-child(3) {
   color: #ffeb75;
 }
 
-#history-table tr.moved-up td:nth-child(2) {
+#history-table tr.moved-up td:nth-child(4),
+#history-table tr.moved-up td:nth-child(3) {
   color: #4eff4e;
 }
 
-#history-table tr.moved-down td:nth-child(2) {
+#history-table tr.moved-down td:nth-child(4),
+#history-table tr.moved-down td:nth-child(3) {
   color: #fb8080;
 }
 
