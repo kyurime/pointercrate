@@ -53,7 +53,6 @@ impl PageFragment for IndividualStatsViewer {
                 }
                 aside.right {
                     (super::continent_panel())
-                    (super::hide_subdivision_panel())
                     section.panel.fade style = "overflow: initial;" {
                         h3.underlined {
                             "Political Subdivision:"
