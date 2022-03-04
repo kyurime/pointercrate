@@ -30,6 +30,12 @@ class NavigationBar {
     }
     navigation.appendChild(dropDown);
 
+    const navButtons = document.querySelectorAll(".nav-drop-down .nav-item.colorless");
+    for (const button of navButtons) {
+      button.classList.remove("colorless");
+      button.classList.add("dark-gray");
+    }
+
     this.dropDown = $(dropDown);
     this.button = this.ensureButton();
     this.registerHandlers();
