@@ -33,7 +33,7 @@ pub async fn overview(
 ) -> Result<Page<OverviewPage>> {
     // should be const, but chrono aint const :(
     let beginning_of_time: DateTime<FixedOffset> =
-        FixedOffset::east(0).from_utc_datetime(&NaiveDate::from_ymd(2017, 1, 4).and_hms(0, 0, 0));
+        FixedOffset::east(0).from_utc_datetime(&NaiveDate::from_ymd(2019, 4, 19).and_hms(0, 0, 0));
 
     let mut connection = pool.connection().await?;
 

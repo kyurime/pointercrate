@@ -59,7 +59,7 @@ impl Render for Tardis {
         html! {
             @match self {
                 Tardis::Activated { destination, ..} => {
-                    div.panel.fade.blue.flex style="align-items: center;" {
+                    div.panel.fade.medium-gray.flex style="align-items: center;" {
                         span style = "text-align: end"{
                             "You are currently looking at the demonlist how it was on"
                             br;
@@ -71,7 +71,7 @@ impl Render for Tardis {
                                 }
                             }
                         }
-                        a.white.button href = "/demonlist/" onclick=r#"document.cookie = "when=""# style = "margin-left: 15px"{ b{"Go to present" }}
+                        a.purple.button href = "/demonlist/" onclick=r#"document.cookie = "when=""# style = "margin-left: 15px"{ b{"Go to present" }}
                     }
                 },
                 _ => {}
@@ -83,12 +83,12 @@ impl Render for Tardis {
                         h2 {"Time Machine"}
                     }
                     p {
-                        "Enter the date you want to view the demonlist at below. For technical reasons, the earliest possible date is January 4th 2017. Note however that data before August 4th 2017 is only provided on a best-effort basis and not guaranteed to be 100% accurate. Particularly data from before April 4th 2017 contains significant errors!"
+                        "Enter the date you want to view the demonlist at below. For technical reasons, the earliest possible date is April 21st 2019."
                     }
                     div.flex {
                         span.form-input data-type = "dropdown" style = "max-width:33%" {
                             h3 {"Year:"}
-                            (simple_dropdown("time-machine-year", None, 2017..=current_year))
+                            (simple_dropdown("time-machine-year", None, 2019..=current_year))
                             p.error {}
                         }
                         span.form-input data-type = "dropdown" style = "max-width:33%"  {
