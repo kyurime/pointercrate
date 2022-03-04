@@ -72,12 +72,16 @@ function initializeHistoryTable() {
           let other = entry["reason"]["OtherAddedAbove"]["other"];
           let name = other.name === null ? "A demon" : other["name"];
 
+          name = name.length > 24 ? `${name.substring(0, 24)}...` : name;
+
           reason = name + " was added above";
 
         } else if (entry["reason"]["OtherMoved"] !== undefined) {
           let other = entry["reason"]["OtherMoved"]["other"];
           let verb = positionChange < 0 ? "down" : "up";
           let name = other.name === null ? "A demon" : other["name"];
+
+          name = name.length > 24 ? `${name.substring(0, 24)}...` : name;
 
           reason = name + " was moved " + verb + " past this demon"
         }
