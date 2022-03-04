@@ -728,6 +728,10 @@ ul.selection-list li {
   text-align: left;
   cursor: pointer;
   border-radius: 4px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 ul.selection-list li:first-child {
