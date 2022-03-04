@@ -77,6 +77,8 @@ function generateUser(userData) {
   var b = document.createElement("b");
   var i = document.createElement("i");
 
+  li.classList.add("dark-gray");
+
   li.dataset.id = userData.id;
 
   b.appendChild(document.createTextNode(userData.name));

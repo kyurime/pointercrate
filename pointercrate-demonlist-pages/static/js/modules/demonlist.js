@@ -284,6 +284,8 @@ export function generateDemon(demon) {
   let li = document.createElement("li");
   let b = document.createElement("b");
 
+  li.classList.add("dark-gray");
+
   li.dataset.id = demon.id;
 
   b.innerText = "#" + demon.position + " - ";
