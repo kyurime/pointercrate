@@ -565,8 +565,7 @@ h2 .dropdown-menu ul {
   visibility: hidden;
   z-index: 9;
 
-  border: 3px solid #ddd;
-  background: #fff;
+  background: #121212;
 
   left: 50%;
   transform: translateX(-50%);
@@ -574,13 +573,15 @@ h2 .dropdown-menu ul {
   padding: 5px;
   margin: 5px;
 
+  border-radius: 16px;
+
   position: absolute;
 }
 
 .tooltip:hover .tooltiptext {
   visibility: visible;
-  opacity: 0.9;
-  transition: 1s opacity;
+  opacity: 1.0;
+  transition: 0.25s opacity;
 }
 
 /* (Under)lines */
