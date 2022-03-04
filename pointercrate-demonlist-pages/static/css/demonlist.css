@@ -31,22 +31,20 @@ tr:hover {
   font-weight: bold;
 }
 
+/*
 #history-table tr:not(:first-child) {
   background: #fffadd;
   color: #4d4707;
 }
 
-/* same colors as info boxes! */
 #history-table tr.moved-up {
-  background: #ddffdd;
-  color: #074d07;
+  border-left-color: #ddffdd;
 }
 
 #history-table tr.moved-down {
-  background: #fdd;
-  color: #4d0707;
+  border-left-color: #fdd;
 }
-
+*/
 #editors li {
   display: inline-block;
   margin: 2px;
