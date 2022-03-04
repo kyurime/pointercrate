@@ -19,7 +19,7 @@ export class Dropdown {
 
     for (let li of this.html.querySelectorAll("ul li")) {
       li.addEventListener("mousedown", (e) => e.preventDefault());
-      li.addEventListener("click", () => this.select(li.dataset.value));
+      li.addEventListener("click", () => { this.select(li.dataset.value); this.input.blur(); });
 
       this.values[li.dataset.value] = li.dataset.display || li.innerHTML;
     }
@@ -68,7 +68,7 @@ export class Dropdown {
     this.ul.appendChild(li);
 
     li.addEventListener("mousedown", (e) => e.preventDefault());
-    li.addEventListener("click", () => this.select(li.dataset.value));
+    li.addEventListener("click", () => { this.select(li.dataset.value); this.input.blur(); });
 
     this.values[li.dataset.value] = li.dataset.display || li.innerHTML;
   }
