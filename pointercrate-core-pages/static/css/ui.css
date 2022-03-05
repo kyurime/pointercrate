@@ -576,6 +576,8 @@ h2 .dropdown-menu ul {
   border-radius: 4px;
 
   position: absolute;
+
+  overflow-wrap: normal;
 }
 
 .tooltip:hover .tooltiptext {
