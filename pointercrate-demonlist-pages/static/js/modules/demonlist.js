@@ -26,7 +26,7 @@ export function embedVideo(video) {
 
   if (video.startsWith("https://www.twitch")) {
     return (
-      "https://player.twitch.tv/?autoplay=false&parent=pointercrate.com&video=" +
+      "https://player.twitch.tv/?autoplay=false&parent=pointercrate.xyze.dev&video=" +
       video.substring(29)
     );
   }

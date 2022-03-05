@@ -118,7 +118,7 @@ impl PageFragment for OverviewPage {
                                 "@type": "ListItem",
                                 "position": 1,
                                 "item": {
-                                    "@id": "https://pointercrate.com/",
+                                    "@id": "https://pointercrate.xyze.dev/",
                                     "name": "pointercrate"
                                 }
                             },
@@ -126,7 +126,7 @@ impl PageFragment for OverviewPage {
                                 "@type": "ListItem",
                                 "position": 2,
                                 "item": {
-                                    "@id": "https://pointercrate.com/demonlist/",
+                                    "@id": "https://pointercrate.xyze.dev/demonlist/",
                                     "name": "demonlist"
                                 }
                             }
@@ -134,7 +134,7 @@ impl PageFragment for OverviewPage {
                     },
                     "name": "Geometry Dash Demonlist",
                     "description": "The official pointercrate Demonlist!",
-                    "url": "https://pointercrate.com/demonlist/"
+                    "url": "https://pointercrate.xyze.dev/demonlist/"
                 }
                 </script>
             "#))
@@ -145,7 +145,7 @@ impl PageFragment for OverviewPage {
                 </script>", list_config::list_size(), list_config::extended_list_size())
             ))
             // FIXME: abstract away
-            link ref = "canonical" href = "https://pointercrate.com/demonlist/";
+            link ref = "canonical" href = "https://pointercrate.xyze.dev/demonlist/";
         }
     }
 
