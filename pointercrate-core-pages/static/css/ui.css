@@ -735,10 +735,6 @@ ul.selection-list li {
   text-overflow: ellipsis;
 }
 
-ul.selection-list li:first-child {
-  margin-top: 0.75rem;
-}
-
 /* Tab panel stuff */
 .tab-content:not(.tab-content-active) {
   display: none;
