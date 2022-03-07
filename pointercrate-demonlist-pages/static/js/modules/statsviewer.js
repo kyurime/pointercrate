@@ -118,14 +118,16 @@ export class StatsViewer extends FilteredPaginator {
             element.style.opacity = ".5";
         }
 
+        const name = demon.name.length > 24 ? `${demon.name.substring(0, 24)}...` : demon.name;
+
         if (link) {
             let a = document.createElement("a");
             a.href = link;
-            a.textContent = demon.name;
+            a.textContent = name;
 
             element.appendChild(a);
         } else {
-            element.textContent = demon.name;
+            element.textContent = name;
         }
 
         return element;
