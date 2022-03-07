@@ -458,7 +458,6 @@ textarea:invalid {
 .stats-container {
   margin: 5px 0%;
   flex-wrap: wrap;
-  overflow-wrap: anywhere;
 }
 
 .stats-container > * {
