@@ -93,7 +93,7 @@ fn dropdown(section: &ListSection, demons: &[&Demon], current: Option<&Demon>) -
 
     html! {
         div {
-            div.button.white.hover.no-shadow.js-toggle data-toggle-group="0" onclick={"javascript:void(DropDown.toggleDropDown('" (section.id) "'))"} {
+            div.button.dark-gray.hover.no-shadow.js-toggle data-toggle-group="0" onclick={"javascript:void(DropDown.toggleDropDown('" (section.id) "'))"} {
                 (section.name)
             }
 

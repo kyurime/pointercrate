@@ -27,15 +27,12 @@ impl IndividualStatsViewer {
     fn body(&self) -> Markup {
         html! {
             nav.flex.wrap.m-center.fade #statsviewers style="text-align: center;" {
-                a.button.white.hover.no-shadow href="/demonlist/statsviewer/"{
+                a.button.dark-gray.hover.no-shadow href="/demonlist/statsviewer/"{
                     b {"Individual"}
                 }
-                a.button.white.hover.no-shadow href="/demonlist/statsviewer/nations/" {
+                a.button.dark-gray.hover.no-shadow href="/demonlist/statsviewer/nations/" {
                     b {"Nations"}
                 }
-            }
-            div #world-map-wrapper {
-                object #world-map data="/static/demonlist/images/world.svg" type="image/svg+xml" {}
             }
             div.flex.m-center.container {
                 main.left {
@@ -77,7 +74,6 @@ impl IndividualStatsViewer {
                             "#, publisher_id)))
                         }
                     }
-                    (super::hide_subdivision_panel())
                     section.panel.fade style = "overflow: initial;" {
                         h3.underlined {
                             "Political Subdivision:"
@@ -87,11 +83,11 @@ impl IndividualStatsViewer {
                         }
                         div.dropdown-menu.js-search #subdivision-dropdown data-default = "None" {
                             div{
-                                input type="text" style = "color: #444446; font-weight: bold;";
+                                input type="text" style = "font-weight: bold;";
                             }
                             div.menu {
                                 ul {
-                                    li.white.hover.underlined data-value = "None" {"None"}
+                                    li.colorless.hover.underlined data-value = "None" {"None"}
                                 }
                             }
                         }
