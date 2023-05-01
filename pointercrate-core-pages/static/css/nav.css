@@ -202,7 +202,7 @@ footer {
   background: #121212;
   color: #ddd;
 
-  border-top: 1px solid black;
+  border-top: 1px solid #222;
 
   flex-shrink: 0;
 }
