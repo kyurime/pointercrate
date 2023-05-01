@@ -10,9 +10,10 @@ use pointercrate_core_api::{
 };
 use pointercrate_demonlist::{
     error::DemonlistError,
+    player::claim::PlayerClaim,
     record::{
         audit::RecordModificationData,
-        note::{NewNote, Note, PatchNote},
+        note::{notes_on, NewNote, Note, PatchNote},
         FullRecord, MinimalRecordPD, PatchRecord, RecordPagination, RecordStatus, Submission,
     },
     submitter::Submitter,
@@ -23,6 +24,15 @@ use rocket::{http::Status, serde::json::Json, tokio, State};
 use sqlx::{pool::PoolConnection, Postgres};
 use std::net::IpAddr;
 
+/// Pagination endpoint for records in case authentication is provided
+///
+/// Subject to the following constraints
+/// + Only users with `LIST_MODERATOR` permissions can filter by submitter.
+/// + Only users with `LIST_HELPER` permissions can filter by record status. For all other users,
+/// the `status` property defaults to `APPROVED` (although explicitly setting the status to
+/// `APPROVED` is allowed, UNLESS we also filter by player and the player we filter by match a
+/// verified claim of the user making the request, in which case access to all records is allowed
+/// (the `status` property does not get defaulted, and filtering on it is allowed)
 #[rocket::get("/")]
 pub async fn paginate(mut auth: TokenAuth, query: Query<RecordPagination>) -> Result<Response2<Json<Vec<MinimalRecordPD>>>> {
     let mut pagination = query.0;
@@ -31,9 +41,13 @@ pub async fn paginate(mut auth: TokenAuth, query: Query<RecordPagination>) -> Re
         auth.require_permission(LIST_MODERATOR)?;
     }
 
-    if !auth.has_permission(LIST_HELPER) {
+    let claim = PlayerClaim::by_user(auth.user.inner().id, &mut auth.connection)
+        .await?
+        .filter(|c| c.verified);
+
+    if (claim.is_none() || claim.map(|c| c.player.id) != pagination.player) && !auth.has_permission(LIST_HELPER) {
         if pagination.status.is_some() && pagination.status != Some(RecordStatus::Approved) {
-            return Err(CoreError::Unauthorized.into())
+            return Err(CoreError::MissingPermissions { required: LIST_HELPER }.into())
         }
 
         pagination.status = Some(RecordStatus::Approved);
@@ -76,12 +90,12 @@ pub async fn submit(
     ratelimits: &State<DemonlistRatelimits>,
 ) -> Result<Tagged<FullRecord>> {
     let submission = submission.0;
-    let is_team_member = match auth {
-        Some(ref auth) => auth.has_permission(LIST_HELPER),
-        None => false,
+    let (is_team_member, user_id) = match auth {
+        Some(ref auth) => (auth.has_permission(LIST_HELPER), Some(auth.user.inner().id)),
+        None => (false, None),
     };
 
-    if submission.status != RecordStatus::Submitted || submission.video.is_none() {
+    if submission.status() != RecordStatus::Submitted || !submission.has_video() {
         match auth {
             Some(ref auth) => auth.require_permission(LIST_HELPER)?,
             None => return Err(CoreError::Unauthorized.into()),
@@ -102,7 +116,24 @@ pub async fn submit(
         },
     };
 
-    let validated = submission.validate(submitter, &mut connection).await?;
+    // Banned submitters cannot submit records
+    if submitter.banned {
+        return Err(DemonlistError::BannedFromSubmissions.into())
+    }
+
+    let normalized = submission.normalize(&mut connection).await?;
+
+    // check if the player is claimed with submissions locked
+    if let Some(claim) = normalized.verified_player_claim(&mut connection).await? {
+        if claim.lock_submissions {
+            match user_id {
+                Some(user_id) if user_id == claim.user_id => (),
+                _ => return Err(DemonlistError::NoThirdPartySubmissions.into()),
+            }
+        }
+    }
+
+    let validated = normalized.validate(&mut connection).await?;
 
     if !is_team_member {
         // Check ratelimits before any change is made to the database so that the transaction rollback is
@@ -113,7 +144,7 @@ pub async fn submit(
         ratelimits.record_submission_global()?;
     }
 
-    let record = validated.create(&mut connection).await?;
+    let mut record = validated.create(submitter, &mut connection).await?;
 
     connection.commit().await.map_err(DemonlistError::from)?;
 
@@ -127,6 +158,10 @@ pub async fn submit(
                 pool.connection().await?,
             ));
         }
+    }
+
+    if !is_team_member {
+        record.submitter = None;
     }
 
     Ok(Tagged(record))
@@ -144,14 +179,11 @@ pub async fn get(record_id: i32, auth: Option<TokenAuth>, pool: &State<Pointercr
         None => pool.transaction().await?,
     };
 
-    let mut record = FullRecord::by_id(record_id, &mut connection).await?;
+    let record = FullRecord::by_id(record_id, &mut connection).await?;
 
-    if !is_helper {
-        record.notes.clear();
-
-        if record.status != RecordStatus::Approved {
-            return Err(DemonlistError::RecordNotFound { record_id }.into())
-        }
+    // TODO: allow access if auth is provided and a verified claim on the record's player is given
+    if !is_helper && record.status != RecordStatus::Approved {
+        return Err(DemonlistError::RecordNotFound { record_id }.into())
     }
 
     Ok(Tagged(record))
@@ -210,6 +242,33 @@ pub async fn delete(record_id: i32, mut auth: TokenAuth, precondition: Precondit
     auth.commit().await?;
 
     Ok(Status::NoContent)
+}
+
+#[rocket::get("/<record_id>/notes")]
+pub async fn get_notes(record_id: i32, mut auth: TokenAuth) -> Result<Response2<Json<Vec<Note>>>> {
+    let record_holder_id = sqlx::query!("SELECT player FROM records WHERE id = $1", record_id)
+        .fetch_one(&mut auth.connection)
+        .await
+        .map_err(|err| {
+            if let sqlx::Error::RowNotFound = err {
+                DemonlistError::RecordNotFound { record_id }
+            } else {
+                err.into()
+            }
+        })?
+        .player;
+
+    let notes = if auth.has_permission(LIST_HELPER) {
+        notes_on(record_id, false, &mut auth.connection).await?
+    } else {
+        match PlayerClaim::get(auth.user.inner().id, record_holder_id, &mut auth.connection).await {
+            Ok(claim) if claim.verified => notes_on(record_id, true, &mut auth.connection).await?,
+            Ok(_) | Err(DemonlistError::ClaimNotFound { .. }) => return Err(DemonlistError::RecordNotFound { record_id }.into()),
+            Err(err) => return Err(err.into()),
+        }
+    };
+
+    Ok(Response2::json(notes))
 }
 
 #[rocket::post("/<record_id>/notes", data = "<data>")]

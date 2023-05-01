@@ -1,25 +1,27 @@
-import {del, displayError, FilteredPaginator, get, Output, patch, post, put} from "/static/core/js/modules/form.js";
+import {del, displayError, FilteredPaginator, Output, patch, post, put, get} from "/static/core/js/modules/form.js";
 import {embedVideo, generatePlayer} from "/static/demonlist/js/modules/demonlist.js";
+import {Paginator} from "/static/core/js/modules/form.js";;
+import {generateRecord} from "/static/demonlist/js/modules/demonlist.js";
 
 export let claimManager;
 
 class ClaimManager extends FilteredPaginator {
-    constructor(token) {
-        super("claim-pagination", claim => generate_claim(token, claim), "any_name_contains");
+    constructor() {
+        super("claim-pagination", claim => generateClaim(claim), "any_name_contains");
     }
 
     onSelect(selected) {
         get("/api/v1/records/?limit=1&status=APPROVED&player=" + selected.dataset.playerId, {})
             .then(response => {
                 if (response.data.length === 0)
-                    this.setError("The claimed player does not have an approved records on the list")
+                    this.setError("The claimed player does not have an approved record on the list")
                 else
                     document.getElementById("claim-video").src = embedVideo(response.data[0].video);
             })
     }
 }
 
-function generate_claim(csrfToken, claim) {
+function generateClaim(claim) {
     let li = document.createElement("li");
 
     li.classList.add("flex", "no-stretch");
@@ -61,7 +63,7 @@ function generate_claim(csrfToken, claim) {
 
         button.addEventListener("click", event => {
             event.stopPropagation();
-            patch("/api/v1/players/" + claim.player.id + "/claims/" + claim.user.id, {"X-CSRF-TOKEN": csrfToken}, {"verified": true}).then(() => claimManager.refresh());
+            patch("/api/v1/players/" + claim.player.id + "/claims/" + claim.user.id, {}, {"verified": true}).then(() => claimManager.refresh());
         })
 
         rightDiv.appendChild(button);
@@ -75,7 +77,7 @@ function generate_claim(csrfToken, claim) {
 
     deleteButton.addEventListener("click", event => {
         event.stopPropagation();
-        del("/api/v1/players/" + claim.player.id + "/claims/" + claim.user.id, {"X-CSRF-TOKEN": csrfToken}).then(() => claimManager.refresh());
+        del("/api/v1/players/" + claim.player.id + "/claims/" + claim.user.id, {}).then(() => claimManager.refresh());
     })
 
     rightDiv.appendChild(deleteButton);
@@ -118,9 +120,49 @@ class ClaimPlayerPaginator extends FilteredPaginator {
     }
 }
 
-export function initialize(csrfToken) {
+class ClaimedPlayerRecordPaginator extends Paginator {
+    constructor(playerId) {
+        super("claims-record-pagination", {player: playerId}, generateRecord);
+    }
+
+    onSelect(selected) {
+        let recordId = selected.dataset.id;
+
+        get("/api/v1/records/" + recordId + "/notes/")
+            .then(response => {
+                if(Array.isArray(response.data) && response.data.length > 0) {
+                    this.setSuccess(null);
+
+                    while(this.successOutput.lastChild) {
+                        this.successOutput.removeChild(this.successOutput.lastChild);
+                    }
+
+                    let title = document.createElement("b");
+                    title.innerText = "Notes for record " + recordId + ":";
+
+                    this.successOutput.appendChild(title);
+                    this.successOutput.appendChild(document.createElement("br"));
+
+                    for (let note of response.data) {
+                        let noteAuthor = document.createElement("i");
+                        noteAuthor.innerText = "(" + note.author + ") ";
+
+                        this.successOutput.appendChild(noteAuthor);
+                        this.successOutput.appendChild(document.createTextNode(note.content));
+                    }
+
+                    this.successOutput.style.display = "block";
+                } else {
+                    this.setSuccess("No public notes on this record!");
+                }
+            })
+            .catch(displayError(this));
+    }
+}
+
+export function initialize() {
     if (document.getElementById("claim-pagination")) {
-        claimManager = new ClaimManager(csrfToken);
+        claimManager = new ClaimManager();
         claimManager.initialize();
     }
 
@@ -129,7 +171,7 @@ export function initialize(csrfToken) {
     let playerPaginator = new ClaimPlayerPaginator();
     playerPaginator.initialize();
     playerPaginator.addSelectionListener(selected => {
-        put("/api/v1/players/" + selected.id + "/claims/", {"X-CSRF-TOKEN": csrfToken})
+        put("/api/v1/players/" + selected.id + "/claims/")
             .then(() => {
                 window.location.reload();
             }).catch(displayError(playerPaginator));
@@ -145,10 +187,10 @@ export function initialize(csrfToken) {
         let geolocationButton = document.getElementById("claims-geolocate-nationality");
         let output = new Output(claimPanel);
 
-        geolocationButton.addEventListener("click", () => {
-            let playerId = claimedPlayer.dataset.id;
+        let playerId = claimedPlayer.dataset.id;
 
-            post("/api/v1/players/" + playerId + "/geolocate", {'X-CSRF-TOKEN': csrfToken})
+        geolocationButton.addEventListener("click", () => {
+            post("/api/v1/players/" + playerId + "/geolocate")
                 .then(response => {
                     let nationality = response.data;
                     if (nationality.subdivision) {
@@ -158,5 +200,15 @@ export function initialize(csrfToken) {
                     }
                 }).catch(displayError(output))
         })
+
+        let lockSubmissionsCheckbox = document.getElementById("lock-submissions-checkbox");
+        lockSubmissionsCheckbox.addEventListener("change", () => {
+            patch("/api/v1/players/" + playerId + "/claims/" + window.userId + "/", {}, {"lock_submissions": lockSubmissionsCheckbox.checked}).then(_ => {
+                output.setSuccess("Successfully applied changed")
+            }).catch(displayError(output))
+        });
+
+        let recordPaginator = new ClaimedPlayerRecordPaginator(playerId);
+        recordPaginator.initialize();
     }
 }

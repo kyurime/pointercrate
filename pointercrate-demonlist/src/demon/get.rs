@@ -155,6 +155,7 @@ struct FetchedDemon {
     position: i16,
     requirement: i16,
     video: Option<String>,
+    thumbnail: String,
     publisher_id: i32,
     publisher_name: String,
     publisher_banned: bool,
@@ -164,27 +165,28 @@ struct FetchedDemon {
     level_id: Option<i64>,
 }
 
-impl Into<Demon> for FetchedDemon {
-    fn into(self) -> Demon {
+impl From<FetchedDemon> for Demon {
+    fn from(fetched: FetchedDemon) -> Self {
         Demon {
             base: MinimalDemon {
-                id: self.demon_id,
-                name: self.demon_name,
-                position: self.position,
+                id: fetched.demon_id,
+                name: fetched.demon_name,
+                position: fetched.position,
             },
-            requirement: self.requirement,
-            video: self.video,
+            requirement: fetched.requirement,
+            video: fetched.video,
+            thumbnail: fetched.thumbnail,
             publisher: DatabasePlayer {
-                id: self.publisher_id,
-                name: self.publisher_name,
-                banned: self.publisher_banned,
+                id: fetched.publisher_id,
+                name: fetched.publisher_name,
+                banned: fetched.publisher_banned,
             },
             verifier: DatabasePlayer {
-                id: self.verifier_id,
-                name: self.verifier_name,
-                banned: self.verifier_banned,
+                id: fetched.verifier_id,
+                name: fetched.verifier_name,
+                banned: fetched.verifier_banned,
             },
-            level_id: self.level_id.map(|id| id as u64),
+            level_id: fetched.level_id.map(|id| id as u64),
         }
     }
 }
@@ -214,6 +216,7 @@ pub async fn list_at(connection: &mut PgConnection, at: DateTime<FixedOffset>) -
                 },
                 requirement: row.requirement,
                 video: row.video,
+                thumbnail: row.thumbnail,
                 publisher: DatabasePlayer {
                     id: row.publisher_id,
                     name: row.publisher_name,

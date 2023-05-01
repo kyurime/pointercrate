@@ -29,10 +29,6 @@
     opacity: 1 !important;
 }
 
-#statsviewers.fade {
-    border: 0px;
-}
-
 #statsviewers .button:first-child {
     border-radius: 0 0 0 4px;
     border: 1px black solid;
@@ -49,9 +45,3 @@
     border-left: 0px;
     border-top: 0px;
 }
-
-/*
- Flag styles, taken from https://github.com/lipis/flag-icon-css
- */
-
-.flag-icon-background{background-size:contain;background-position:50%;background-repeat:no-repeat}.flag-icon{background-size:contain;background-position:50%;background-repeat:no-repeat;position:relative;display:inline-block;width:1.33333333em;line-height:1em}.flag-icon:before{content:'\00a0'}

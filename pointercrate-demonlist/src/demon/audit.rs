@@ -48,8 +48,7 @@ pub async fn movement_log_for_demon(demon_id: i32, connection: &mut PgConnection
     {
         // non-lexical lifetimes working amazingly I see >.>
         let mut addition_stream = sqlx::query!(
-            "SELECT time, demon_additions.id, demons.name::text FROM demon_additions LEFT OUTER JOIN demons ON demons.id = \
-             demon_additions.id"
+            r#"SELECT time AS "time!", demon_additions.id AS "id!", demons.name::text FROM demon_additions LEFT OUTER JOIN demons ON demons.id = demon_additions.id"#
         )
         .fetch(&mut *connection);
 
@@ -89,7 +88,7 @@ pub async fn movement_log_for_demon(demon_id: i32, connection: &mut PgConnection
                     new_position: None,
                     reason: MovementReason::Added,
                 }),
-            AuditLogEntryType::Modification(data) => {
+            AuditLogEntryType::Modification(data) =>
                 if let Some(old_position) = data.position {
                     // whenever a demon is moved, its position is first set to -1, all other demons are shifted, and
                     // then it is moved to its final position however since audit log entries with
@@ -161,18 +160,17 @@ pub async fn movement_log_for_demon(demon_id: i32, connection: &mut PgConnection
                     // then this movement is the shift induced by that addition
                     // otherwise, we do not know (the log entry is from before we kept track of
                     // audit logs accurately) :(
-                }
-            },
+                },
             AuditLogEntryType::Deletion => unreachable!(),
         }
     }
 
     // update the last entry with the current position
-    if let Ok(minimal_demon) = MinimalDemon::by_id(demon_id, &mut *connection).await {
+    MinimalDemon::by_id(demon_id, &mut *connection).await.map(|minimal_demon| {
         movement_log
             .last_mut()
             .map(|entry| entry.new_position = Some(minimal_demon.position));
-    }
+    })?;
 
     Ok(movement_log)
 }

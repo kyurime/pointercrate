@@ -4,7 +4,11 @@ import {
 import {get} from "/static/core/js/modules/form.js";
 
 $(document).ready(function () {
-  initializeHistoryTable();
+  if(window.demon_id) {
+    initializePositionChart();
+    initializeHistoryTable();
+  }
+
   initializeRecordSubmitter();
   initializeTimeMachine();
 });

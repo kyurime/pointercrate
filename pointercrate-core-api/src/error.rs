@@ -1,5 +1,5 @@
 use crate::response::Page;
-use log::{error, warn};
+use log::{error, info};
 use pointercrate_core::error::PointercrateError;
 use pointercrate_core_pages::error::ErrorFragment;
 use rocket::{
@@ -25,7 +25,7 @@ impl<'r> Responder<'r, 'static> for ErrorResponder {
     fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
         let accept = match request.accept() {
             None => {
-                warn!("No ACCEPT header set, assuming application/json");
+                info!("No ACCEPT header set, assuming application/json");
 
                 MediaType::JSON
             },
@@ -40,7 +40,7 @@ impl<'r> Responder<'r, 'static> for ErrorResponder {
 
         if accept == MediaType::HTML {
             Response::build_from(
-                Page(ErrorFragment {
+                Page::new(ErrorFragment {
                     status: self.error_code / 100,
                     reason: status.reason_lossy().to_string(),
                     message: self.message,

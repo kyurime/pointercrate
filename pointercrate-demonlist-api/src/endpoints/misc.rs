@@ -1,8 +1,9 @@
 use pointercrate_demonlist::config;
-use serde_json::json;
+use rocket::serde::json::Json;
+use serde_json::{json, Value};
 
 #[rocket::get("/")]
-pub fn list_information() -> String {
+pub fn list_information() -> Json<Value> {
     let data = json! {
         {
             "list_size": config::list_size(),
@@ -10,5 +11,5 @@ pub fn list_information() -> String {
         }
     };
 
-    data.to_string()
+    Json(data)
 }

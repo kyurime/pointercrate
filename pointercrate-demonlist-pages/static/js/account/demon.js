@@ -23,15 +23,13 @@ import {
 export let demonManager;
 
 export class DemonManager extends FilteredPaginator {
-  constructor(csrfToken) {
+  constructor() {
     super("demon-pagination", generateDemon, "name_contains");
 
     this.output = new Viewer(
       this.html.parentNode.getElementsByClassName("viewer-content")[0],
       this
     );
-
-    this._tok = csrfToken;
 
     this.retrievalEndpoint = "/api/v2/demons/";
 
@@ -40,6 +38,8 @@ export class DemonManager extends FilteredPaginator {
 
     this._video = document.getElementById("demon-video");
     this._video_link = document.getElementById("demon-video-link");
+
+    this._thumbnail_link = document.getElementById("demon-thumbnail-link");
 
     this._position = document.getElementById("demon-position");
     this._requirement = document.getElementById("demon-requirement");
@@ -50,15 +50,23 @@ export class DemonManager extends FilteredPaginator {
     this._creators = document.getElementById("demon-creators");
 
     let videoForm = setupFormDialogEditor(
-      new PaginatorEditorBackend(this, csrfToken, false),
+      new PaginatorEditorBackend(this, false),
       "demon-video-dialog",
       "demon-video-pen",
       this.output
     );
 
-    videoForm.addValidators({
-      "demon-video-edit": {
+    let thumbnailForm = setupFormDialogEditor(
+        new PaginatorEditorBackend(this, false),
+        "demon-thumbnail-dialog",
+        "demon-thumbnail-pen",
+        this.output
+    );
+
+    thumbnailForm.addValidators({
+      "demon-thumbnail-edit": {
         "Please enter a valid URL": typeMismatch,
+        "Please enter a URL": valueMissing,
       },
     });
 
@@ -67,7 +75,7 @@ export class DemonManager extends FilteredPaginator {
     }
 
     let requirementForm = setupFormDialogEditor(
-      new PaginatorEditorBackend(this, csrfToken, false),
+      new PaginatorEditorBackend(this, false),
       "demon-requirement-dialog",
       "demon-requirement-pen",
       this.output
@@ -86,7 +94,7 @@ export class DemonManager extends FilteredPaginator {
     requirementForm.addErrorOverride(42212, "demon-requirement-edit");
 
     let positionForm = setupFormDialogEditor(
-      new PaginatorEditorBackend(this, csrfToken, true),
+      new PaginatorEditorBackend(this, true),
       "demon-position-dialog",
       "demon-position-pen",
       this.output
@@ -104,7 +112,7 @@ export class DemonManager extends FilteredPaginator {
     positionForm.addErrorOverride(42213, "demon-position-edit");
 
     let nameForm = setupFormDialogEditor(
-      new PaginatorEditorBackend(this, csrfToken, true),
+      new PaginatorEditorBackend(this, true),
       "demon-name-dialog",
       "demon-name-pen",
       this.output
@@ -116,9 +124,9 @@ export class DemonManager extends FilteredPaginator {
       },
     });
 
-    setupEditorDialog(new PlayerSelectionDialog("demon-verifier-dialog"), "demon-verifier-pen", new PaginatorEditorBackend(this, csrfToken, true), this.output, data => ({verifier: data.player}));
+    setupEditorDialog(new PlayerSelectionDialog("demon-verifier-dialog"), "demon-verifier-pen", new PaginatorEditorBackend(this, true), this.output, data => ({verifier: data.player}));
 
-    setupEditorDialog(new PlayerSelectionDialog("demon-publisher-dialog"), "demon-publisher-pen", new PaginatorEditorBackend(this, csrfToken, true), this.output, data => ({publisher: data.player}));
+    setupEditorDialog(new PlayerSelectionDialog("demon-publisher-dialog"), "demon-publisher-pen", new PaginatorEditorBackend(this, true), this.output, data => ({publisher: data.player}));
   }
 
   onReceive(response) {
@@ -150,6 +158,9 @@ export class DemonManager extends FilteredPaginator {
       this._video_link.style.display = "none";
     }
 
+    this._thumbnail_link.href = this.currentObject.thumbnail;
+    this._thumbnail_link.innerText = this.currentObject.thumbnail;
+
     this._publisher.innerHTML =
       this.currentObject.publisher.name +
       " (" +
@@ -178,10 +189,7 @@ export class DemonManager extends FilteredPaginator {
           this.currentObject.id +
           "/creators/" +
           creator.id +
-          "/",
-        {
-          "X-CSRF-TOKEN": this._tok,
-        }
+          "/"
       )
         .then(() => {
           this._creators.removeChild(html);
@@ -232,9 +240,8 @@ function createCreatorHtml(creator) {
   return span;
 }
 
-function setupDemonAdditionForm(csrfToken) {
+function setupDemonAdditionForm() {
   let form = new Form(document.getElementById("demon-submission-form"));
-
 
   let verifierSelector = new PlayerSelectionDialog("demon-add-verifier-dialog");
   document.getElementById("demon-add-verifier-pen").addEventListener('click', () => verifierSelector.open().then(data => form.input('demon-add-verifier').value = data.player));
@@ -270,7 +277,7 @@ function setupDemonAdditionForm(csrfToken) {
 
     data["creators"] = form.creators;
 
-    post("/api/v2/demons/", { "X-CSRF-TOKEN": csrfToken }, data)
+    post("/api/v2/demons/", {}, data)
       .then(() => {
         form.setSuccess("Successfully added demon!");
         demonManager.refresh();
@@ -282,11 +289,11 @@ function setupDemonAdditionForm(csrfToken) {
   return form;
 }
 
-export function initialize(csrfToken) {
-  demonManager = new DemonManager(csrfToken);
+export function initialize() {
+  demonManager = new DemonManager();
   demonManager.initialize();
 
-  let addDemonForm = setupDemonAdditionForm(csrfToken);
+  let addDemonForm = setupDemonAdditionForm();
 
   let creatorFormDialog = new PlayerSelectionDialog("demon-add-creator-dialog");
   let dialogCreators = document.getElementById("demon-add-creators");
@@ -298,9 +305,7 @@ export function initialize(csrfToken) {
     creatorFormDialog.submissionPredicateFactory = (data) => {
       return post(
           "/api/v2/demons/" + demonManager.currentObject.id + "/creators/",
-          {
-            "X-CSRF-TOKEN": csrfToken,
-          },
+          {},
           {creator: data.player}
       )
           .then((response) => {

@@ -7,21 +7,20 @@ use pointercrate_core::{error::PointercrateError, permission::PermissionsManager
 use pointercrate_core_pages::{
     error::ErrorFragment,
     util::{dropdown, paginator},
-    PageFragment,
 };
 use pointercrate_demonlist::{
     demon::{current_list, Demon},
     LIST_HELPER,
 };
-use pointercrate_user::{sqlx::PgConnection, User};
+use pointercrate_user::{sqlx::PgConnection, AuthenticatedUser};
 use pointercrate_user_pages::account::AccountPageTab;
 
 pub struct RecordsPage;
 
 #[async_trait::async_trait]
 impl AccountPageTab for RecordsPage {
-    fn should_display_for(&self, user: &User, permissions: &PermissionsManager) -> bool {
-        permissions.require_permission(user.permissions, LIST_HELPER).is_ok()
+    fn should_display_for(&self, permissions_we_have: u16, permissions: &PermissionsManager) -> bool {
+        permissions.require_permission(permissions_we_have, LIST_HELPER).is_ok()
     }
 
     fn initialization_script(&self) -> String {
@@ -42,7 +41,7 @@ impl AccountPageTab for RecordsPage {
         }
     }
 
-    async fn content(&self, _user: &User, _permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup {
+    async fn content(&self, _user: &AuthenticatedUser, _permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup {
         let demons = match current_list(connection).await {
             Ok(demons) => demons,
             Err(err) =>
@@ -51,7 +50,7 @@ impl AccountPageTab for RecordsPage {
                     reason: "Internal Server Error".to_string(),
                     message: err.to_string(),
                 }
-                .body_fragment(),
+                .body(),
         };
 
         html! {
@@ -89,7 +88,7 @@ fn record_manager(demons: &[Demon]) -> Markup {
                 (dropdown("All", html! {
                     li.colorless.hover.underlined data-value = "All"
                      {"All Demons"}
-                }, demons.iter().map(|demon| html!(li.colorless.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
+                }, demons.iter().map(|demon| html!(li.white.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
             }
             div.flex.viewer {
                 (paginator("record-pagination", "/api/v1/records/"))
@@ -302,8 +301,17 @@ fn note_adder() -> Markup {
     html! {
         div.panel.fade.closable #add-record-note style = "display: none" {
             span.plus.cross.hover {}
-            div.button.purple.hover.small style = "width: 100px; margin-bottom: 10px"{
-                "Add"
+            div style="display: flex;align-items: center;justify-content: space-between;" {
+                div.button.blue.hover.small style = "width: 100px; margin-bottom: 10px"{
+                    "Add"
+                }
+                div.cb-container.flex.no-stretch style="justify-content: space-between; align-items: center" {
+                    b {
+                        "Public note:"
+                    }
+                    input #add-note-is-public-checkbox type = "checkbox" name = "is_public";
+                    span.checkmark {}
+                }
             }
             p.info-red.output {}
             textarea style = "width: 100%" placeholder = "Add note here. Click 'Add' above when done!"{}

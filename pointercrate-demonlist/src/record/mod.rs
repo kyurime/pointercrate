@@ -27,9 +27,7 @@ pub use self::{
     patch::PatchRecord,
     post::Submission,
 };
-use crate::{
-    demon::MinimalDemon, error::Result, nationality::Nationality, player::DatabasePlayer, record::note::Note, submitter::Submitter,
-};
+use crate::{demon::MinimalDemon, error::Result, nationality::Nationality, player::DatabasePlayer, submitter::Submitter};
 use derive_more::Display;
 use pointercrate_core::etag::Taggable;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -57,7 +55,7 @@ pub enum RecordStatus {
 }
 
 impl RecordStatus {
-    fn to_sql(&self) -> String {
+    pub fn to_sql(self) -> String {
         match self {
             RecordStatus::Submitted => "SUBMITTED",
             RecordStatus::Approved => "APPROVED",
@@ -135,7 +133,6 @@ pub struct FullRecord {
     pub player: DatabasePlayer,
     pub demon: MinimalDemon,
     pub submitter: Option<Submitter>,
-    pub notes: Vec<Note>,
 }
 
 impl Taggable for FullRecord {

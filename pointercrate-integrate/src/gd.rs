@@ -24,6 +24,7 @@ pub use dash_rs::{
     model::level::{DemonRating, LevelRating},
     Thunk,
 };
+use reqwest::header::HeaderMap;
 use std::cmp::Ordering;
 
 #[derive(Debug)]
@@ -112,16 +113,12 @@ impl PgCache {
 
                 let song = match level.custom_song {
                     Some(id) =>
-                        self.lookup_newgrounds_song(id)
-                            .await
-                            .ok()
-                            .map(|entry| {
-                                match entry {
-                                    CacheEntry::Expired(song, _) | CacheEntry::Live(song, _) => Some(song),
-                                    _ => None,
-                                }
-                            })
-                            .flatten(),
+                        self.lookup_newgrounds_song(id).await.ok().and_then(|entry| {
+                            match entry {
+                                CacheEntry::Expired(song, _) | CacheEntry::Live(song, _) => Some(song),
+                                _ => None,
+                            }
+                        }),
                     None => None,
                 };
 
@@ -141,6 +138,7 @@ impl PgCache {
 
         let request_result = http_client
             .post(&request.to_url())
+            .headers(HeaderMap::new())  // boomlings.com rejects any request with a User-Agent header set, so make sure reqwest doesn't "helpfully" add one
             .body(request.to_string())
             .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
             .send()
@@ -159,7 +157,7 @@ impl PgCache {
                                     .map_err(|err| error!("Error marking result to {:?} as absent:  {:?}", request, err))
                                     .map(|_| ()),
                             Ok(demons) =>
-                                if demons.len() == 0 {
+                                if demons.is_empty() {
                                     self.mark_levels_request_result_as_absent(&request)
                                         .await
                                         .map_err(|err| error!("Error marking result to {:?} as absent:  {:?}", request, err))
@@ -202,6 +200,7 @@ impl PgCache {
 
         let request_result = http_client
             .post(&request.to_url())
+            .headers(HeaderMap::new())  // boomlings.com rejects any request with a User-Agent header set, so make sure reqwest doesn't "helpfully" add one
             .body(request.to_string())
             .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
             .send()

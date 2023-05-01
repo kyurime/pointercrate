@@ -10,7 +10,7 @@ pub(crate) fn stats_viewer_panel() -> Markup {
         section #stats.panel.fade.js-scroll-anim data-anim = "fade" {
             div.underlined {
                 h2 {
-                    "Stats Viewer:"
+                    "Stats Viewer"
                 }
             }
             p {
@@ -33,6 +33,24 @@ fn continent_panel() -> Markup {
                 "Select a continent below to focus the stats viewer to that continent. Select 'All' to reset selection."
             }
             (simple_dropdown("continent-dropdown", Some("All"), vec!["Asia", "Europe", "Australia", "Africa", "North America", "South America", "Central America"].into_iter()))
+        }
+    }
+}
+
+fn hide_subdivision_panel() -> Markup {
+    html! {
+        section.panel.fade {
+            h3.underlined {
+                "Show subdivisions"
+            }
+            p {
+                "Whether the map should display political subdivisions"
+            }
+            div.cb-container.flex.no-stretch style="margin-bottom:10px" {
+                i {"Show political subdivisions"}
+                input #show-subdivisions-checkbox type = "checkbox" checked="";
+                span.checkmark {}
+            }
         }
     }
 }
@@ -62,7 +80,7 @@ fn stats_viewer_html(nations: Option<&[Nationality]>, rows: Vec<StatsViewerRow>)
                     " - "
                     (dropdown("International",
                         html! {
-                            li.colorless.hover.underlined data-value = "International" data-display = "International" {
+                            li.white.hover.underlined data-value = "International" data-display = "International" {
                                 span.em.em-world_map {}
                                 (PreEscaped("&nbsp;"))
                                 b {"WORLD"}
@@ -71,7 +89,7 @@ fn stats_viewer_html(nations: Option<&[Nationality]>, rows: Vec<StatsViewerRow>)
                             }
                         },
                         nations.iter().map(|nation| html! {
-                            li.colorless.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
+                            li.white.hover data-value = {(nation.iso_country_code)} data-display = {(nation.nation)} {
                                 span class = "flag-icon" style={"background-image: url(/static/demonlist/images/flags/" (nation.iso_country_code.to_lowercase()) ".svg"} {}
                                 (PreEscaped("&nbsp;"))
                                 b {(nation.iso_country_code)}

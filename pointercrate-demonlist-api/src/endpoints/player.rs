@@ -1,5 +1,4 @@
 use crate::{config, ratelimits::DemonlistRatelimits};
-
 use pointercrate_core::{error::CoreError, pool::PointercratePool};
 use pointercrate_core_api::{
     error::Result,
@@ -12,7 +11,7 @@ use pointercrate_demonlist::{
     error::DemonlistError,
     nationality::Nationality,
     player::{
-        claim::{ListedClaim, PatchVerified, PlayerClaim, PlayerClaimPagination},
+        claim::{ListedClaim, PatchPlayerClaim, PlayerClaim, PlayerClaimPagination},
         DatabasePlayer, FullPlayer, PatchPlayer, Player, PlayerPagination, RankedPlayer, RankingPagination,
     },
     LIST_HELPER,
@@ -24,31 +23,19 @@ use serde::Deserialize;
 use std::net::IpAddr;
 
 #[rocket::get("/")]
-pub async fn paginate(mut auth: TokenAuth, query: Query<PlayerPagination>) -> Result<Response2<Json<Vec<Player>>>> {
-    let mut pagination = query.0;
-
-    if !auth.has_permission(LIST_HELPER) {
-        pagination.banned = Some(false);
-    }
-
-    let mut players = pagination.page(&mut auth.connection).await?;
-    let (max_id, min_id) = Player::extremal_player_ids(&mut auth.connection).await?;
-
-    pagination_response!(
-        "/api/v1/players/",
-        players,
-        pagination,
-        min_id,
-        max_id,
-        before_id,
-        after_id,
-        base.id
-    )
-}
-#[rocket::get("/", rank = 1)]
-pub async fn unauthed_paginate(pool: &State<PointercratePool>, query: Query<PlayerPagination>) -> Result<Response2<Json<Vec<Player>>>> {
+pub async fn paginate(
+    pool: &State<PointercratePool>, query: Query<PlayerPagination>, auth: Option<TokenAuth>,
+) -> Result<Response2<Json<Vec<Player>>>> {
     let mut pagination = query.0;
     let mut connection = pool.connection().await?;
+
+    if let Some(auth) = auth {
+        if !auth.has_permission(LIST_HELPER) {
+            pagination.banned = Some(false);
+        }
+    } else {
+        pagination.banned = Some(false);
+    }
 
     let mut players = pagination.page(&mut connection).await?;
     let (max_id, min_id) = Player::extremal_player_ids(&mut connection).await?;
@@ -124,12 +111,43 @@ pub async fn put_claim(player_id: i32, mut auth: TokenAuth) -> Result<Response2<
         .with_header("Location", format!("/api/v1/players/{}/claims/{}/", player.id, user_id)))
 }
 
+/// The `verified` attribute can only be changed by moderator. All other attributes can only be
+/// changed by the person holding the claim, but only if the claim is verified (to claim a different
+/// player, put in a new `PUT` request)
 #[rocket::patch("/<player_id>/claims/<user_id>", data = "<data>")]
-pub async fn patch_claim(player_id: i32, user_id: i32, mut auth: TokenAuth, data: Json<PatchVerified>) -> Result<Json<PlayerClaim>> {
-    auth.require_permission(MODERATOR)?;
+pub async fn patch_claim(player_id: i32, user_id: i32, mut auth: TokenAuth, data: Json<PatchPlayerClaim>) -> Result<Json<PlayerClaim>> {
+    let claim = PlayerClaim::get(user_id, player_id, &mut auth.connection).await;
 
-    let claim = PlayerClaim::get(user_id, player_id, &mut auth.connection).await?;
-    let claim = claim.set_verified(data.verified, &mut auth.connection).await?;
+    if data.verified.is_some() {
+        auth.require_permission(MODERATOR)?;
+    }
+
+    let claim = match claim {
+        Ok(claim) if data.lock_submissions.is_some() => {
+            if claim.user_id != auth.user.inner().id {
+                return Err(DemonlistError::ClaimNotFound {
+                    member_id: user_id,
+                    player_id,
+                }
+                .into())
+            }
+
+            if !claim.verified {
+                return Err(DemonlistError::ClaimUnverified.into())
+            }
+
+            claim
+        },
+        Ok(claim) => claim,
+        Err(_) =>
+            return Err(DemonlistError::ClaimNotFound {
+                member_id: user_id,
+                player_id,
+            }
+            .into()),
+    };
+
+    let claim = claim.apply_patch(data.0, &mut auth.connection).await?;
 
     auth.commit().await?;
 

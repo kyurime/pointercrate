@@ -56,8 +56,6 @@ impl PlayerClaimPagination {
             }
         }
 
-        let _limit = self.limit.unwrap_or(50) as i32;
-
         let order = if self.after_id.is_none() && self.before_id.is_some() {
             "DESC"
         } else {

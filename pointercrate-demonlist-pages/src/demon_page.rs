@@ -7,7 +7,7 @@ use crate::{
 };
 use chrono::NaiveDateTime;
 use maud::{html, Markup, PreEscaped, Render};
-use pointercrate_core_pages::{PageFragment, Script};
+use pointercrate_core_pages::{config as page_config, head::HeadLike, PageFragment};
 use pointercrate_demonlist::{
     config as list_config,
     demon::{Demon, FullDemon},
@@ -29,7 +29,22 @@ pub struct DemonPage {
     pub integration: GDIntegrationResult,
 }
 
-impl PageFragment for DemonPage {
+impl From<DemonPage> for PageFragment {
+    fn from(page: DemonPage) -> Self {
+        PageFragment::new(page.title(), page.description())
+            .script("https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js")
+            .module("/static/core/js/modules/form.js")
+            .module("/static/demonlist/js/modules/demonlist.js")
+            .module("/static/demonlist/js/demonlist.js")
+            .stylesheet("https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css")
+            .stylesheet("/static/demonlist/css/demonlist.css")
+            .stylesheet("/static/core/css/sidebar.css")
+            .head(page.head())
+            .body(page.body())
+    }
+}
+
+impl DemonPage {
     fn title(&self) -> String {
         format!(
             "#{} - {} - Geometry Dash Demonlist",
@@ -47,24 +62,7 @@ impl PageFragment for DemonPage {
         format!("{}: <No Description Provided>", self.title())
     }
 
-    fn additional_scripts(&self) -> Vec<Script> {
-        vec![
-            Script::new("https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"),
-            Script::module("/static/core/js/modules/form.js"),
-            Script::module("/static/demonlist/js/modules/demonlist.js"),
-            Script::module("/static/demonlist/js/demonlist.js"),
-        ]
-    }
-
-    fn additional_stylesheets(&self) -> Vec<String> {
-        vec![
-            "https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css".to_string(),
-            "/static/demonlist/css/demonlist.css".to_string(),
-            "/static/core/css/sidebar.css".to_string(),
-        ]
-    }
-
-    fn head_fragment(&self) -> Markup {
+    fn head(&self) -> Markup {
         html! {
             (PreEscaped(format!(r##"
                 <script type="application/ld+json">
@@ -81,7 +79,7 @@ impl PageFragment for DemonPage {
                                     "name": "pointercrate"
                                 }}
                             }},{{
-                                "@type": "ListItem",<
+                                "@type": "ListItem",
                                 "position": 2,
                                 "item": {{
                                     "@id": "https://pointercrate.xyze.dev/demonlist/",
@@ -113,7 +111,7 @@ impl PageFragment for DemonPage {
         }
     }
 
-    fn body_fragment(&self) -> Markup {
+    fn body(&self) -> Markup {
         let dropdowns = super::dropdowns(&self.demonlist.iter().collect::<Vec<_>>()[..], Some(&self.data.demon));
 
         let mut labels = Vec::new();
@@ -146,6 +144,22 @@ impl PageFragment for DemonPage {
 
             div.flex.m-center.container {
                 main.left {
+                    @if let Some(publisher_id) = page_config::adsense_publisher_id() {
+                        div.panel.fade style = "padding: 0px; height: 90px" {
+                            (PreEscaped(format!(r#"
+                            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={0}"
+         crossorigin="anonymous"></script>
+    <!-- Demonpage Banner ad -->
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:728px;height:90px"
+         data-ad-client="{0}"
+         data-ad-slot="4829214686"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({{}});
+    </script>
+                            "#, publisher_id)))
+                        }
+                    }
                     (RecordSubmitter::new(false, &self.demonlist))
                     (self.demon_panel())
                     (self.level_info_panel())
@@ -188,9 +202,7 @@ impl PageFragment for DemonPage {
             }
         }
     }
-}
 
-impl DemonPage {
     fn demon_panel(&self) -> Markup {
         let position = self.data.demon.base.position;
         let name = &self.data.demon.base.name;

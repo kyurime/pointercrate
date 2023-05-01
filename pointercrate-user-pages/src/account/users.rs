@@ -2,15 +2,15 @@ use crate::account::AccountPageTab;
 use maud::{html, Markup, PreEscaped};
 use pointercrate_core::permission::{Permission, PermissionsManager};
 use pointercrate_core_pages::util::filtered_paginator;
-use pointercrate_user::{sqlx::PgConnection, User, ADMINISTRATOR};
+use pointercrate_user::{sqlx::PgConnection, AuthenticatedUser, ADMINISTRATOR};
 
 pub struct UsersTab(pub Vec<Permission>);
 
 #[async_trait::async_trait]
 impl AccountPageTab for UsersTab {
-    fn should_display_for(&self, user: &User, permissions: &PermissionsManager) -> bool {
+    fn should_display_for(&self, permissions_we_have: u16, permissions: &PermissionsManager) -> bool {
         for perm in &self.0 {
-            if permissions.require_permission(user.permissions, *perm).is_ok() {
+            if permissions.require_permission(permissions_we_have, *perm).is_ok() {
                 return true
             }
         }
@@ -36,8 +36,11 @@ impl AccountPageTab for UsersTab {
         }
     }
 
-    async fn content(&self, user: &User, permissions: &PermissionsManager, _connection: &mut PgConnection) -> Markup {
-        let mut assignable_permissions = permissions.assignable_by_bits(user.permissions).into_iter().collect::<Vec<_>>();
+    async fn content(&self, user: &AuthenticatedUser, permissions: &PermissionsManager, _connection: &mut PgConnection) -> Markup {
+        let mut assignable_permissions = permissions
+            .assignable_by_bits(user.inner().permissions)
+            .into_iter()
+            .collect::<Vec<_>>();
         assignable_permissions.sort_by_key(|perm| perm.bit());
 
         html! {
@@ -86,7 +89,7 @@ impl AccountPageTab for UsersTab {
                                             "Permissions:"
                                         }
                                         @for permission in assignable_permissions {
-                                            @let name_in_snake_case = permission.name().to_lowercase().replace(" ", "-");
+                                            @let name_in_snake_case = permission.name().to_lowercase().replace(' ', "-");
 
                                             label.cb-container.form-input #(name_in_snake_case) for = (name_in_snake_case) data-bit = (permission.bit()) {
                                                 input type = "checkbox" name = (name_in_snake_case);
@@ -98,7 +101,7 @@ impl AccountPageTab for UsersTab {
                                     }
                                 }
                                 div.flex.no-stretch {
-                                    @if user.has_permission(ADMINISTRATOR) {
+                                    @if user.inner().has_permission(ADMINISTRATOR) {
                                         input.button.red.hover #delete-user type = "button" style = "margin: 15px auto 0px;" value="Delete user";
                                     }
                                     input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Edit user";

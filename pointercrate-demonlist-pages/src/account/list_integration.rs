@@ -1,15 +1,19 @@
+use log::error;
 use maud::{html, Markup, PreEscaped};
 use pointercrate_core::{error::PointercrateError, permission::PermissionsManager};
-use pointercrate_core_pages::{error::ErrorFragment, util::filtered_paginator, PageFragment};
+use pointercrate_core_pages::{
+    error::ErrorFragment,
+    util::{filtered_paginator, paginator},
+};
 use pointercrate_demonlist::player::claim::PlayerClaim;
-use pointercrate_user::{sqlx::PgConnection, User, MODERATOR};
+use pointercrate_user::{sqlx::PgConnection, AuthenticatedUser, MODERATOR};
 use pointercrate_user_pages::account::AccountPageTab;
 
-pub struct ListIntegrationTab(/* discord invite url */ pub &'static str);
+pub struct ListIntegrationTab(#[doc = "discord invite url"] pub &'static str);
 
 #[async_trait::async_trait]
 impl AccountPageTab for ListIntegrationTab {
-    fn should_display_for(&self, _user: &User, _permissions: &PermissionsManager) -> bool {
+    fn should_display_for(&self, _permissions_we_have: u16, _permissions: &PermissionsManager) -> bool {
         true
     }
 
@@ -31,18 +35,21 @@ impl AccountPageTab for ListIntegrationTab {
         }
     }
 
-    async fn content(&self, user: &User, permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup {
-        let player_claim = match PlayerClaim::by_user(user.id, connection).await {
+    async fn content(&self, user: &AuthenticatedUser, permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup {
+        let player_claim = match PlayerClaim::by_user(user.inner().id, connection).await {
             Ok(player_claim) => player_claim,
-            Err(err) =>
+            Err(err) => {
+                error!("Error retrieving player claim of user {}: {:?}", user.inner(), err);
+
                 return ErrorFragment {
                     status: err.status_code(),
                     reason: "Internal Server Error".to_string(),
                     message: err.to_string(),
                 }
-                .body_fragment(),
+                .body()
+            },
         };
-        let is_moderator = permissions.require_permission(user.permissions, MODERATOR).is_ok();
+        let is_moderator = permissions.require_permission(user.inner().permissions, MODERATOR).is_ok();
 
         html! {
             div.left {
@@ -55,7 +62,7 @@ impl AccountPageTab for ListIntegrationTab {
                             }
                             @match player_claim {
                                 Some(ref claim) => {
-                                    i #claimed-player data-id = (claim.player.id){
+                                    i #claimed-player data-id = (claim.player.id) {
                                         (claim.player.name)
                                     }
                                 },
@@ -86,18 +93,46 @@ impl AccountPageTab for ListIntegrationTab {
                                 p.info-green.output style = "margin: 10px 0" {}
                                 div.flex.no-stretch style="justify-content: space-between; align-items: center" {
                                     b {
-                                        "Geolocate nationality:"
+                                        "Geolocate statsviewer flag:"
                                     }
                                     a.button.purple.hover #claims-geolocate-nationality {
                                         "Go"
                                     }
                                 }
                                 p {
-                                    "Clicking the above button let's you set your claimed player's nationality via IP Geolocation. To offer this functionality, pointercrate uses "
+                                    "Clicking the above button let's you set your claimed player's statsviewer flag via IP Geolocation. To offer this functionality, pointercrate uses "
                                     a.link href = "https://www.abstractapi.com/ip-geolocation-api" { "abstract's IP geolocation API"}
                                     ". Clicking the above button also counts as your consent for pointercrate to send your IP to abstract."
                                 }
+                                div.cb-container.flex.no-stretch style="justify-content: space-between; align-items: center" {
+                                    b {
+                                        "Lock Submissions:"
+                                    }
+                                    @if claim.lock_submissions {
+                                        input #lock-submissions-checkbox type = "checkbox" name = "lock_submissions" checked = "";
+                                    }
+                                    @else {
+                                        input #lock-submissions-checkbox type = "checkbox" name = "lock_submissions";
+                                    }
+                                    span.checkmark {}
+                                }
+                                p {
+                                    "Whether submissions for your claimed player should be locked, meaning only you will be able to submit records for your claimed player (and only while logged in to this account holding the verified claim)"
+                                }
                             }
+                        }
+                    }
+                }
+                @if let Some(claim) = player_claim {
+                    @if claim.verified {
+                        div.panel.fade {
+                            h2.pad.underlined {
+                                "Your claimed player's records"
+                            }
+                            p {
+                                "A list of your claimed player's records, including all under consideration and rejected records and all submissions. Use this to track the status of your submissions. Clicking on a record will pull up any public notes a list mod left on the given record."
+                            }
+                            (paginator("claims-record-pagination", "/api/v1/records/"))
                         }
                     }
                 }

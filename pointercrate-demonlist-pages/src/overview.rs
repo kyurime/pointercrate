@@ -7,13 +7,11 @@ use crate::{
     statsviewer::stats_viewer_panel,
 };
 use maud::{html, Markup, PreEscaped};
-use pointercrate_core_pages::{PageFragment, Script};
+use pointercrate_core_pages::{config as page_config, head::HeadLike, PageFragment};
 use pointercrate_demonlist::{
     config as list_config,
     demon::{Demon, TimeShiftedDemon},
 };
-use std::borrow::Cow;
-use url::Url;
 
 pub struct OverviewPage {
     pub team: Team,
@@ -25,42 +23,22 @@ pub struct OverviewPage {
 fn demon_panel(demon: &Demon, current_position: Option<i16>) -> Markup {
     html! {
         section.panel.fade style="overflow:hidden" {
-            @if let Some(ref video) = demon.video {
-                div.flex style = "align-items: center" {
-                    div.thumb."ratio-16-9"."js-delay-css" style = "position: relative" data-property = "background-image" data-property-value = {"url('" (thumbnail(video)) "')"} {
+            div.flex style = "align-items: center" {
+                div.thumb."ratio-16-9"."js-delay-css" style = "position: relative" data-property = "background-image" data-property-value = {"url('" (demon.thumbnail) "')"} {
+                    @if let Some(video) = &demon.video {
                         a.play href = (video) {}
                     }
-                    div style = "padding-left: 15px" {
-                        h2 style = "text-align: left; margin-bottom: 0px" {
-                            a href = {"/demonlist/permalink/" (demon.base.id) "/"} {
-                                "#" (demon.base.position) (PreEscaped(" &#8211; ")) (demon.base.name)
-                            }
-                        }
-                        h3 style = "text-align: left" {
-                            i {
-                                (demon.publisher.name)
-                            }
-                            @if let Some(current_position) = current_position {
-                                br;
-                                @if current_position > list_config::extended_list_size() {
-                                    "Currently Legacy"
-                                }
-                                @else {
-                                    "Currently #"(current_position)
-                                }
-                            }
-                        }
+                    @else {
+                        a.play href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" {}
                     }
                 }
-            }
-            @else {
-                div.flex.col style = "align-items: center" {
-                    h2 style = "margin-bottom: 0px"{
+                div style = "padding-left: 15px" {
+                    h2 style = "text-align: left; margin-bottom: 0px" {
                         a href = {"/demonlist/permalink/" (demon.base.id) "/"} {
                             "#" (demon.base.position) (PreEscaped(" &#8211; ")) (demon.base.name)
                         }
                     }
-                    h3 {
+                    h3 style = "text-align: left" {
                         i {
                             (demon.publisher.name)
                         }
@@ -77,34 +55,61 @@ fn demon_panel(demon: &Demon, current_position: Option<i16>) -> Markup {
                 }
             }
         }
+        // Gotta put the ads in this method although they dont belong here, yikes
+        @if let Some(publisher_id) = page_config::adsense_publisher_id() {
+            @if demon.base.position == 1 {
+                section.panel.fade style = "padding: 0px; height: 90px"{
+                    (PreEscaped(format!(r#"
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={0}"
+    crossorigin="anonymous"></script>
+    <!-- Demonlist Responsive Feed Ad -->
+    <ins class="adsbygoogle"
+    style="display:inline-block;width:728px;height:90px"
+    data-ad-client="{0}"
+    data-ad-slot="2819150519"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({{}});
+    </script>
+                    "#, publisher_id)))
+                }
+            }
+            // Place ad every 10th demon
+            @if demon.base.position % 10 == 0 {
+                section.panel.fade {
+                (PreEscaped(format!(r#"
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={0}"
+    crossorigin="anonymous"></script>
+    <ins class="adsbygoogle"
+    style="display:block"
+    data-ad-format="fluid"
+    data-ad-layout-key="-h1+40+4u-93+n"
+    data-ad-client="{0}"
+    data-ad-slot="5157884729"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({{}});
+    </script>
+                    "#, publisher_id)))
+                }
+            }
+        }
     }
 }
 
-impl PageFragment for OverviewPage {
-    fn title(&self) -> String {
-        "Geometry Dash Demonlist".to_string()
+impl From<OverviewPage> for PageFragment {
+    fn from(page: OverviewPage) -> Self {
+        PageFragment::new("Geometry Dash Demonlist", "The official pointercrate Demonlist!")
+            .module("/static/core/js/modules/form.js")
+            .module("/static/demonlist/js/modules/demonlist.js")
+            .module("/static/demonlist/js/demonlist.js")
+            .stylesheet("/static/demonlist/css/demonlist.css")
+            .stylesheet("/static/core/css/sidebar.css")
+            .head(page.head())
+            .body(page.body())
     }
+}
 
-    fn description(&self) -> String {
-        "The official pointercrate Demonlist!".to_string()
-    }
-
-    fn additional_scripts(&self) -> Vec<Script> {
-        vec![
-            Script::module("/static/core/js/modules/form.js"),
-            Script::module("/static/demonlist/js/modules/demonlist.js"),
-            Script::module("/static/demonlist/js/demonlist.js"),
-        ]
-    }
-
-    fn additional_stylesheets(&self) -> Vec<String> {
-        vec![
-            "/static/demonlist/css/demonlist.css".to_string(),
-            "/static/core/css/sidebar.css".to_string(),
-        ]
-    }
-
-    fn head_fragment(&self) -> Markup {
+impl OverviewPage {
+    fn head(&self) -> Markup {
         html! {
             (PreEscaped(r#"
                 <script type="application/ld+json">
@@ -149,7 +154,7 @@ impl PageFragment for OverviewPage {
         }
     }
 
-    fn body_fragment(&self) -> Markup {
+    fn body(&self) -> Markup {
         let demons_for_dropdown: Vec<&Demon> = match self.time_machine {
             Tardis::Activated { ref demons, .. } => demons.iter().map(|demon| &demon.current_demon).collect(),
             _ => self.demonlist.iter().collect(),
@@ -192,15 +197,4 @@ impl PageFragment for OverviewPage {
             }
         }
     }
-}
-
-fn thumbnail(video: &str) -> String {
-    // Videos need to be well formed once we get here!
-    let url = Url::parse(video).unwrap();
-    let video_id = url
-        .query_pairs()
-        .find_map(|(key, value)| if key == "v" { Some(value) } else { None })
-        .unwrap_or(Cow::Borrowed("dQw4w9WgXcQ"));
-
-    format!("https://i.ytimg.com/vi/{}/mqdefault.jpg", video_id)
 }

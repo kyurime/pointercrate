@@ -3,15 +3,15 @@ use maud::{html, Markup, PreEscaped};
 use pointercrate_core::permission::PermissionsManager;
 use pointercrate_core_pages::util::filtered_paginator;
 use pointercrate_demonlist::LIST_MODERATOR;
-use pointercrate_user::{sqlx::PgConnection, User};
+use pointercrate_user::{sqlx::PgConnection, AuthenticatedUser};
 use pointercrate_user_pages::account::AccountPageTab;
 
 pub struct DemonsTab;
 
 #[async_trait::async_trait]
 impl AccountPageTab for DemonsTab {
-    fn should_display_for(&self, user: &User, permissions: &PermissionsManager) -> bool {
-        permissions.require_permission(user.permissions, LIST_MODERATOR).is_ok()
+    fn should_display_for(&self, permissions_we_have: u16, permissions: &PermissionsManager) -> bool {
+        permissions.require_permission(permissions_we_have, LIST_MODERATOR).is_ok()
     }
 
     fn initialization_script(&self) -> String {
@@ -32,7 +32,7 @@ impl AccountPageTab for DemonsTab {
         }
     }
 
-    async fn content(&self, _user: &User, _permissions: &PermissionsManager, _connection: &mut PgConnection) -> Markup {
+    async fn content(&self, _user: &AuthenticatedUser, _permissions: &PermissionsManager, _connection: &mut PgConnection) -> Markup {
         html! {
             div.left {
                 (demon_submitter())
@@ -65,6 +65,15 @@ impl AccountPageTab for DemonsTab {
                                         }
                                         br;
                                         a.link #demon-video-link target = "_blank" {}
+                                    }
+                                }
+                                div.stats-container.flex.space  {
+                                    span{
+                                        b {
+                                            i.fa.fa-pencil-alt.clickable #demon-thumbnail-pen aria-hidden = "true" {} " Thumbnail:"
+                                        }
+                                        br;
+                                        a.link #demon-thumbnail-link target = "_blank" {}
                                     }
                                 }
                                 div.stats-container.flex.space  {
@@ -122,6 +131,7 @@ impl AccountPageTab for DemonsTab {
             (change_position_dialog())
             (change_requirement_dialog())
             (change_video_dialog())
+            (change_thumbnail_dialog())
             (change_verifier_dialog())
             (change_publisher_dialog())
             (add_creator_dialog())
@@ -231,7 +241,7 @@ fn change_video_dialog() -> Markup {
                     "Change verification video link:"
                 }
                 p style = "max-width: 400px"{
-                    "Change the verification video link for this record. Leave empty to remove the verification video. ."
+                    "Change the verification video link for this record. Leave empty to remove the verification video."
                 }
                 form.flex.col novalidate = "" {
                     p.info-red.output {}
@@ -242,6 +252,36 @@ fn change_video_dialog() -> Markup {
                         p.error {}
                     }
                     input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                }
+            }
+        }
+    }
+}
+
+fn change_thumbnail_dialog() -> Markup {
+    html! {
+        div.overlay.closable {
+            div.dialog #demon-thumbnail-dialog {
+                span.plus.cross.hover {}
+                h2.underlined.pad {
+                    "Change thumbnail link:"
+                }
+                p style = "max-width: 400px"{
+                    "Change the thumbnail link for this record. To link it to the thumbnail of a youtube video, set it to "
+                    i {
+                        "https://i.ytimg.com/vi/" b{"VIDEO_ID"} "/mqdefault.jpg"
+                    }
+                    "."
+                }
+                form.flex.col novalidate = "" {
+                    p.info-red.output {}
+                    p.info-green.output {}
+                    span.form-input #demon-thumbnail-edit {
+                        label for = "thumbnail" {"Thumbnail link:"}
+                        input required="" name = "thumbnail" type = "url";
+                        p.error {}
+                    }
+                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }

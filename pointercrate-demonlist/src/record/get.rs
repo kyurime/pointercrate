@@ -3,7 +3,7 @@ use crate::{
     error::{DemonlistError, Result},
     nationality::Nationality,
     player::DatabasePlayer,
-    record::{note::notes_on, FullRecord, MinimalRecordD, MinimalRecordP, RecordStatus},
+    record::{FullRecord, MinimalRecordD, MinimalRecordP, RecordStatus},
     submitter::Submitter,
 };
 use futures::stream::StreamExt;
@@ -51,7 +51,6 @@ impl FullRecord {
                         id: row.submitter_id,
                         banned: row.submitter_banned,
                     }),
-                    notes: notes_on(id, connection).await?,
                 }),
 
             Err(Error::RowNotFound) => Err(DemonlistError::RecordNotFound { record_id: id }),

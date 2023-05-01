@@ -27,7 +27,7 @@ import {
 export let recordManager;
 
 class RecordManager extends Paginator {
-  constructor(tok) {
+  constructor() {
     super("record-pagination", {}, generateRecord);
 
     var manager = document.getElementById("record-manager");
@@ -45,7 +45,6 @@ class RecordManager extends Paginator {
     this._progress = document.getElementById("record-progress");
     this._submitter = document.getElementById("record-submitter");
     this._notes = document.getElementById("record-notes");
-    this._tok = tok; // FIXME: bad
 
     this.dropdown = new Dropdown(
       document
@@ -65,7 +64,7 @@ class RecordManager extends Paginator {
     });
 
     this._status = setupDropdownEditor(
-      new PaginatorEditorBackend(this, this._tok, true),
+      new PaginatorEditorBackend(this, true),
       "edit-record-status",
       "status",
       this.output
@@ -74,7 +73,7 @@ class RecordManager extends Paginator {
     this.initProgressDialog();
     this.initVideoDialog();
 
-    setupEditorDialog(new PlayerSelectionDialog("record-holder-dialog"), "record-holder-pen", new PaginatorEditorBackend(this, this._tok, true), this.output);
+    setupEditorDialog(new PlayerSelectionDialog("record-holder-dialog"), "record-holder-pen", new PaginatorEditorBackend(this, true), this.output);
     this.initDemonDialog();
 
     document.getElementById("record-copy-info").addEventListener('click', () => {
@@ -86,7 +85,7 @@ class RecordManager extends Paginator {
 
   initProgressDialog() {
     let form = setupFormDialogEditor(
-      new PaginatorEditorBackend(this, this._tok, true),
+      new PaginatorEditorBackend(this, true),
       "record-progress-dialog",
       "record-progress-pen",
       this.output
@@ -107,7 +106,7 @@ class RecordManager extends Paginator {
 
   initVideoDialog() {
     let form = setupFormDialogEditor(
-      new PaginatorEditorBackend(this, this._tok, false),
+      new PaginatorEditorBackend(this, false),
       "record-video-dialog",
       "record-video-pen",
       this.output
@@ -128,7 +127,7 @@ class RecordManager extends Paginator {
     setupEditorDialog(
       new DropdownDialog("record-demon-dialog", "edit-demon-record"),
       "record-demon-pen",
-      new PaginatorEditorBackend(this, this._tok, true),
+      new PaginatorEditorBackend(this, true),
       this.output,
       demonId => ({demon_id: parseInt(demonId)})
     );
@@ -170,20 +169,23 @@ class RecordManager extends Paginator {
     this._progress.innerHTML = this.currentObject.progress + "%";
     this._submitter.innerHTML = this.currentObject.submitter.id;
 
-    // clear notes
-    while (this._notes.firstChild) {
-      this._notes.removeChild(this._notes.firstChild);
-    }
+    // this is introducing race conditions. Oh well.
+    return get("/api/v1/records/" + this.currentObject.id + "/notes").then(response => {
+      // clear notes
+      while (this._notes.firstChild) {
+        this._notes.removeChild(this._notes.firstChild);
+      }
 
-    for (let note of this.currentObject.notes) {
-      this._notes.appendChild(createNoteHtml(note, this._tok));
-    }
+      for (let note of response.data) {
+        this._notes.appendChild(createNoteHtml(note));
+      }
 
-    $(this._notes.parentElement).show(300); // TODO: maybe via CSS transform?
+      $(this._notes.parentElement).show(300); // TODO: maybe via CSS transform?
+    })
   }
 }
 
-function createNoteHtml(note, csrfToken) {
+function createNoteHtml(note) {
   let noteDiv = document.createElement("div");
 
   noteDiv.classList.add("dark-gray");
@@ -208,8 +210,7 @@ function createNoteHtml(note, csrfToken) {
             recordManager.currentObject.id +
             "/notes/" +
             note.id +
-            "/",
-          { "X-CSRF-TOKEN": csrfToken }
+            "/"
         ).then(() => noteDiv.parentElement.removeChild(noteDiv));
       }
     });
@@ -240,7 +241,11 @@ function createNoteHtml(note, csrfToken) {
   }
 
   if (note.transferred) {
-    furtherInfo.innerHTML += "This not was not originally left on this record.";
+    furtherInfo.innerHTML += "This not was not originally left on this record. ";
+  }
+
+  if(note.is_public) {
+    furtherInfo.innerHTML += "This note is public. ";
   }
 
   if (isAdmin) noteDiv.appendChild(closeX);
@@ -251,20 +256,21 @@ function createNoteHtml(note, csrfToken) {
   return noteDiv;
 }
 
-function setupAddNote(csrfToken) {
+function setupAddNote() {
   let adder = document.getElementById("add-record-note");
   let output = new Output(adder);
   let textArea = adder.getElementsByTagName("textarea")[0];
   let add = adder.getElementsByClassName("button")[0];
+  let isPublic = document.getElementById("add-note-is-public-checkbox");
 
   add.addEventListener("click", () => {
     post(
       "/api/v1/records/" + recordManager.currentObject.id + "/notes/",
-      { "X-CSRF-TOKEN": csrfToken },
-      { content: textArea.value }
+      {},
+      { content: textArea.value, is_public: isPublic.checked }
     )
       .then((noteResponse) => {
-        let newNote = createNoteHtml(noteResponse.data.data, csrfToken);
+        let newNote = createNoteHtml(noteResponse.data.data);
         recordManager._notes.appendChild(newNote);
 
         $(adder).hide(100);
@@ -331,7 +337,7 @@ function setupRecordFilterPlayerNameForm() {
   });
 }
 
-function setupEditRecordForm(csrfToken) {
+function setupEditRecordForm() {
   document.getElementById("record-delete").addEventListener("click", () => {
     if (
       confirm(
@@ -339,7 +345,6 @@ function setupEditRecordForm(csrfToken) {
       )
     ) {
       del("/api/v1/records/" + recordManager.currentObject.id + "/", {
-        "X-CSRF-TOKEN": csrfToken,
         "If-Match": recordManager.currentEtag,
       }).then(() => {
         recordManager.output.hideContent();
@@ -349,15 +354,15 @@ function setupEditRecordForm(csrfToken) {
   });
 }
 
-export function initialize(csrfToken) {
+export function initialize() {
   setupRecordFilterPlayerIdForm();
   setupRecordFilterPlayerNameForm();
-  setupAddNote(csrfToken);
-  setupEditRecordForm(csrfToken);
+  setupAddNote();
+  setupEditRecordForm();
   setupRecordSearchRecordIdForm();
 
-  initializeRecordSubmitter(csrfToken, true);
+  initializeRecordSubmitter(true);
 
-  recordManager = new RecordManager(csrfToken);
+  recordManager = new RecordManager();
   return recordManager.initialize();
 }
