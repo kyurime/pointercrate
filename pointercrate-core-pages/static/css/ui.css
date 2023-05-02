@@ -26,7 +26,7 @@ a.link {
 }
 
 a.link:after {
-  font-family: "Font Awesome 5 Free";
+  font-family: "Font Awesome 6 Free";
   font-weight: 600;
   font-style: normal;
 
@@ -376,7 +376,7 @@ textarea:invalid {
 .search:before,
 .search:after,
 .dropdown-menu div:first-child:after {
-  font-family: "Font Awesome 5 Free";
+  font-family: "Font Awesome 6 Free";
   font-weight: 900;
   font-style: normal;
 
