@@ -557,7 +557,7 @@ h2 .dropdown-menu ul {
 .tooltip {
   position: relative;
   display: inline-block;
-  border-bottom: 1px dotted #555;
+  border-bottom: 2px dotted #888;
 }
 
 .tooltip .tooltiptext {
