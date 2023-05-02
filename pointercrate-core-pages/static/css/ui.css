@@ -401,7 +401,7 @@ textarea:invalid {
   content: "\f078";
   position: absolute;
   right: 0;
-  top: .8em;
+  top: .8rem;
   right: .8em;
 }
 
