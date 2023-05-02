@@ -416,7 +416,7 @@ fn webhook_status_embed(record: &FullRecord) -> serde_json::Value {
             {
                 "type": "rich",
                 "title": format!("{}% on {}", record.progress, record.demon.name),
-                "description": format!("The status of {}'s record status has been set to `{}`!", record.player.name, record.status),
+                "description": format!("The status of {}'s record has been set to `{}`!", record.player.name, record.status),
                 "author": {
                     "name": format!("Owner: {} (ID: {})", record.player.name, record.player.id),
                     "url": record.video
