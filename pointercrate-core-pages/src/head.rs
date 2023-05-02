@@ -139,8 +139,11 @@ impl Render for &Meta {
     }
 }
 
+// this should be handled automatically on newer versions of maud
+/*
 impl Render for Script {
     fn render(&self) -> Markup {
         (&self).render()
     }
 }
+*/
