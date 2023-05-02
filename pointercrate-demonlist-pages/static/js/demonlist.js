@@ -5,7 +5,6 @@ import {get} from "/static/core/js/modules/form.js";
 
 $(document).ready(function () {
   if(window.demon_id) {
-    initializePositionChart();
     initializeHistoryTable();
   }
 

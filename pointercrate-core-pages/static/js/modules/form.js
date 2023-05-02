@@ -258,7 +258,7 @@ export class Dialog {
     this.submissionPredicateFactory = (data) => new Promise(resolve => resolve(data));
 
     this.dialog.getElementsByClassName("cross")[0].addEventListener("click", () => {
-      this.reject(); // order important
+      this.reject(new Error("Dialog closed")); // order important
       this.close();
     })
   }
