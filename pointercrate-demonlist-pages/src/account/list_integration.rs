@@ -105,16 +105,15 @@ impl AccountPageTab for ListIntegrationTab {
                                     ". Clicking the above button also counts as your consent for pointercrate to send your IP to abstract."
                                 }
                                 div.cb-container.flex.no-stretch style="justify-content: space-between; align-items: center" {
+                                    @if claim.lock_submissions {
+                                        input #lock-submissions-checkbox type = "checkbox" name = "lock_submissions" checked = "" style="margin-right: 8px;";
+                                    }
+                                    @else {
+                                        input #lock-submissions-checkbox type = "checkbox" name = "lock_submissions" style="margin-right: 8px;";
+                                    }
                                     b {
                                         "Lock Submissions:"
                                     }
-                                    @if claim.lock_submissions {
-                                        input #lock-submissions-checkbox type = "checkbox" name = "lock_submissions" checked = "";
-                                    }
-                                    @else {
-                                        input #lock-submissions-checkbox type = "checkbox" name = "lock_submissions";
-                                    }
-                                    span.checkmark {}
                                 }
                                 p {
                                     "Whether submissions for your claimed player should be locked, meaning only you will be able to submit records for your claimed player (and only while logged in to this account holding the verified claim)"

@@ -204,7 +204,7 @@ export function initialize() {
         let lockSubmissionsCheckbox = document.getElementById("lock-submissions-checkbox");
         lockSubmissionsCheckbox.addEventListener("change", () => {
             patch("/api/v1/players/" + playerId + "/claims/" + window.userId + "/", {}, {"lock_submissions": lockSubmissionsCheckbox.checked}).then(_ => {
-                output.setSuccess("Successfully applied changed")
+                output.setSuccess("Successfully applied changes")
             }).catch(displayError(output))
         });
 

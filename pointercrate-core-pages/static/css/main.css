@@ -15,6 +15,10 @@ body {
   flex-direction: column;
 }
 
+:root {
+  color-scheme: only dark;
+}
+
 body {
   background-color: #0A0A0A;
   color-scheme: only dark;

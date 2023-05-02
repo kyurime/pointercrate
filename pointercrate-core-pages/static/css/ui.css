@@ -99,7 +99,7 @@ h4 {
 
 iframe {
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 table {
@@ -189,7 +189,7 @@ a {
   transform: translate(-50%, -50%);
   background-color: #121212;
   box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.3);
-  border: 1px solid black;
+  border: 1px solid #333;
   padding: 1rem;
   max-width: 600px;
   overflow:auto;
@@ -314,7 +314,6 @@ textarea:invalid {
 .cb-container {
   display: block;
   position: relative;
-  padding-left: 1.5em;
   cursor: pointer;
 }
 
