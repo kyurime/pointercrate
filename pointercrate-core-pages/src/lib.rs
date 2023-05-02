@@ -47,6 +47,7 @@ impl PageConfiguration {
 
             meta http-equiv="Content-Type" content = "text/html; charset=utf-8";
             meta http-equiv="Content-Style-Type" content="text/css";
+            link rel="icon" type="image/png" href="/static/images/logo.png";
         };
 
         PageConfiguration {
