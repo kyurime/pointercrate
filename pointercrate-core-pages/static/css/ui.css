@@ -524,7 +524,7 @@ h2 .dropdown-menu ul {
 }
 
 .dropdown-menu input:focus, .dropdown-menu input:invalid {
-  border: 1px solid black;
+  border: 1px solid #333;
 }
 
 .dropdown-menu .menu ul {
