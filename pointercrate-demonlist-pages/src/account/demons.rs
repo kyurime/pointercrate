@@ -24,11 +24,11 @@ impl AccountPageTab for DemonsTab {
 
     fn tab(&self) -> Markup {
         html! {
-            i class = "fa fa-shower fa-2x" aria-hidden="true" {}
-            (PreEscaped("&nbsp;&nbsp;"))
             b {
                 "Demons"
             }
+            (PreEscaped("&nbsp;&nbsp;"))
+            i class = "fa fa-shower fa-2x" aria-hidden="true" {}
         }
     }
 
@@ -281,7 +281,7 @@ fn change_thumbnail_dialog() -> Markup {
                         input required="" name = "thumbnail" type = "url";
                         p.error {}
                     }
-                    input.button.blue.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value = "Edit";
                 }
             }
         }

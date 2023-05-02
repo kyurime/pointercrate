@@ -27,7 +27,7 @@ impl AccountPageTab for PlayersPage {
                 "Players"
             }
             (PreEscaped("&nbsp;&nbsp;"))
-            i class = "fa fa-beer fa-2x" aria-hidden="true" {}
+            i class = "fa fa-user-secret fa-2x" aria-hidden="true" {}
         }
     }
 
@@ -73,7 +73,7 @@ impl AccountPageTab for PlayersPage {
                                             "Banned:"
                                         }
                                         br;
-                                        div.dropdown-menu.js-search #edit-player-banned style = "max-width: 7rem" {
+                                        div.dropdown-menu.js-search #edit-player-banned {
                                             div {
                                                 input type="text" style = "font-weight: bold;";
                                             }

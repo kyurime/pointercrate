@@ -100,6 +100,8 @@ h4 {
 iframe {
   border: none;
   border-radius: 8px;
+  /* remove color scheme styling as it makes iframe bg white */
+  color-scheme: auto;
 }
 
 table {
@@ -533,6 +535,10 @@ h2 .dropdown-menu ul {
   padding: 0.75rem;
   text-align: left;
   cursor: pointer;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow-x: hidden;
 }
 
 /* DropDown styles */
@@ -715,7 +721,7 @@ form .output {
 
 ul.selection-list {
   overflow-y: auto;
-  border: 1px solid black;
+  border: 1px solid #333;
   font-size: 80%;
   margin: 10px 0px;
   border-radius: 4px;

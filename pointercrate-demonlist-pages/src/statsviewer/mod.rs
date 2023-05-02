@@ -47,9 +47,8 @@ fn hide_subdivision_panel() -> Markup {
                 "Whether the map should display political subdivisions"
             }
             div.cb-container.flex.no-stretch style="margin-bottom:10px" {
-                i {"Show political subdivisions"}
                 input #show-subdivisions-checkbox type = "checkbox" checked="";
-                span.checkmark {}
+                i {"Show political subdivisions"}
             }
         }
     }

@@ -149,6 +149,7 @@ class ClaimedPlayerRecordPaginator extends Paginator {
 
                         this.successOutput.appendChild(noteAuthor);
                         this.successOutput.appendChild(document.createTextNode(note.content));
+                        this.successOutput.appendChild(document.createElement("br"));
                     }
 
                     this.successOutput.style.display = "block";

@@ -301,16 +301,15 @@ fn note_adder() -> Markup {
     html! {
         div.panel.fade.closable #add-record-note style = "display: none" {
             span.plus.cross.hover {}
-            div style="display: flex;align-items: center;justify-content: space-between;" {
-                div.button.blue.hover.small style = "width: 100px; margin-bottom: 10px"{
+            div style="display: flex;align-items: center;justify-content: space-between; margin-top: 1em" {
+                div.button.purple.hover.small style = "width: 5em; margin-bottom: 0.75em"{
                     "Add"
                 }
                 div.cb-container.flex.no-stretch style="justify-content: space-between; align-items: center" {
                     b {
                         "Public note:"
                     }
-                    input #add-note-is-public-checkbox type = "checkbox" name = "is_public";
-                    span.checkmark {}
+                    input #add-note-is-public-checkbox type = "checkbox" name = "is_public" style="margin-left: 0.5em;";
                 }
             }
             p.info-red.output {}
