@@ -16,6 +16,8 @@ header nav {
   font-size: 1.2em;
   font-weight: 600;
   text-align: center;
+
+  border-bottom: 1px solid #333;
 }
 
 header nav + * {

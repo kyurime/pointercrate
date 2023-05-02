@@ -108,11 +108,11 @@ fn dropdown(section: &ListSection, demons: &[&Demon], current: Option<&Demon>) -
                     @for demon in demons {
                         @match current {
                             Some(current) if current.base.position == demon.base.position =>
-                                li.hover.white.active title={"#" (demon.base.position) " - " (demon.base.name)} {
+                                li.hover.dark-gray.active title={"#" (demon.base.position) " - " (demon.base.name)} {
                                     (format(demon))
                                 },
                             _ =>
-                                li.hover.white title={"#" (demon.base.position) " - " (demon.base.name)} {
+                                li.hover.dark-gray title={"#" (demon.base.position) " - " (demon.base.name)} {
                                     (format(demon))
                                 }
                         }

@@ -88,7 +88,7 @@ fn record_manager(demons: &[Demon]) -> Markup {
                 (dropdown("All", html! {
                     li.colorless.hover.underlined data-value = "All"
                      {"All Demons"}
-                }, demons.iter().map(|demon| html!(li.white.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
+                }, demons.iter().map(|demon| html!(li.colorless.hover data-value = (demon.base.id) data-display = (demon.base.name) {b{"#"(demon.base.position) " - " (demon.base.name)} br; {"by "(demon.publisher.name)}}))))
             }
             div.flex.viewer {
                 (paginator("record-pagination", "/api/v1/records/"))

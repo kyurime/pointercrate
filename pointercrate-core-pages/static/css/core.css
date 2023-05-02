@@ -184,6 +184,16 @@
   color: white;
 }
 
+.colorless.hover:not(.disabled):not([disabled]):hover,
+.colorless.active {
+  background: #18181888;
+}
+
+.colorless.hover:not(.disabled):not([disabled]):active,
+.colorless.active {
+  background: #16161688;
+}
+
 .medium-gray {
   background: #383838;
   color: white;
