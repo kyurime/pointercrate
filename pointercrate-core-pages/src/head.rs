@@ -1,4 +1,4 @@
-use maud::{html, Markup, Render, PreEscaped};
+use maud::{html, Markup, PreEscaped, Render};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -111,9 +111,7 @@ fn render_import_map(map: &HashMap<String, String>) -> String {
     // remove trailing comma
     inner.pop();
 
-    format!(
-        r#"{{"imports": {{ {} }}}}"#, inner
-    )
+    format!(r#"{{"imports": {{ {} }}}}"#, inner)
 }
 
 #[derive(Debug, Clone)]
