@@ -22,6 +22,15 @@ impl AccountPageTab for ListIntegrationTab {
         with_version_string!("/static/demonlist/js/account/integration.js").into()
     }
 
+    fn imports(&self) -> Vec<(String, String)> {
+        use pointercrate_core_pages::versioned_import_string;
+
+        vec![
+            versioned_import_string!("/static/core/js/modules/form.js"),
+            versioned_import_string!("/static/demonlist/js/modules/demonlist.js")
+        ]
+    }
+
     fn tab_id(&self) -> u8 {
         7
     }

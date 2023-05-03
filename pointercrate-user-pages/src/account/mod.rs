@@ -17,6 +17,11 @@ pub trait AccountPageTab {
         vec![]
     }
 
+    /// Returns scripts that should be added to the page import map
+    fn imports(&self) -> Vec<(String, String)> {
+        vec![]
+    }
+
     fn tab_id(&self) -> u8;
     fn tab(&self) -> Markup;
     async fn content(&self, user: &AuthenticatedUser, permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup;
@@ -44,6 +49,7 @@ impl AccountPageConfig {
         let mut page = AccountPage {
             user,
             scripts: vec![],
+            imports: vec![],
             tabs: vec![],
         };
 
@@ -53,6 +59,7 @@ impl AccountPageConfig {
                 let content = tab_config.content(&page.user, permissions, connection).await;
 
                 page.scripts.extend(tab_config.additional_scripts());
+                page.imports.extend(tab_config.imports());
                 page.scripts.push(Script::module(tab_config.initialization_script()));
                 page.tabs
                     .push((tab, content, tab_config.initialization_script(), tab_config.tab_id()));
@@ -66,25 +73,25 @@ impl AccountPageConfig {
 pub struct AccountPage {
     user: AuthenticatedUser,
     scripts: Vec<Script>,
+    imports: Vec<(String, String)>,
     tabs: Vec<(Markup, Markup, String, u8)>,
 }
 
 impl From<AccountPage> for PageFragment {
     fn from(account: AccountPage) -> Self {
-        use pointercrate_core_pages::{versioned_import, with_version_string};
+        use pointercrate_core_pages::with_version_string;
 
         let mut fragment = PageFragment::new(format!("Account - {}", account.user.inner().name), "")
             .stylesheet(with_version_string!("/static/user/css/account.css"))
             .stylesheet(with_version_string!("/static/core/css/sidebar.css"))
-            // this is kinda hacky, the account page depends on the demonlist...
-            // TODO: integrate this as part of AccountPageTab
-            .import(versioned_import!("/static/core/js/modules/form.js"))
-            .import(versioned_import!("/static/demonlist/js/account/records.js"))
-            .import(versioned_import!("/static/demonlist/js/modules/demonlist.js"))
             .head(PreEscaped(
                 format!(r#"<script>window.username='{}'; window.etag='{}'; window.permissions='{}'; window.userId={}</script><script type="module">{}</script>"#, account.user.inner().name, account.user.inner().etag_string(), account.user.inner().permissions, account.user.inner().id, account.initialization_script())
             ))
             .body(account.body());
+
+        for (key, val) in account.imports {
+            fragment = fragment.with_import(key, val);
+        }
 
         for script in account.scripts {
             fragment = fragment.with_script(script);

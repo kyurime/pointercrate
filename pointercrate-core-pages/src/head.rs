@@ -191,9 +191,20 @@ macro_rules! with_version_string {
     };
 }
 
+/// Returns a pair of strings,
+/// with first value being provided path and second being path with import
 #[macro_export]
 macro_rules! versioned_import {
     ($path:literal) => {
         ($path, $crate::with_version_string!($path))
+    };
+}
+
+/// Same as versioned_import,
+/// but returns a (String, String) instead of (&str, &str)
+#[macro_export]
+macro_rules! versioned_import_string {
+    ($path:literal) => {
+        ($path.to_string(), $crate::with_version_string!($path).to_string())
     };
 }
