@@ -1,10 +1,12 @@
-use maud::{html, Markup, Render};
+use maud::{html, Markup, Render, PreEscaped};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Head {
     scripts: Vec<Script>,
     stylesheets: Vec<String>,
     meta_tags: Vec<Meta>,
+    import_map: HashMap<String, String>,
 
     pub(crate) other: Markup,
 }
@@ -15,6 +17,7 @@ impl Head {
             scripts: vec![],
             stylesheets: vec![],
             meta_tags: vec![],
+            import_map: HashMap::new(),
             other,
         }
     }
@@ -23,6 +26,12 @@ impl Head {
 impl Render for Head {
     fn render(&self) -> Markup {
         html! {
+            @if !&self.import_map.is_empty() {
+                script type = "importmap" {
+                    (PreEscaped(render_import_map(&self.import_map)))
+                }
+            }
+
             @for meta in &self.meta_tags {
                 meta name=(meta.name) content=(meta.content);
             }
@@ -58,6 +67,11 @@ pub trait HeadLike: Sized {
         self
     }
 
+    fn with_import(mut self, import: String, val: String) -> Self {
+        self.head_mut().import_map.insert(import, val);
+        self
+    }
+
     fn meta(self, name: impl Into<String>, content: impl Into<String>) -> Self {
         self.with_meta(Meta::new(name, content))
     }
@@ -73,12 +87,33 @@ pub trait HeadLike: Sized {
     fn stylesheet(self, sheet: impl Into<String>) -> Self {
         self.with_stylesheet(sheet.into())
     }
+
+    fn import<S: Into<String>>(self, import: (S, S)) -> Self {
+        self.with_import(import.0.into(), import.1.into())
+    }
 }
 
 impl HeadLike for Head {
     fn head_mut(&mut self) -> &mut Head {
         self
     }
+}
+
+/// Converts an import hashmap to a JSON string
+fn render_import_map(map: &HashMap<String, String>) -> String {
+    // there's no json here... oh no
+    let mut inner = "".to_string();
+
+    for (key, val) in map.iter() {
+        inner.push_str(&format!(r#""{}": "{}","#, key, val));
+    }
+
+    // remove trailing comma
+    inner.pop();
+
+    format!(
+        r#"{{"imports": {{ {} }}}}"#, inner
+    )
 }
 
 #[derive(Debug, Clone)]
@@ -155,5 +190,12 @@ impl Render for Script {
 macro_rules! with_version_string {
     ($path:literal) => {
         concat!($path, "?v=", env!("CARGO_PKG_VERSION"))
+    };
+}
+
+#[macro_export]
+macro_rules! versioned_import {
+    ($path:literal) => {
+        ($path, $crate::with_version_string!($path))
     };
 }
