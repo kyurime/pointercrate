@@ -31,12 +31,14 @@ pub struct DemonPage {
 
 impl From<DemonPage> for PageFragment {
     fn from(page: DemonPage) -> Self {
+        use pointercrate_core_pages::with_version_string;
+
         PageFragment::new(page.title(), page.description())
-            .module("/static/core/js/modules/form.js")
-            .module("/static/demonlist/js/modules/demonlist.js")
-            .module("/static/demonlist/js/demonlist.js")
-            .stylesheet("/static/demonlist/css/demonlist.css")
-            .stylesheet("/static/core/css/sidebar.css")
+            .module(with_version_string!("/static/core/js/modules/form.js"))
+            .module(with_version_string!("/static/demonlist/js/modules/demonlist.js"))
+            .module(with_version_string!("/static/demonlist/js/demonlist.js"))
+            .stylesheet(with_version_string!("/static/demonlist/css/demonlist.css"))
+            .stylesheet(with_version_string!("/static/core/css/sidebar.css"))
             .head(page.head())
             .body(page.body())
     }

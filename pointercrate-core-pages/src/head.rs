@@ -147,3 +147,14 @@ impl Render for Script {
     }
 }
 */
+
+
+/// Adds a version query string to a url based on the package version.
+/// 
+/// A macro is used to make the version crate-independent.
+#[macro_export]
+macro_rules! with_version_string {
+    ($path:literal) => {
+        concat!($path, "?v=", env!("CARGO_PKG_VERSION"))
+    }
+}

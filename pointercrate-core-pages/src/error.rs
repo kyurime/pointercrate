@@ -9,10 +9,12 @@ pub struct ErrorFragment {
 
 impl From<ErrorFragment> for PageFragment {
     fn from(error: ErrorFragment) -> Self {
+        use crate::with_version_string;
+
         let body = error.body();
 
         PageFragment::new(format!("{} - {}", error.status, error.reason), error.message)
-            .stylesheet("/static/core/css/error.css")
+            .stylesheet(with_version_string!("/static/core/css/error.css"))
             .body(body)
     }
 }

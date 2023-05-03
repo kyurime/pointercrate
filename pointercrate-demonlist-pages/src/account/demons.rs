@@ -15,7 +15,8 @@ impl AccountPageTab for DemonsTab {
     }
 
     fn initialization_script(&self) -> String {
-        "/static/demonlist/js/account/demon.js".into()
+        use pointercrate_core_pages::with_version_string;
+        with_version_string!("/static/demonlist/js/account/demon.js").into()
     }
 
     fn tab_id(&self) -> u8 {

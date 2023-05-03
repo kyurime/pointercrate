@@ -14,7 +14,8 @@ impl AccountPageTab for SubmittersPage {
     }
 
     fn initialization_script(&self) -> String {
-        "/static/demonlist/js/account/submitter.js".into()
+        use pointercrate_core_pages::with_version_string;
+        with_version_string!("/static/demonlist/js/account/submitter.js").into()
     }
 
     fn tab_id(&self) -> u8 {

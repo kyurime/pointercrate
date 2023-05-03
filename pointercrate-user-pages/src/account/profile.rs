@@ -12,7 +12,8 @@ impl AccountPageTab for ProfileTab {
     }
 
     fn initialization_script(&self) -> String {
-        "/static/user/js/account/profile.js".into()
+        use pointercrate_core_pages::with_version_string;
+        with_version_string!("/static/user/js/account/profile.js").into()
     }
 
     fn tab_id(&self) -> u8 {

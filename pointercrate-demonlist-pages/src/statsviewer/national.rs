@@ -3,15 +3,17 @@ use maud::{html, Markup, PreEscaped};
 use pointercrate_core_pages::{config, head::HeadLike, PageFragment};
 
 pub fn nation_based_stats_viewer() -> PageFragment {
+    use pointercrate_core_pages::with_version_string;
+
     PageFragment::new(
         "Nation Stats Viewer",
         "The pointercrate nation stats viewer, ranking how well each nations player's are doing in their quest to collectively complete \
          the entire demonlist!",
     )
-    .module("/static/demonlist/js/modules/statsviewer.js")
-    .module("/static/demonlist/js/statsviewer/nation.js")
-    .stylesheet("/static/demonlist/css/statsviewer.css")
-    .stylesheet("/static/core/css/sidebar.css")
+    .module(with_version_string!("/static/demonlist/js/modules/statsviewer.js"))
+    .module(with_version_string!("/static/demonlist/js/statsviewer/nation.js"))
+    .stylesheet(with_version_string!("/static/demonlist/css/statsviewer.css"))
+    .stylesheet(with_version_string!("/static/core/css/sidebar.css"))
     .body(nation_based_stats_viewer_html())
 }
 

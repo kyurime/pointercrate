@@ -2,13 +2,15 @@ use maud::{html, Markup};
 use pointercrate_core_pages::{head::HeadLike, PageFragment};
 
 pub fn login_page() -> PageFragment {
+    use pointercrate_core_pages::with_version_string;
+
     PageFragment::new(
         "Pointercrate - Login",
         "Log in to an existing pointercrate account or register for a new one!",
     )
-    .module("/static/user/js/login.js")
-    .module("/static/core/js/modules/form.js")
-    .stylesheet("/static/user/css/login.css")
+    .module(with_version_string!("/static/user/js/login.js"))
+    .module(with_version_string!("/static/core/js/modules/form.js"))
+    .stylesheet(with_version_string!("/static/user/css/login.css"))
     .body(login_page_body())
 }
 

@@ -71,9 +71,11 @@ pub struct AccountPage {
 
 impl From<AccountPage> for PageFragment {
     fn from(account: AccountPage) -> Self {
+        use pointercrate_core_pages::with_version_string;
+
         let mut fragment = PageFragment::new(format!("Account - {}", account.user.inner().name), "")
-            .stylesheet("/static/user/css/account.css")
-            .stylesheet("/static/core/css/sidebar.css")
+            .stylesheet(with_version_string!("/static/user/css/account.css"))
+            .stylesheet(with_version_string!("/static/core/css/sidebar.css"))
             .head(PreEscaped(
                 format!(r#"<script>window.username='{}'; window.etag='{}'; window.permissions='{}'; window.userId={}</script><script type="module">{}</script>"#, account.user.inner().name, account.user.inner().etag_string(), account.user.inner().permissions, account.user.inner().id, account.initialization_script())
             ))
