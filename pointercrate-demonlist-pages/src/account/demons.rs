@@ -24,7 +24,7 @@ impl AccountPageTab for DemonsTab {
 
         vec![
             versioned_import_string!("/static/core/js/modules/form.js"),
-            versioned_import_string!("/static/demonlist/js/modules/demonlist.js")
+            versioned_import_string!("/static/demonlist/js/modules/demonlist.js"),
         ]
     }
 
