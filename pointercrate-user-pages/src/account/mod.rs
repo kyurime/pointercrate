@@ -71,11 +71,16 @@ pub struct AccountPage {
 
 impl From<AccountPage> for PageFragment {
     fn from(account: AccountPage) -> Self {
-        use pointercrate_core_pages::with_version_string;
+        use pointercrate_core_pages::{with_version_string, versioned_import};
 
         let mut fragment = PageFragment::new(format!("Account - {}", account.user.inner().name), "")
             .stylesheet(with_version_string!("/static/user/css/account.css"))
             .stylesheet(with_version_string!("/static/core/css/sidebar.css"))
+            // this is kinda hacky, the account page depends on the demonlist...
+            // TODO: integrate this as part of AccountPageTab
+            .import(versioned_import!("/static/core/js/modules/form.js"))
+            .import(versioned_import!("/static/demonlist/js/account/records.js"))
+            .import(versioned_import!("/static/demonlist/js/modules/demonlist.js"))
             .head(PreEscaped(
                 format!(r#"<script>window.username='{}'; window.etag='{}'; window.permissions='{}'; window.userId={}</script><script type="module">{}</script>"#, account.user.inner().name, account.user.inner().etag_string(), account.user.inner().permissions, account.user.inner().id, account.initialization_script())
             ))
@@ -125,9 +130,13 @@ impl AccountPage {
     }
 
     fn initialization_script(&self) -> String {
-        let mut imports = r#"
-import { TabbedPane } from "/static/core/js/modules/tab.js";
-        "#
+        use pointercrate_core_pages::with_version_string;
+
+        // oh dear! this looks terrible. but it is compile time
+        let mut imports = concat!(
+            "import { TabbedPane } from \"",
+            with_version_string!("/static/core/js/modules/tab.js"),
+            "\";")
         .to_owned();
         let mut initialization_states = String::new();
         let mut initializations = String::new();

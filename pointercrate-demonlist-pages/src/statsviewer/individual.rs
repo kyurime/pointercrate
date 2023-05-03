@@ -10,7 +10,7 @@ pub struct IndividualStatsViewer {
 
 impl From<IndividualStatsViewer> for PageFragment {
     fn from(stats_viewer: IndividualStatsViewer) -> Self {
-        use pointercrate_core_pages::with_version_string;
+        use pointercrate_core_pages::{with_version_string, versioned_import};
 
         PageFragment::new(
             "Individual Stats Viewer",
@@ -19,6 +19,9 @@ impl From<IndividualStatsViewer> for PageFragment {
         )
         .module(with_version_string!("/static/demonlist/js/modules/statsviewer.js"))
         .module(with_version_string!("/static/demonlist/js/statsviewer/individual.js"))
+        .import(versioned_import!("/static/core/js/modules/form.js"))
+        .import(versioned_import!("/static/demonlist/js/modules/demonlist.js"))
+        .import(versioned_import!("/static/demonlist/js/modules/statsviewer.js"))
         .stylesheet(with_version_string!("/static/demonlist/css/statsviewer.css"))
         .stylesheet(with_version_string!("/static/core/css/sidebar.css"))
         .body(stats_viewer.body())

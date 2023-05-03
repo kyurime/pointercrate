@@ -3,7 +3,7 @@ use maud::{html, Markup, PreEscaped};
 use pointercrate_core_pages::{config, head::HeadLike, PageFragment};
 
 pub fn nation_based_stats_viewer() -> PageFragment {
-    use pointercrate_core_pages::with_version_string;
+    use pointercrate_core_pages::{with_version_string, versioned_import};
 
     PageFragment::new(
         "Nation Stats Viewer",
@@ -12,6 +12,9 @@ pub fn nation_based_stats_viewer() -> PageFragment {
     )
     .module(with_version_string!("/static/demonlist/js/modules/statsviewer.js"))
     .module(with_version_string!("/static/demonlist/js/statsviewer/nation.js"))
+    .import(versioned_import!("/static/core/js/modules/form.js"))
+    .import(versioned_import!("/static/demonlist/js/modules/demonlist.js"))
+    .import(versioned_import!("/static/demonlist/js/modules/statsviewer.js"))
     .stylesheet(with_version_string!("/static/demonlist/css/statsviewer.css"))
     .stylesheet(with_version_string!("/static/core/css/sidebar.css"))
     .body(nation_based_stats_viewer_html())
