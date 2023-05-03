@@ -10,7 +10,7 @@ pub struct IndividualStatsViewer {
 
 impl From<IndividualStatsViewer> for PageFragment {
     fn from(stats_viewer: IndividualStatsViewer) -> Self {
-        use pointercrate_core_pages::{with_version_string, versioned_import};
+        use pointercrate_core_pages::{versioned_import, with_version_string};
 
         PageFragment::new(
             "Individual Stats Viewer",

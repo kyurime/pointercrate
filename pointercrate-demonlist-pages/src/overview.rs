@@ -97,7 +97,7 @@ fn demon_panel(demon: &Demon, current_position: Option<i16>) -> Markup {
 
 impl From<OverviewPage> for PageFragment {
     fn from(page: OverviewPage) -> Self {
-        use pointercrate_core_pages::{with_version_string, versioned_import};
+        use pointercrate_core_pages::{versioned_import, with_version_string};
 
         PageFragment::new("Geometry Dash Demonlist", "The official pointercrate Demonlist!")
             .module(with_version_string!("/static/core/js/modules/form.js"))

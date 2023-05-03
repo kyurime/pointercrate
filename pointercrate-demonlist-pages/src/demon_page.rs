@@ -31,7 +31,7 @@ pub struct DemonPage {
 
 impl From<DemonPage> for PageFragment {
     fn from(page: DemonPage) -> Self {
-        use pointercrate_core_pages::{with_version_string, versioned_import};
+        use pointercrate_core_pages::{versioned_import, with_version_string};
 
         PageFragment::new(page.title(), page.description())
             .module(with_version_string!("/static/core/js/modules/form.js"))

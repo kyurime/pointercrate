@@ -71,7 +71,7 @@ pub struct AccountPage {
 
 impl From<AccountPage> for PageFragment {
     fn from(account: AccountPage) -> Self {
-        use pointercrate_core_pages::{with_version_string, versioned_import};
+        use pointercrate_core_pages::{versioned_import, with_version_string};
 
         let mut fragment = PageFragment::new(format!("Account - {}", account.user.inner().name), "")
             .stylesheet(with_version_string!("/static/user/css/account.css"))
@@ -136,7 +136,8 @@ impl AccountPage {
         let mut imports = concat!(
             "import { TabbedPane } from \"",
             with_version_string!("/static/core/js/modules/tab.js"),
-            "\";")
+            "\";"
+        )
         .to_owned();
         let mut initialization_states = String::new();
         let mut initializations = String::new();

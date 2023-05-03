@@ -3,7 +3,7 @@ use maud::{html, Markup, PreEscaped};
 use pointercrate_core_pages::{config, head::HeadLike, PageFragment};
 
 pub fn nation_based_stats_viewer() -> PageFragment {
-    use pointercrate_core_pages::{with_version_string, versioned_import};
+    use pointercrate_core_pages::{versioned_import, with_version_string};
 
     PageFragment::new(
         "Nation Stats Viewer",
