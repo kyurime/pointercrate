@@ -91,18 +91,18 @@ impl DemonPage {
                                 "@type": "ListItem",
                                 "position": 3,
                                 "item": {{
-                                    "@id": "https://pointercrate.xyze.dev/demonlist/{0}/",
+                                    "@id": "https://pointercrate.xyze.dev/demonlist/permalink/{0}/",
                                     "name": "{1}"
                                 }}
                             }}
                         ]
                     }},
-                    "name": "#{0} - {1}",
+                    "name": "#{3} - {1}",
                     "description": "{2}",
-                    "url": "https://pointercrate.xyze.dev/demonlist/{0}/"
+                    "url": "https://pointercrate.xyze.dev/demonlist/permalink/{0}/"
                 }}
                 </script>
-            "##, self.data.position(), self.data.name(), self.description().render().0)))
+            "##, self.data.demon.base.id, self.data.name(), self.description().render().0, self.data.position())))
             (PreEscaped(format!("
                 <script>
                     window.list_length = {0};
@@ -216,8 +216,8 @@ impl DemonPage {
             section.panel.fade.js-scroll-anim data-anim = "fade" {
                 div.underlined {
                     h1 #demon-heading style = "overflow: hidden; text-overflow: ellipsis;"{
-                        @if self.data.demon.base.position != 1 {
-                            a href=(format!("/demonlist/{:?}", self.data.demon.base.position - 1)) {
+                        @if position != 1 {
+                            a href=(format!("/demonlist/{:?}", position - 1)) {
                                 i class="fa fa-chevron-left" style="padding-right: 5%" {}
                             }
                         }

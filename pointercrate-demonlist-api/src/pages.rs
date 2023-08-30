@@ -76,19 +76,10 @@ pub async fn overview(
 }
 
 #[rocket::get("/permalink/<demon_id>")]
-pub async fn demon_permalink(demon_id: i32, pool: &State<PointercratePool>) -> Result<Redirect> {
+pub async fn demon_permalink(demon_id: i32, pool: &State<PointercratePool>, gd: &State<PgCache>, auth: Option<TokenAuth>) -> Result<Page> {
     let mut connection = pool.connection().await?;
 
-    let position = MinimalDemon::by_id(demon_id, &mut connection).await?.position;
-
-    Ok(Redirect::to(rocket::uri!("/demonlist", demon_page(position))))
-}
-
-#[rocket::get("/<position>")]
-pub async fn demon_page(position: i16, pool: &State<PointercratePool>, gd: &State<PgCache>, auth: Option<TokenAuth>) -> Result<Page> {
-    let mut connection = pool.connection().await?;
-
-    let full_demon = FullDemon::by_position(position, &mut connection).await?;
+    let full_demon = FullDemon::by_id(demon_id, &mut connection).await?;
 
     let audit_log = audit_log_for_demon(full_demon.demon.base.id, &mut connection).await?;
 
@@ -152,6 +143,15 @@ pub async fn demon_page(position: i16, pool: &State<PointercratePool>, gd: &Stat
     }
 
     Ok(page)
+}
+
+#[rocket::get("/<position>")]
+pub async fn demon_page(position: i16, pool: &State<PointercratePool>) -> Result<Redirect> {
+    let mut connection = pool.connection().await?;
+
+    let id = MinimalDemon::by_position(position, &mut connection).await?.id;
+
+    Ok(Redirect::to(rocket::uri!("/demonlist", demon_permalink(id))))
 }
 
 #[rocket::get("/statsviewer")]
