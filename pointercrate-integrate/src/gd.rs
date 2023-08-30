@@ -29,7 +29,7 @@ use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub enum GDIntegrationResult {
-    Success(Level<'static, ()>, LevelData<'static>, Option<NewgroundsSong<'static>>),
+    Success(Level<'static, ()>, CachedLevelData, Option<NewgroundsSong<'static>>),
     DemonNotFoundByName,
     DemonNotYetCached,
     LevelDataNotFound,
@@ -97,7 +97,17 @@ impl PgCache {
                 let level_data = match self.lookup_level_data(level_id).await {
                     Err(CacheError::Db(_err)) => return Err(()),
                     Err(_) => return Err(()), // shouldn't be reachable
-                    Ok(CacheEntry::Missing) => return Ok(GDIntegrationResult::LevelDataNotCached),
+                    Ok(CacheEntry::Missing) => {
+                        // force a new download on missing
+                        // in the future, there should probably be a way to track errors
+                        tokio::spawn(
+                            self.clone()
+                                .download_demon(http_client, level.level_id.into(), demon_id)
+                                .map(|_| ()),
+                        );
+
+                        return Ok(GDIntegrationResult::DemonNotYetCached)
+                    },
                     Ok(CacheEntry::Absent) => return Ok(GDIntegrationResult::LevelDataNotFound),
                     Ok(CacheEntry::Expired(level_data, _)) => {
                         tokio::spawn(
@@ -290,6 +300,14 @@ pub struct PgCache {
     expire_after: Duration,
 }
 
+/// Struct encoding cached level data. Like [LevelData] but with more pre-processing
+#[derive(Debug)]
+pub struct CachedLevelData {
+    pub password: Password,
+    pub length: i32,
+    pub object_count: i32,
+}
+
 impl PgCache {
     pub fn new(pool: Pool<Postgres>, expire_after: Duration) -> Self {
         PgCache { pool, expire_after }
@@ -458,7 +476,7 @@ impl PgCache {
         Ok(meta)
     }
 
-    pub async fn lookup_level_data<'a>(&self, level_id: u64) -> Result<CacheEntry<LevelData<'static>>, CacheError> {
+    pub async fn lookup_level_data<'a>(&self, level_id: u64) -> Result<CacheEntry<CachedLevelData>, CacheError> {
         let mut connection = self.pool.acquire().await?;
 
         let meta = sqlx::query_as!(
@@ -480,16 +498,14 @@ impl PgCache {
             .fetch_one(&mut *connection)
             .await?;
 
-        let level = LevelData {
-            level_data: Thunk::Processed(bincode::deserialize(&row.level_data[..]).unwrap()),
+        let level = CachedLevelData {
             password: match row.level_password {
                 None => Password::NoCopy,
                 Some(-1) => Password::FreeCopy,
                 Some(number) => Password::PasswordCopy(number as u32),
             },
-            time_since_upload: Cow::Owned(row.time_since_upload),
-            time_since_update: Cow::Owned(row.time_since_update),
-            index_36: row.index_36.map(Cow::Owned),
+            length: row.level_length,
+            object_count: row.level_objects_count
         };
 
         Ok(self.make_cache_entry(meta, level))
@@ -508,6 +524,12 @@ impl PgCache {
         .fetch_one(&mut connection)
         .await?;
 
+        // lol.
+        struct LevelObjectMeta {
+            pub object_count: usize,
+            pub length_in_seconds: f32,
+        }
+
         // FIXME: this
         trace!("Starting to parse level data");
         let objects = match data.level_data {
@@ -518,32 +540,32 @@ impl PgCache {
                     CacheError::MalformedLevelData
                 })?;
 
-                bincode::serialize(&processed)
+                LevelObjectMeta {
+                    object_count: processed.objects.len(),
+                    length_in_seconds: processed.length_in_seconds()
+                }
             },
-            Thunk::Processed(ref proc) => bincode::serialize(proc),
-        }
-        .map_err(|err| {
-            error!("Error binary serializing level data: {:?}", err);
-
-            CacheError::MalformedLevelData
-        })?;
+            Thunk::Processed(ref proc) => LevelObjectMeta {
+                object_count: proc.objects.len(),
+                length_in_seconds: proc.length_in_seconds()
+            },
+        };
         trace!("Finished parsing level data");
 
         sqlx::query!(
-            "INSERT INTO gj_level_data(level_id,level_data,level_password,time_since_upload,time_since_update,index_36) VALUES \
-             ($1,$2,$3,$4,$5,$6) ON CONFLICT(level_id) DO UPDATE SET \
-             level_id=EXCLUDED.level_id,level_data=EXCLUDED.level_data,level_password=EXCLUDED.level_password,time_since_upload=EXCLUDED.\
-             time_since_upload,time_since_update=EXCLUDED.time_since_update,index_36=EXCLUDED.index_36",
+            "INSERT INTO gj_level_data(level_id,level_password,level_length,level_objects_count) VALUES \
+             ($1,$2,$3,$4) ON CONFLICT(level_id) DO UPDATE SET \
+             level_id=EXCLUDED.level_id,level_password=EXCLUDED.level_password,level_length=EXCLUDED.\
+             level_length,level_objects_count=EXCLUDED.level_objects_count",
             level_id as i64,
-            objects,
             match data.password {
                 Password::NoCopy => None,
                 Password::FreeCopy => Some(-1),
                 Password::PasswordCopy(pw) => Some(pw as i32),
             },
-            data.time_since_upload.as_ref(),
-            data.time_since_update.as_ref(),
-            data.index_36.as_deref()
+            objects.length_in_seconds as i32,
+            // specify the overflow behavior to return max instead of whatever
+            i32::try_from(objects.object_count).unwrap_or(i32::MAX)
         )
         .execute(&mut *connection)
         .await?;

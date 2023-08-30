@@ -330,24 +330,16 @@ impl DemonPage {
                                     "Length: "
                                 }
                                 br;
-                                @match level_data.level_data {
-                                    Thunk::Processed(ref objects) => {
-                                        @let length_in_seconds = objects.length_in_seconds();
 
-                                        (format!("{}:{:02}", (length_in_seconds as i32)/ 60, (length_in_seconds as i32) % 60))
-                                    }
-                                    _ => "unreachable!()"
-                                }
+                                @let length_in_seconds = level_data.length;
+                                (format!("{}:{:02}", length_in_seconds / 60, length_in_seconds % 60))
                             }
                             span {
                                 b {
                                     "Objects: "
                                 }
                                 br;
-                                @match level_data.level_data {
-                                    Thunk::Processed(ref objects) => (objects.objects.len()),
-                                    _ => "unreachable!()"
-                                }
+                                (level_data.object_count)
                             }
                             @if let Some(song) = song {
                                 span style = "width: 100%"{
