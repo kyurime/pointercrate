@@ -99,7 +99,7 @@ impl From<OverviewPage> for PageFragment {
     fn from(page: OverviewPage) -> Self {
         use pointercrate_core_pages::{versioned_import, with_version_string};
 
-        PageFragment::new("Geometry Dash Demonlist", "The official pointercrate Demonlist!")
+        PageFragment::new("1.9 GDPS Demonlist", "The official pointercrate Demonlist!")
             .module(with_version_string!("/static/core/js/modules/form.js"))
             .module(with_version_string!("/static/demonlist/js/modules/demonlist.js"))
             .module(with_version_string!("/static/demonlist/js/demonlist.js"))
@@ -141,8 +141,8 @@ impl OverviewPage {
                             }
                         ]
                     },
-                    "name": "Geometry Dash Demonlist",
-                    "description": "The official pointercrate Demonlist!",
+                    "name": "1.9 GDPS Demonlist",
+                    "description": "The official 1.9 GDPS Demonlist!",
                     "url": "https://pointercrate.xyze.dev/demonlist/"
                 }
                 </script>

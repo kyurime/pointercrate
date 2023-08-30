@@ -49,7 +49,7 @@ impl From<DemonPage> for PageFragment {
 impl DemonPage {
     fn title(&self) -> String {
         format!(
-            "#{} - {} - Geometry Dash Demonlist",
+            "#{} - {} - 1.9 GDPS Demonlist",
             self.data.demon.base.position,
             self.data.demon.base.name // FIXME: flatten the structs, holy shit
         )
