@@ -23,9 +23,12 @@ impl MinimalDemon {
     }
 
     pub async fn by_position(position: i16, connection: &mut PgConnection) -> Result<MinimalDemon> {
-        let row = sqlx::query!(r#"SELECT id, name as "name: String", position FROM demons WHERE position = $1"#, position)
-            .fetch_one(connection)
-            .await?;
+        let row = sqlx::query!(
+            r#"SELECT id, name as "name: String", position FROM demons WHERE position = $1"#,
+            position
+        )
+        .fetch_one(connection)
+        .await?;
 
         Ok(MinimalDemon {
             id: row.id,
