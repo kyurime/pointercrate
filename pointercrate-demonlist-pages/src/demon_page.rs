@@ -327,6 +327,13 @@ impl DemonPage {
                             }
                             span {
                                 b {
+                                    "Password: "
+                                }
+                                br;
+                                (level_data.password)
+                            }
+                            span {
+                                b {
                                     "Length: "
                                 }
                                 br;
