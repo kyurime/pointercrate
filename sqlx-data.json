@@ -746,6 +746,43 @@
     },
     "query": "SELECT MAX(position) as max_position FROM demons"
   },
+  "42c6276751f0cc6c64d730bef292deb38d16e835f697549b00dc9742eda3efc0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name: String",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": "Simple",
+              "name": "citext"
+            }
+          }
+        },
+        {
+          "name": "position",
+          "ordinal": 2,
+          "type_info": "Int2"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int2"
+        ]
+      }
+    },
+    "query": "SELECT id, name as \"name: String\", position FROM demons WHERE position = $1"
+  },
   "4518403fe84bbfff351bd18f5b1455f09e318cf59a45c9f47c6b198ee1e103e5": {
     "describe": {
       "columns": [],
@@ -864,16 +901,6 @@
       }
     },
     "query": "SELECT demons.id AS demon_id, demons.name AS \"demon_name: String\", demons.position, demons.requirement, demons.level_id, CASE WHEN verifiers.link_banned THEN NULL ElSE demons.video END, demons.thumbnail,\n       verifiers.id AS verifier_id, verifiers.name AS \"verifier_name: String\", verifiers.banned AS verifier_banned,\n       publishers.id AS publisher_id, publishers.name AS \"publisher_name: String\", publishers.banned AS publisher_banned\nFROM demons\nINNER JOIN players AS verifiers ON verifiers.id=demons.verifier\nINNER JOIN players AS publishers ON publishers.id=demons.publisher\nWHERE demons.position=$1"
-  },
-  "499aabbf81756f01c54fe23e2be05cdefacef43fae73d469b19d96e345cf19a2": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "INSERT INTO players (name, link_banned) VALUES ('Riot', TRUE)"
   },
   "4cdbaa4240f4b3715d31dc0cd9ef959c6b5b2f00cbdb645823b602c46e20ac6e": {
     "describe": {
