@@ -505,7 +505,7 @@ impl PgCache {
                 Some(number) => Password::PasswordCopy(number as u32),
             },
             length: row.level_length,
-            object_count: row.level_objects_count
+            object_count: row.level_objects_count,
         };
 
         Ok(self.make_cache_entry(meta, level))
@@ -542,21 +542,22 @@ impl PgCache {
 
                 LevelObjectMeta {
                     object_count: processed.objects.len(),
-                    length_in_seconds: processed.length_in_seconds()
+                    length_in_seconds: processed.length_in_seconds(),
                 }
             },
-            Thunk::Processed(ref proc) => LevelObjectMeta {
-                object_count: proc.objects.len(),
-                length_in_seconds: proc.length_in_seconds()
-            },
+            Thunk::Processed(ref proc) =>
+                LevelObjectMeta {
+                    object_count: proc.objects.len(),
+                    length_in_seconds: proc.length_in_seconds(),
+                },
         };
         trace!("Finished parsing level data");
 
         sqlx::query!(
-            "INSERT INTO gj_level_data(level_id,level_password,level_length,level_objects_count) VALUES \
-             ($1,$2,$3,$4) ON CONFLICT(level_id) DO UPDATE SET \
-             level_id=EXCLUDED.level_id,level_password=EXCLUDED.level_password,level_length=EXCLUDED.\
-             level_length,level_objects_count=EXCLUDED.level_objects_count",
+            "INSERT INTO gj_level_data(level_id,level_password,level_length,level_objects_count) VALUES ($1,$2,$3,$4) ON \
+             CONFLICT(level_id) DO UPDATE SET \
+             level_id=EXCLUDED.level_id,level_password=EXCLUDED.level_password,level_length=EXCLUDED.level_length,\
+             level_objects_count=EXCLUDED.level_objects_count",
             level_id as i64,
             match data.password {
                 Password::NoCopy => None,
