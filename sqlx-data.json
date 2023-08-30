@@ -383,6 +383,21 @@
     },
     "query": "INSERT INTO active_user (id) VALUES ($1)"
   },
+  "14487437affceec5af50804478f28420c2b4e2fb0997e278f957187fd339ec9a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int4",
+          "Int4",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO gj_level_data(level_id,level_password,level_length,level_objects_count) VALUES ($1,$2,$3,$4) ON CONFLICT(level_id) DO UPDATE SET level_id=EXCLUDED.level_id,level_password=EXCLUDED.level_password,level_length=EXCLUDED.level_length,level_objects_count=EXCLUDED.level_objects_count"
+  },
   "152884feab0334b95b66f6cb5b7547f622ed02d63fac33561ee80b10448a9906": {
     "describe": {
       "columns": [
@@ -850,22 +865,15 @@
     },
     "query": "SELECT demons.id AS demon_id, demons.name AS \"demon_name: String\", demons.position, demons.requirement, demons.level_id, CASE WHEN verifiers.link_banned THEN NULL ElSE demons.video END, demons.thumbnail,\n       verifiers.id AS verifier_id, verifiers.name AS \"verifier_name: String\", verifiers.banned AS verifier_banned,\n       publishers.id AS publisher_id, publishers.name AS \"publisher_name: String\", publishers.banned AS publisher_banned\nFROM demons\nINNER JOIN players AS verifiers ON verifiers.id=demons.verifier\nINNER JOIN players AS publishers ON publishers.id=demons.publisher\nWHERE demons.position=$1"
   },
-  "48b4dfaa256d556abf54631a547cd7760c596a2730d649d060387f88b2c9c9c3": {
+  "499aabbf81756f01c54fe23e2be05cdefacef43fae73d469b19d96e345cf19a2": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
-        "Left": [
-          "Int8",
-          "Bytea",
-          "Int4",
-          "Text",
-          "Text",
-          "Text"
-        ]
+        "Left": []
       }
     },
-    "query": "INSERT INTO gj_level_data(level_id,level_data,level_password,time_since_upload,time_since_update,index_36) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT(level_id) DO UPDATE SET level_id=EXCLUDED.level_id,level_data=EXCLUDED.level_data,level_password=EXCLUDED.level_password,time_since_upload=EXCLUDED.time_since_upload,time_since_update=EXCLUDED.time_since_update,index_36=EXCLUDED.index_36"
+    "query": "INSERT INTO players (name, link_banned) VALUES ('Riot', TRUE)"
   },
   "4cdbaa4240f4b3715d31dc0cd9ef959c6b5b2f00cbdb645823b602c46e20ac6e": {
     "describe": {
@@ -3446,38 +3454,26 @@
           "type_info": "Int8"
         },
         {
-          "name": "level_data",
+          "name": "level_password",
           "ordinal": 1,
-          "type_info": "Bytea"
+          "type_info": "Int4"
         },
         {
-          "name": "level_password",
+          "name": "level_length",
           "ordinal": 2,
           "type_info": "Int4"
         },
         {
-          "name": "time_since_upload",
+          "name": "level_objects_count",
           "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "time_since_update",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "index_36",
-          "ordinal": 5,
-          "type_info": "Text"
+          "type_info": "Int4"
         }
       ],
       "nullable": [
         false,
-        false,
         true,
         false,
-        false,
-        true
+        false
       ],
       "parameters": {
         "Left": [
