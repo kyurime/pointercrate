@@ -294,22 +294,22 @@ impl DemonPage {
                     @match &self.integration {
                         GDIntegrationResult::DemonNotFoundByName => {
                             p.info-red {
-                                "A demon with this name was not found on the Geometry Dash servers. Please notify a list moderator of this, as it means they most likely misspelled the name!"
+                                "A demon with this name was not found on the 1.9 GDPS servers. Please notify a list moderator of this, as it means they most likely misspelled the name!"
                             }
                         }
                         GDIntegrationResult::DemonNotYetCached => {
                             p.info-yellow {
-                                "The data from the Geometry Dash servers has not yet been cached. Please wait a bit and refresh the page."
+                                "The data from the 1.9 GDPS servers has not yet been cached. Please wait a bit and refresh the page."
                             }
                         }
                         GDIntegrationResult::LevelDataNotFound => {
                             p.info-red {
-                                "It seems like this level has been deleted from the Geometry Dash servers"
+                                "It seems like this level has been deleted from the 1.9 GDPS servers."
                             }
                         }
                         GDIntegrationResult::LevelDataNotCached => {
                             p.info-red {
-                                "This demon's level data is not stored in our database, even though the demon ID was successfully resolved. This either indicates a (hopefully temporary) inconsistent database state, or an error in dash-rs' level data processing. If this error persists, please contact an administrator!"
+                                "This demon's level data is not stored in our database, even though the demon ID was successfully resolved. If this issue persists, please contact an administrator!"
                             }
                         }
                         GDIntegrationResult::Success(level, level_data, song) => {
