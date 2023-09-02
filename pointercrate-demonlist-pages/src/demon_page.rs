@@ -341,8 +341,17 @@ impl DemonPage {
                                     "Objects: "
                                 }
                                 br;
-                                (level_data.object_count)
+                                span #level_info_objects {
+                                    (level_data.object_count)
+                                }
                             }
+                            // rust doesn't have a built in way to format with commas
+                            // shift the work onto the browser instead
+                            (PreEscaped(format!(r##"
+                            <script>
+                            document.querySelector("#level_info_objects").textContent = new Intl.NumberFormat().format({0});
+                            </script>
+                            "##, level_data.object_count)))
                             @if let Some(song) = song {
                                 span style = "width: 100%"{
                                     b {
