@@ -228,11 +228,6 @@ impl DemonPage {
                             }
                         }
                     }
-                    (PreEscaped(format!(r#"
-                    <script>
-                    document.getElementById("demon-heading").addEventListener('click', () => navigator.clipboard.writeText('https://pointercrate.xyze.dev/demonlist/permalink/{}/'))
-                    </script>
-                    "#, self.data.demon.base.id)))
                     h3 {
                         @if self.data.creators.len() > 3 {
                             "by " (self.data.creators[0].name) " and "
