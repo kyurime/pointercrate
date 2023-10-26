@@ -14,9 +14,8 @@ use pointercrate_demonlist::{
         claim::{ListedClaim, PatchPlayerClaim, PlayerClaim, PlayerClaimPagination},
         DatabasePlayer, FullPlayer, PatchPlayer, Player, PlayerPagination, RankedPlayer, RankingPagination,
     },
-    LIST_HELPER,
+    LIST_HELPER, LIST_MODERATOR,
 };
-use pointercrate_user::MODERATOR;
 use pointercrate_user_api::auth::TokenAuth;
 use rocket::{http::Status, serde::json::Json, State};
 use serde::Deserialize;
@@ -119,7 +118,7 @@ pub async fn patch_claim(player_id: i32, user_id: i32, mut auth: TokenAuth, data
     let claim = PlayerClaim::get(user_id, player_id, &mut auth.connection).await;
 
     if data.verified.is_some() {
-        auth.require_permission(MODERATOR)?;
+        auth.require_permission(LIST_MODERATOR)?;
     }
 
     let claim = match claim {
@@ -156,7 +155,7 @@ pub async fn patch_claim(player_id: i32, user_id: i32, mut auth: TokenAuth, data
 
 #[rocket::delete("/<player_id>/claims/<user_id>")]
 pub async fn delete_claim(player_id: i32, user_id: i32, mut auth: TokenAuth) -> Result<Status> {
-    auth.require_permission(MODERATOR)?;
+    auth.require_permission(LIST_MODERATOR)?;
 
     let claim = PlayerClaim::get(user_id, player_id, &mut auth.connection).await?;
 
@@ -168,7 +167,7 @@ pub async fn delete_claim(player_id: i32, user_id: i32, mut auth: TokenAuth) -> 
 
 #[rocket::get("/claims")]
 pub async fn paginate_claims(mut auth: TokenAuth, pagination: Query<PlayerClaimPagination>) -> Result<Response2<Json<Vec<ListedClaim>>>> {
-    auth.require_permission(MODERATOR)?;
+    auth.require_permission(LIST_MODERATOR)?;
 
     let mut pagination = pagination.0;
 

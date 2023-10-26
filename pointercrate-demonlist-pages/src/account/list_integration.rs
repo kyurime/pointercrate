@@ -5,8 +5,8 @@ use pointercrate_core_pages::{
     error::ErrorFragment,
     util::{filtered_paginator, paginator},
 };
-use pointercrate_demonlist::player::claim::PlayerClaim;
-use pointercrate_user::{sqlx::PgConnection, AuthenticatedUser, MODERATOR};
+use pointercrate_demonlist::{player::claim::PlayerClaim, LIST_MODERATOR};
+use pointercrate_user::{sqlx::PgConnection, AuthenticatedUser};
 use pointercrate_user_pages::account::AccountPageTab;
 
 pub struct ListIntegrationTab(#[doc = "discord invite url"] pub &'static str);
@@ -59,7 +59,7 @@ impl AccountPageTab for ListIntegrationTab {
                 .body()
             },
         };
-        let is_moderator = permissions.require_permission(user.inner().permissions, MODERATOR).is_ok();
+        let is_moderator = permissions.require_permission(user.inner().permissions, LIST_MODERATOR).is_ok();
 
         html! {
             div.left {
