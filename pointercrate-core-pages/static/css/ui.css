@@ -21,7 +21,8 @@
 
 /* Link styles */
 
-a.link {
+a.link,
+a.internal-link {
   color: #ce8bff;
 }
 

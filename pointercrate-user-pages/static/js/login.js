@@ -82,7 +82,11 @@ function intializeRegisterForm() {
   });
 }
 
-$(document).ready(function() {
+function initializePasskeyForm() {
+  
+}
+
+$(document).ready(async () => {
   initializeLoginForm();
   intializeRegisterForm();
 });

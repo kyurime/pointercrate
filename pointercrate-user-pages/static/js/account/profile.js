@@ -2,6 +2,7 @@
 
 import {
   del,
+  get,
   displayError,
   EditorBackend,
   Form,
@@ -13,6 +14,22 @@ import {
   typeMismatch,
   valueMissing,
 } from "/static/core/js/modules/form.js";
+
+async function determinePasskeySupported() {
+  // from <https://web.dev/articles/passkey-registration>
+  if (window.PublicKeyCredential &&
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
+    PublicKeyCredential.isConditionalMediationAvailable) {
+    const results = await Promise.all([
+      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(),
+      PublicKeyCredential.isConditionalMediationAvailable(),
+    ]);
+
+    return results.every(r => r === true);
+  }
+
+  return false;
+}
 
 function setupGetAccessToken() {
   var accessTokenArea = document.getElementById("token-area");
@@ -209,6 +226,82 @@ function setupEditAccount() {
       .then(() => window.location.reload())
       .catch(displayError(deleteAccountForm));
   });
+
+  var addPasskeyDialog = document.getElementById("add-passkey-dialog");
+  var addPasskeyForm = new Form(
+    addPasskeyDialog.getElementsByTagName("form")[0]
+  );
+
+  document.getElementById("add-passkey").addEventListener("click", () => {
+    $(addPasskeyDialog.parentElement).show();
+  });
+
+  var passkeyTitle = addPasskeyForm.input("passkey-name");
+  passkeyTitle.addValidators({
+    "Passkey title required": valueMissing,
+  });
+
+  addPasskeyForm.onSubmit(async () => {
+    if (!(await determinePasskeySupported())) {
+      return displayError(addPasskeyForm)({
+        data: {
+          message: "Your browser does not support this feature!", code: 10010
+        }
+      });
+    }
+
+    const get_req = await get("/api/v1/auth/me/");
+
+    const profile_data = get_req.data.data;
+
+    try {
+      const credential_options = {
+        challenge: new Uint8Array(), // this field supposedly goes unused
+        rp: {
+          name: "1.9 GDPS Demonlist",
+          id: "localhost",
+        },
+        user: {
+          id: Uint8Array.from(profile_data.id),
+          name: profile_data.name,
+          displayName: profile_data.display_name,
+        },
+        pubKeyCredParams: [{
+          alg: -7, type: "public-key"
+        }, {
+          alg: -257, type: "public-key"
+        }],
+  /*
+        excludeCredentials: [{
+          id: *****,
+          type: 'public-key',
+          transports: ['internal'],
+        }],
+  */
+        authenticatorSelection: {
+          requireResidentKey: true,
+        }
+      };
+  
+      console.log(credential_options);
+  
+      const credential = await navigator.credentials.create({
+        publicKey: credential_options
+      });
+  
+      console.log(credential);
+    } catch (e) {
+      return displayError(addPasskeyForm)(e);
+    }
+/*
+    del("/api/v1/auth/me/", {
+      "If-Match": window.etag,
+      Authorization: "Basic " + btoa(window.username + ":" + deleteAuth.value),
+    })
+      .then(() => window.location.reload())
+      .catch(displayError(deleteAccountForm));
+*/
+  });
 }
 
 function setupInvalidateToken() {
@@ -247,7 +340,9 @@ function setupInvalidateToken() {
   });
 }
 
-export function initialize() {
+export async function initialize() {
+  await determinePasskeySupported();
+
   setupGetAccessToken();
   setupEditAccount();
   setupInvalidateToken();

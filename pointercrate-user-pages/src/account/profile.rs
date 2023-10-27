@@ -115,6 +115,26 @@ impl AccountPageTab for ProfileTab {
                         input.button.purple.hover #change-password type = "button" style = "margin: 15px auto 0px;" value="Change Password";
                     }
                 }
+                div.panel.fade {
+                    h1.underlined.pad {
+                        "Account Security"
+                    }
+                    div.flex.space.wrap #things {
+                        p.info-red.output style = "margin: 10px" {}
+                        p.info-green.output style = "margin: 10px" {}
+                        span {
+                            b {
+                                "Passkeys: "
+                            }
+                            p {
+                                "A listing of passkeys you have added. Passkeys are an alternative, passwordless method for logging into the site. You can have multiple passkeys associated with one account."
+                            }
+                        }
+                    }
+                    div.flex.no-stretch {
+                        input.button.purple.hover #add-passkey type = "button" style = "margin: 15px auto 0px;" value="Add Passkey";
+                    }
+                }
             }
             div.right {
                 div.panel.fade {
@@ -173,6 +193,7 @@ impl AccountPageTab for ProfileTab {
             (edit_email_address_dialog())
             (change_password_dialog())
             (delete_account_dialog())
+            (add_passkey_dialog())
         }
     }
 }
@@ -326,6 +347,32 @@ fn delete_account_dialog() -> Markup {
                         p.error {}
                     }
                     input.button.red.hover type = "submit" style = "margin: 15px auto 0px;" value="Delete";
+                }
+            }
+        }
+    }
+}
+
+fn add_passkey_dialog() -> Markup {
+    html! {
+        div.overlay.closable {
+            div.dialog #add-passkey-dialog {
+                span.plus.cross.hover {}
+                h2.underlined.pad {
+                    "Add Passkey:"
+                }
+                p {
+                    "The passkey title is used for reference. Pressing create will prompt the browser to create a passkey, which will require additional input."
+                }
+                form.flex.col novalidate = "" {
+                    p.info-red.output {}
+                    p.info-green.output {}
+                    span.form-input #passkey-name {
+                        label for = "passkey-name" {"Passkey title:"}
+                        input type = "text" name = "passkey_name" required = "";
+                        p.error {}
+                    }
+                    input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Create";
                 }
             }
         }

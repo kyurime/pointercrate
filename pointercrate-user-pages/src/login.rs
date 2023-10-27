@@ -42,7 +42,8 @@ fn login_page_body() -> Markup {
                             p.error {}
                         }
                         div.grow {}
-                        input.button.purple.hover type = "submit" style = "margin: 15px auto 0px;" value="Log in";
+                        input.button.purple.hover type = "submit" style = "margin: 15px auto 5px;" value="Log in";
+                        a.internal-link #login-passkey style="display: hidden;" {"Use a passkey"}
                     }
                 }
                 div.flex.col {
