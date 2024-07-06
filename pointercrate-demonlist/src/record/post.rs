@@ -151,10 +151,6 @@ impl NormalizedSubmission {
             Some(ref raw) => {
                 let _ = Url::parse(raw).map_err(|_| DemonlistError::MalformedRawUrl)?;
             },
-            None if self.status == RecordStatus::Submitted => {
-                // list mods can submit without raw
-                return Err(DemonlistError::RawRequired);
-            },
             _ => (),
         }
 

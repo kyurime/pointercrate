@@ -181,7 +181,7 @@ pub enum DemonlistError {
     /// `422 UNPROCESSABLE ENTITY` variant
     ///
     /// Error Code `42232`
-    #[display(fmt = "Raw footage much be provided to submit this record")]
+    #[display(fmt = "Raw footage must be provided to submit this record")]
     RawRequired, //hehe
 
     /// `422 UNPROCESSABLE ENTITY` variant
