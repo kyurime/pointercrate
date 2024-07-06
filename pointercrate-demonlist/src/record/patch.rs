@@ -60,13 +60,18 @@ impl FullRecord {
         }
 
         match (data.demon, data.demon_id) {
-            (Some(demon_name), None) =>
+            (Some(demon_name), None) => {
                 self.set_demon(MinimalDemon::by_name(demon_name.as_ref(), connection).await?, connection)
-                    .await?,
+                    .await?
+            },
             (None, Some(demon_id)) => self.set_demon(MinimalDemon::by_id(demon_id, connection).await?, connection).await?,
             (Some(_), Some(_)) => return Err(CoreError::MutuallyExclusive.into()),
             _ => (),
         }
+
+        // Not all record update require recomputing scores (for example, changing status from "submitted" to "under consideration")
+        // but the logic for correctly determining this is hard, and updating scores of individual players cheap, so we do not bother.
+        self.player.update_score(connection).await?;
 
         Ok(self)
     }
@@ -77,7 +82,7 @@ impl FullRecord {
         if self.player.id == player && self.demon.id == demon {
             warn!("Record::ensure_invariants was called, but the given player and demon ids match those we already have. Doing nothing.");
 
-            return Ok(())
+            return Ok(());
         }
 
         match self.status {
@@ -197,14 +202,14 @@ impl FullRecord {
         let video = crate::video::validate(&video)?;
 
         if Some(&video) == self.video.as_ref() {
-            return Ok(())
+            return Ok(());
         }
 
         if let Some(row) = sqlx::query!(r#"SELECT id FROM records WHERE video = $1"#, video.to_string())
             .fetch_optional(&mut *connection)
             .await?
         {
-            return Err(DemonlistError::DuplicateVideo { id: row.id })
+            return Err(DemonlistError::DuplicateVideo { id: row.id });
         }
 
         sqlx::query!("UPDATE records SET video = $1::text WHERE id = $2", video, self.id)
@@ -220,7 +225,7 @@ impl FullRecord {
         let requirement = demon.requirement(connection).await?;
 
         if self.progress < requirement {
-            return Err(DemonlistError::InvalidProgress { requirement })
+            return Err(DemonlistError::InvalidProgress { requirement });
         }
 
         self.ensure_invariants(self.player.id, self.demon.id, connection).await?;
@@ -238,9 +243,11 @@ impl FullRecord {
     ///
     /// If the new player has a record that would stand in conflict with this one, this records
     /// takes precedence and overrides the existing one.
+    ///
+    /// If this record is approved, updates the score of the old holder.
     pub async fn set_player(&mut self, player: DatabasePlayer, connection: &mut PgConnection) -> Result<()> {
         if player.banned && self.status != RecordStatus::Rejected {
-            return Err(DemonlistError::PlayerBanned)
+            return Err(DemonlistError::PlayerBanned);
         }
 
         info!("Setting player of record {} to {}", self, player);
@@ -248,8 +255,10 @@ impl FullRecord {
         self.ensure_invariants(player.id, self.demon.id, connection).await?;
 
         sqlx::query!("UPDATE records SET player = $1 WHERE id = $2", player.id, self.id)
-            .execute(connection)
+            .execute(&mut *connection)
             .await?;
+
+        self.player.update_score(connection).await?;
 
         self.player = player;
 
@@ -345,7 +354,7 @@ impl FullRecord {
         let requirement = self.demon.requirement(&mut *connection).await?;
 
         if progress > 100 || progress < requirement {
-            return Err(DemonlistError::InvalidProgress { requirement })
+            return Err(DemonlistError::InvalidProgress { requirement });
         }
 
         if self.status == RecordStatus::Approved {

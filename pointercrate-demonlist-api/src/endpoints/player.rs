@@ -1,9 +1,10 @@
 use crate::{config, ratelimits::DemonlistRatelimits};
+use log::warn;
 use pointercrate_core::{error::CoreError, pool::PointercratePool};
 use pointercrate_core_api::{
     error::Result,
     etag::{Precondition, TaggableExt, Tagged},
-    pagination_response,
+    pagination::pagination_response,
     query::Query,
     response::Response2,
 };
@@ -26,7 +27,6 @@ pub async fn paginate(
     pool: &State<PointercratePool>, query: Query<PlayerPagination>, auth: Option<TokenAuth>,
 ) -> Result<Response2<Json<Vec<Player>>>> {
     let mut pagination = query.0;
-    let mut connection = pool.connection().await?;
 
     if let Some(auth) = auth {
         if !auth.has_permission(LIST_HELPER) {
@@ -36,39 +36,12 @@ pub async fn paginate(
         pagination.banned = Some(false);
     }
 
-    let mut players = pagination.page(&mut connection).await?;
-    let (max_id, min_id) = Player::extremal_player_ids(&mut connection).await?;
-
-    pagination_response!(
-        "/api/v1/players/",
-        players,
-        pagination,
-        min_id,
-        max_id,
-        before_id,
-        after_id,
-        base.id
-    )
+    Ok(pagination_response("/api/v1/players/", pagination, &mut *pool.connection().await?).await?)
 }
 
 #[rocket::get("/ranking")]
 pub async fn ranking(pool: &State<PointercratePool>, query: Query<RankingPagination>) -> Result<Response2<Json<Vec<RankedPlayer>>>> {
-    let mut pagination = query.0;
-    let mut connection = pool.connection().await?;
-
-    let mut players = pagination.page(&mut connection).await?;
-    let max_index = RankedPlayer::max_index(&mut connection).await?;
-
-    pagination_response!(
-        "/api/v1/players/ranking/",
-        players,
-        pagination,
-        1,
-        max_index,
-        before_index,
-        after_index,
-        index
-    )
+    Ok(pagination_response("/api/v1/players/ranking/", query.0, &mut *pool.connection().await?).await?)
 }
 
 #[rocket::get("/<player_id>")]
@@ -76,7 +49,7 @@ pub async fn get(player_id: i32, pool: &State<PointercratePool>) -> Result<Tagge
     let mut connection = pool.connection().await?;
 
     Ok(Tagged(
-        Player::by_id(player_id, &mut connection).await?.upgrade(&mut connection).await?,
+        Player::by_id(player_id, &mut *connection).await?.upgrade(&mut *connection).await?,
     ))
 }
 
@@ -128,22 +101,23 @@ pub async fn patch_claim(player_id: i32, user_id: i32, mut auth: TokenAuth, data
                     member_id: user_id,
                     player_id,
                 }
-                .into())
+                .into());
             }
 
             if !claim.verified {
-                return Err(DemonlistError::ClaimUnverified.into())
+                return Err(DemonlistError::ClaimUnverified.into());
             }
 
             claim
         },
         Ok(claim) => claim,
-        Err(_) =>
+        Err(_) => {
             return Err(DemonlistError::ClaimNotFound {
                 member_id: user_id,
                 player_id,
             }
-            .into()),
+            .into())
+        },
     };
 
     let claim = claim.apply_patch(data.0, &mut auth.connection).await?;
@@ -169,24 +143,7 @@ pub async fn delete_claim(player_id: i32, user_id: i32, mut auth: TokenAuth) -> 
 pub async fn paginate_claims(mut auth: TokenAuth, pagination: Query<PlayerClaimPagination>) -> Result<Response2<Json<Vec<ListedClaim>>>> {
     auth.require_permission(LIST_MODERATOR)?;
 
-    let mut pagination = pagination.0;
-
-    let mut claims = pagination.page(&mut auth.connection).await?;
-    let (max_id, min_id) = match ListedClaim::extremal_ids(&mut auth.connection).await {
-        Err(_) => return Ok(Response2::json(Vec::new())), // handle empty table case!
-        Ok(data) => data,
-    };
-
-    pagination_response!(
-        "/api/v1/players/claims/",
-        claims,
-        pagination,
-        min_id,
-        max_id,
-        before_id,
-        after_id,
-        id
-    )
+    Ok(pagination_response("/api/v1/players/claims/", pagination.0, &mut auth.connection).await?)
 }
 
 #[derive(Deserialize, Debug)]
@@ -209,44 +166,45 @@ pub async fn geolocate_nationality(
     let claim = PlayerClaim::get(auth.user.inner().id, player_id, &mut auth.connection).await?;
 
     if !claim.verified {
-        return Err(DemonlistError::ClaimUnverified.into())
+        return Err(DemonlistError::ClaimUnverified.into());
     }
 
     ratelimits.geolocate(ip)?;
 
     let response = reqwest::get(format!(
         "https://ipgeolocation.abstractapi.com/v1/?api_key={}&ip_address={}&fields=security,country_code,region_iso_code",
-        config::abstract_api_key().ok_or(CoreError::InternalServerError {
-            message: "No API key for abstract configured".to_string()
-        })?,
+        config::abstract_api_key().ok_or_else(|| CoreError::internal_server_error("No API key for abstract configured"))?,
         ip
     ))
     .await
-    .map_err(|err| {
-        CoreError::InternalServerError {
-            message: format!("Ip Geolocation failed: {}", err),
-        }
-    })?;
+    .map_err(|err| CoreError::internal_server_error(format!("Ip Geolocation failed: {}", err)))?;
 
     let data = response.json::<GeolocationResponse>().await.map_err(|err| {
-        CoreError::InternalServerError {
-            message: format!("Ip Geolocation succeeded, but we could not deserialize the response: {}", err),
-        }
+        CoreError::internal_server_error(format!(
+            "Ip Geolocation succeeded, but we could not deserialize the response: {}",
+            err
+        ))
     })?;
 
     if data.security.is_vpn {
-        return Err(DemonlistError::VpsDetected.into())
+        return Err(DemonlistError::VpsDetected.into());
     }
 
-    let nationality = Nationality::by_country_code_or_name(&data.country_code, &mut auth.connection).await?;
-
-    player.set_nationality(nationality, &mut auth.connection).await?;
-
-    if ["US", "CA", "GB", "AU"].map(ToString::to_string).contains(&data.country_code) {
-        if let Some(region) = data.region_iso_code {
-            player.set_subdivision(region, &mut auth.connection).await?;
-        }
+    let mut nationality = Nationality::by_country_code_or_name(&data.country_code, &mut auth.connection).await?;
+    if let Some(region) = data.region_iso_code {
+        nationality.subdivision = nationality
+            .subdivision_by_code(&region, &mut auth.connection)
+            .await
+            .inspect_err(|err| {
+                warn!(
+                    "No subdivision {} for nation {}, or nation does not support subdivisions: {:?}",
+                    region, nationality.iso_country_code, err
+                )
+            })
+            .ok();
     }
+
+    player.set_nationality(Some(nationality), &mut auth.connection).await?;
 
     auth.commit().await?;
 

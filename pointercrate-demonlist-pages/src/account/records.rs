@@ -54,13 +54,14 @@ impl AccountPageTab for RecordsPage {
     async fn content(&self, _user: &AuthenticatedUser, _permissions: &PermissionsManager, connection: &mut PgConnection) -> Markup {
         let demons = match current_list(connection).await {
             Ok(demons) => demons,
-            Err(err) =>
+            Err(err) => {
                 return ErrorFragment {
                     status: err.status_code(),
                     reason: "Internal Server Error".to_string(),
                     message: err.to_string(),
                 }
-                .body(),
+                .body()
+            },
         };
 
         html! {
@@ -319,7 +320,7 @@ fn note_adder() -> Markup {
                     b {
                         "Public note:"
                     }
-                    input #add-note-is-public-checkbox type = "checkbox" name = "is_public" style="margin-left: 0.5em;";
+                    input #add-note-is-public-checkbox type = "checkbox" name = "is_public";
                 }
             }
             p.info-red.output {}

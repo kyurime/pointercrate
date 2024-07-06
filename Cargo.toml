@@ -11,6 +11,17 @@ members = [
     "pointercrate-user-pages",
     "pointercrate-integrate",
 
-    # Create only containing integration tests
-    "pointercrate-test"
+    # Crate only containing integration tests
+    "pointercrate-test",
+
+    # Crate containing an example setup for a custom list
+    "pointercrate-example"
 ]
+resolver = "2"
+
+[workspace.package]
+authors = ["stadust"]
+description = "Libraries for creating pointercrate-like demonlist websites"
+homepage = "https://pointercrate.com"
+edition = "2021"
+repository = "https://github.com/stadust/pointercrate"

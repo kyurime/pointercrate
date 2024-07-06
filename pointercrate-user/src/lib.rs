@@ -11,10 +11,12 @@ pub use self::{
     patch::PatchUser,
 };
 use crate::error::{Result, UserError};
-use pointercrate_core::{etag::Taggable, permission::Permission};
+use pointercrate_core::{
+    etag::Taggable,
+    permission::{Permission, PermissionsManager},
+};
 use serde::Serialize;
 pub use sqlx;
-use sqlx::PgConnection;
 use std::{
     fmt::{Display, Formatter},
     hash::Hash,
@@ -31,6 +33,12 @@ mod video;
 
 pub const ADMINISTRATOR: Permission = Permission::new("Administrator", 0x4000);
 pub const MODERATOR: Permission = Permission::new("Moderator", 0x2000);
+
+pub fn default_permissions_manager() -> PermissionsManager {
+    PermissionsManager::new(vec![ADMINISTRATOR, MODERATOR])
+        .assigns(ADMINISTRATOR, MODERATOR)
+        .implies(ADMINISTRATOR, MODERATOR)
+}
 
 /// Model representing a user in the database
 #[derive(Debug, Serialize, Hash, Eq, PartialEq)]
@@ -80,7 +88,7 @@ impl User {
 
     pub fn validate_name(name: &str) -> Result<()> {
         if name.len() < 3 || name != name.trim() {
-            return Err(UserError::InvalidUsername)
+            return Err(UserError::InvalidUsername);
         }
 
         Ok(())
@@ -91,17 +99,5 @@ impl User {
             Some(ref name) => name,
             None => self.name.as_ref(),
         }
-    }
-
-    /// Gets the maximal and minimal member id currently in use
-    ///
-    /// The returned tuple is of the form (max, min)
-    pub async fn extremal_member_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!(
-            r#"SELECT COALESCE(MAX(member_id), 0) AS "max_id!: i32", COALESCE(MIN(member_id), 0) AS "min_id!: i32" FROM members"#
-        )
-        .fetch_one(connection)
-        .await?; // FIXME: crashes on empty table
-        Ok((row.max_id, row.min_id))
     }
 }

@@ -136,7 +136,7 @@ impl Script {
     }
 }
 
-impl Render for &Script {
+impl Render for Script {
     fn render(&self) -> Markup {
         html! {
             @if self.module {
@@ -171,15 +171,6 @@ impl Render for &Meta {
         }
     }
 }
-
-// this should be handled automatically on newer versions of maud
-/*
-impl Render for Script {
-    fn render(&self) -> Markup {
-        (&self).render()
-    }
-}
-*/
 
 /// Adds a version query string to a url based on the package version.
 ///

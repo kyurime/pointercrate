@@ -5,21 +5,19 @@ use crate::{
     player::DatabasePlayer,
     record::approved_records_on,
 };
-use chrono::{DateTime, FixedOffset};
+use chrono::NaiveDateTime;
 use futures::StreamExt;
 use sqlx::{Error, PgConnection};
 
 impl MinimalDemon {
     pub async fn by_id(id: i32, connection: &mut PgConnection) -> Result<MinimalDemon> {
-        let row = sqlx::query!(r#"SELECT id, name as "name: String", position FROM demons WHERE id = $1"#, id)
+        sqlx::query_as!(MinimalDemon, r#"SELECT id, name, position FROM demons WHERE id = $1"#, id)
             .fetch_one(connection)
-            .await?;
-
-        Ok(MinimalDemon {
-            id,
-            position: row.position,
-            name: row.name,
-        })
+            .await
+            .map_err(|err| match err {
+                Error::RowNotFound => DemonlistError::DemonNotFound { demon_id: id },
+                _ => err.into(),
+            })
     }
 
     pub async fn by_position(position: i16, connection: &mut PgConnection) -> Result<MinimalDemon> {
@@ -38,11 +36,7 @@ impl MinimalDemon {
     }
 
     pub async fn by_name(name: &str, connection: &mut PgConnection) -> Result<MinimalDemon> {
-        let mut stream = sqlx::query!(
-            r#"SELECT id, name as "name: String", position FROM demons WHERE name = cast($1::text as citext)"#, // FIXME(sqlx) once CITEXT is supported
-            name.to_string()
-        )
-        .fetch(connection);
+        let mut stream = sqlx::query!(r#"SELECT id, name, position FROM demons WHERE name = $1"#, name.to_string()).fetch(connection);
 
         let mut demon = None;
         let mut further_demons = Vec::new();
@@ -66,10 +60,9 @@ impl MinimalDemon {
         if further_demons.is_empty() {
             match demon {
                 Some(demon) => Ok(demon),
-                None =>
-                    Err(DemonlistError::DemonNotFoundName {
-                        demon_name: name.to_string(),
-                    }),
+                None => Err(DemonlistError::DemonNotFoundName {
+                    demon_name: name.to_string(),
+                }),
             }
         } else {
             further_demons.extend(demon);
@@ -107,11 +100,9 @@ impl Demon {
             .fetch_one(connection)
             .await
             .map(Into::into)
-            .map_err(|err| {
-                match err {
-                    Error::RowNotFound => DemonlistError::DemonNotFound { demon_id: id },
-                    _ => err.into(),
-                }
+            .map_err(|err| match err {
+                Error::RowNotFound => DemonlistError::DemonNotFound { demon_id: id },
+                _ => err.into(),
             })
     }
 
@@ -120,28 +111,20 @@ impl Demon {
             .fetch_one(connection)
             .await
             .map(Into::into)
-            .map_err(|err| {
-                match err {
-                    Error::RowNotFound => DemonlistError::DemonNotFoundPosition { demon_position: position },
-                    _ => err.into(),
-                }
+            .map_err(|err| match err {
+                Error::RowNotFound => DemonlistError::DemonNotFoundPosition { demon_position: position },
+                _ => err.into(),
             })
     }
 }
 
 macro_rules! query_many_demons {
     ($connection:expr, $query:expr, $id:expr) => {{
-        let mut stream = sqlx::query!($query, $id).fetch($connection);
+        let mut stream = sqlx::query_as!(MinimalDemon, $query, $id).fetch($connection);
         let mut demons = Vec::new();
 
         while let Some(row) = stream.next().await {
-            let row = row?;
-
-            demons.push(MinimalDemon {
-                id: row.id,
-                position: row.position,
-                name: row.name,
-            })
+            demons.push(row?)
         }
 
         Ok(demons)
@@ -151,7 +134,7 @@ macro_rules! query_many_demons {
 pub async fn published_by(player: &DatabasePlayer, connection: &mut PgConnection) -> Result<Vec<MinimalDemon>> {
     query_many_demons!(
         connection,
-        r#"SELECT id, name AS "name: String", position FROM demons WHERE publisher = $1"#,
+        r#"SELECT id, name, position FROM demons WHERE publisher = $1"#,
         player.id
     )
 }
@@ -159,7 +142,7 @@ pub async fn published_by(player: &DatabasePlayer, connection: &mut PgConnection
 pub async fn verified_by(player: &DatabasePlayer, connection: &mut PgConnection) -> Result<Vec<MinimalDemon>> {
     query_many_demons!(
         connection,
-        r#"SELECT id, name as "name: String", position FROM demons WHERE verifier = $1"#,
+        r#"SELECT id, name, position FROM demons WHERE verifier = $1"#,
         player.id
     )
 }
@@ -215,8 +198,8 @@ pub async fn current_list(connection: &mut PgConnection) -> Result<Vec<Demon>> {
         .collect())
 }
 
-pub async fn list_at(connection: &mut PgConnection, at: DateTime<FixedOffset>) -> Result<Vec<TimeShiftedDemon>> {
-    let mut stream = sqlx::query_file!("sql/all_demons_at.sql", at.naive_utc()).fetch(connection);
+pub async fn list_at(connection: &mut PgConnection, at: NaiveDateTime) -> Result<Vec<TimeShiftedDemon>> {
+    let mut stream = sqlx::query_file!("sql/all_demons_at.sql", at).fetch(connection);
     let mut demons = Vec::new();
 
     while let Some(row) = stream.next().await {

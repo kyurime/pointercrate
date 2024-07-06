@@ -49,6 +49,7 @@ fn hide_subdivision_panel() -> Markup {
             div.cb-container.flex.no-stretch style="margin-bottom:10px" {
                 input #show-subdivisions-checkbox type = "checkbox" checked="";
                 i {"Show political subdivisions"}
+                input #show-subdivisions-checkbox type = "checkbox" checked="";
             }
         }
     }

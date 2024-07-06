@@ -11,7 +11,7 @@ impl AccountPageTab for UsersTab {
     fn should_display_for(&self, permissions_we_have: u16, permissions: &PermissionsManager) -> bool {
         for perm in &self.0 {
             if permissions.require_permission(permissions_we_have, *perm).is_ok() {
-                return true
+                return true;
             }
         }
 
@@ -93,7 +93,6 @@ impl AccountPageTab for UsersTab {
                                             @let name_in_snake_case = permission.name().to_lowercase().replace(' ', "-");
 
                                             label.cb-container.form-input #(name_in_snake_case) for = (name_in_snake_case) data-bit = (permission.bit()) {
-                                                input type = "checkbox" name = (name_in_snake_case);
                                                 i {
                                                     (permission.name())
                                                 }

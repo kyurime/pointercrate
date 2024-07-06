@@ -183,7 +183,10 @@ export class InteractiveWorldMap {
     }
 
     deselectSubdivision() {
-        return;
+        if (this.currentlySelected === undefined || !this.currentlySelected.id.includes("-"))
+            return;
+
+        this.select(this.currentlySelected.id.substring(0, 2));
     }
 
     deselect() {

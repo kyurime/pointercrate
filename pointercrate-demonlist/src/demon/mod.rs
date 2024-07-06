@@ -11,8 +11,8 @@ use crate::{
 };
 use derive_more::Display;
 use log::info;
-use pointercrate_core::{error::CoreError, etag::Taggable};
-use serde::Serialize;
+use pointercrate_core::etag::Taggable;
+use serde::{Deserialize, Serialize};
 use sqlx::PgConnection;
 use std::{
     collections::hash_map::DefaultHasher,
@@ -32,7 +32,7 @@ pub struct TimeShiftedDemon {
 }
 
 /// Struct modelling a demon. These objects are returned from the paginating `/demons/` endpoint
-#[derive(Debug, Serialize, Hash, Display, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Display, Eq, PartialEq)]
 #[display(fmt = "{}", base)]
 pub struct Demon {
     #[serde(flatten)]
@@ -60,7 +60,7 @@ pub struct Demon {
 }
 
 /// Absolutely minimal representation of a demon to be sent when a demon is part of another object
-#[derive(Debug, Hash, Serialize, Display, PartialEq, Eq, Clone)]
+#[derive(Debug, Hash, Serialize, Deserialize, Display, PartialEq, Eq, Clone)]
 #[display(fmt = "{} (at {})", name, position)]
 pub struct MinimalDemon {
     /// The [`Demon`]'s unique internal pointercrate ID
@@ -81,7 +81,7 @@ pub struct MinimalDemon {
 ///
 /// In addition to containing publisher/verifier information it also contains a list of the demon's
 /// creators and a list of accepted records
-#[derive(Debug, Serialize, Display, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Display, PartialEq, Eq, Hash)]
 #[display(fmt = "{}", demon)]
 pub struct FullDemon {
     #[serde(flatten)]
@@ -169,7 +169,7 @@ impl FullDemon {
 impl Demon {
     pub fn validate_requirement(requirement: i16) -> Result<()> {
         if !(0..=100).contains(&requirement) {
-            return Err(DemonlistError::InvalidRequirement)
+            return Err(DemonlistError::InvalidRequirement);
         }
 
         Ok(())
@@ -178,10 +178,10 @@ impl Demon {
     pub async fn validate_position(position: i16, connection: &mut PgConnection) -> Result<()> {
         // To prevent holes from being created in the list, the new position must lie between 1 and (current
         // last position + 1), inclusive
-        let maximal_position = Demon::max_position(connection).await.unwrap_or(0) + 1;
+        let maximal_position = Demon::max_position(connection).await? + 1;
 
         if position > maximal_position || position < 1 {
-            return Err(DemonlistError::InvalidPosition { maximal: maximal_position })
+            return Err(DemonlistError::InvalidPosition { maximal: maximal_position });
         }
 
         Ok(())
@@ -199,40 +199,19 @@ impl Demon {
         Ok(())
     }
 
-    /// Decrements the position of all demons with positions equal to or smaller than the given one,
-    /// by one.
-    async fn shift_up(until: i16, connection: &mut PgConnection) -> Result<()> {
-        info!("Shifting up all demons until {}", until);
-
-        sqlx::query!("UPDATE demons SET position = position - 1 WHERE position <= $1", until)
-            .execute(connection)
-            .await?;
-
-        Ok(())
-    }
-
-    /// Gets the current max position a demon has, or `CoreError::NotFound` if there are no demons
+    /// Gets the current max position a demon has, or `0` if there are no demons
     /// in the database
     pub async fn max_position(connection: &mut PgConnection) -> Result<i16> {
-        sqlx::query!("SELECT MAX(position) as max_position FROM demons")
+        Ok(sqlx::query!("SELECT MAX(position) as max_position FROM demons")
             .fetch_one(connection)
             .await?
             .max_position
-            .ok_or_else(|| CoreError::NotFound.into())
-    }
-
-    /// Gets the maximal and minimal submitter id currently in use
-    ///
-    /// The returned tuple is of the form (max, min)
-    pub async fn extremal_demon_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!(r#"SELECT MAX(id) AS "max_id!: i32", MIN(id) AS "min_id!: i32" FROM demons"#)
-            .fetch_one(connection)
-            .await?;
-        Ok((row.max_id, row.min_id))
+            .unwrap_or(0))
     }
 
     pub fn score(&self, progress: i16) -> f64 {
-        let mut score = 150f64 * f64::exp((1f64 - f64::from(self.base.position)) * (1f64 / 30f64).ln() / (-149f64));
+        let position = self.base.position;
+        let mut score = 150f64 * f64::exp((1f64 - f64::from(position)) * (1f64 / 30f64).ln() / (-149f64));
 
         if progress != 100 {
             score *= 0.25f64 + (f64::from(progress) - f64::from(self.requirement)) / (100f64 - f64::from(self.requirement)) * 0.25f64

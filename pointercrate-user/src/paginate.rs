@@ -1,7 +1,8 @@
 use crate::{error::Result, User};
 use futures::StreamExt;
 use pointercrate_core::{
-    error::CoreError,
+    first_and_last,
+    pagination::{PageContext, Paginatable, PaginationParameters, PaginationQuery, __pagination_compat},
     permission::Permission,
     util::{non_nullable, nullable},
 };
@@ -10,14 +11,8 @@ use sqlx::{postgres::PgRow, PgConnection, Row};
 
 #[derive(Deserialize, Debug, Clone, Serialize)]
 pub struct UserPagination {
-    #[serde(rename = "before", default, deserialize_with = "non_nullable")]
-    pub before_id: Option<i32>,
-
-    #[serde(rename = "after", default, deserialize_with = "non_nullable")]
-    pub after_id: Option<i32>,
-
-    #[serde(default, deserialize_with = "non_nullable")]
-    pub limit: Option<u8>,
+    #[serde(flatten)]
+    pub params: PaginationParameters,
 
     #[serde(default, deserialize_with = "non_nullable")]
     pub name: Option<String>,
@@ -35,38 +30,37 @@ pub struct UserPagination {
     pub any_permissions: Option<u16>,
 }
 
-impl UserPagination {
-    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<User>> {
-        if let Some(limit) = self.limit {
-            if !(1..=100).contains(&limit) {
-                return Err(CoreError::InvalidPaginationLimit.into())
-            }
+impl PaginationQuery for UserPagination {
+    fn parameters(&self) -> PaginationParameters {
+        self.params
+    }
+
+    fn with_parameters(&self, parameters: PaginationParameters) -> Self {
+        Self {
+            params: parameters,
+            ..self.clone()
         }
+    }
+}
 
-        if let (Some(after), Some(before)) = (self.before_id, self.after_id) {
-            if after < before {
-                return Err(CoreError::AfterSmallerBefore.into())
-            }
-        }
+impl Paginatable<UserPagination> for User {
+    first_and_last!("members", "member_id");
 
-        let order = if self.after_id.is_none() && self.before_id.is_some() {
-            "DESC"
-        } else {
-            "ASC"
-        };
+    async fn page(query: &UserPagination, connection: &mut PgConnection) -> std::result::Result<(Vec<User>, PageContext), sqlx::Error> {
+        let order = query.params.order();
 
-        let query = format!(include_str!("../sql/paginate_users.sql"), order);
+        let sql_query = format!(include_str!("../sql/paginate_users.sql"), order);
 
-        let mut stream = sqlx::query(&query)
-            .bind(self.before_id)
-            .bind(self.after_id)
-            .bind(self.name.as_ref())
-            .bind(self.display_name.as_ref())
-            .bind(self.display_name == Some(None))
-            .bind(self.has_permissions.map(|p| p as i32))
-            .bind(self.any_permissions.map(|p| p as i32))
-            .bind(self.name_contains.as_ref())
-            .bind(self.limit.unwrap_or(50) as i32 + 1)
+        let mut stream = sqlx::query(&sql_query)
+            .bind(query.params.before)
+            .bind(query.params.after)
+            .bind(query.name.as_ref())
+            .bind(query.display_name.as_ref())
+            .bind(query.display_name == Some(None))
+            .bind(query.has_permissions.map(|p| p as i32))
+            .bind(query.any_permissions.map(|p| p as i32))
+            .bind(query.name_contains.as_ref())
+            .bind(query.params.limit + 1)
             .fetch(connection);
 
         let mut users = Vec::new();
@@ -85,7 +79,11 @@ impl UserPagination {
             })
         }
 
-        Ok(users)
+        Ok(__pagination_compat(&query.params, users))
+    }
+
+    fn pagination_id(&self) -> i32 {
+        self.id
     }
 }
 

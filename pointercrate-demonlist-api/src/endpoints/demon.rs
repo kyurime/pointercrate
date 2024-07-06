@@ -3,7 +3,7 @@ use pointercrate_core::{audit::AuditLogEntry, pool::PointercratePool};
 use pointercrate_core_api::{
     error::Result,
     etag::{Precondition, TaggableExt, Tagged},
-    pagination_response,
+    pagination::pagination_response,
     query::Query,
     response::Response2,
 };
@@ -22,35 +22,14 @@ use rocket::{http::Status, serde::json::Json, State};
 
 #[rocket::get("/")]
 pub async fn paginate(pool: &State<PointercratePool>, pagination: Query<DemonIdPagination>) -> Result<Response2<Json<Vec<Demon>>>> {
-    let mut pagination = pagination.0;
-    let mut connection = pool.connection().await?;
-
-    let mut demons = pagination.page(&mut connection).await?;
-    let (max_id, min_id) = Demon::extremal_demon_ids(&mut connection).await?;
-
-    pagination_response!("/api/v2/demons/", demons, pagination, min_id, max_id, before_id, after_id, base.id)
+    Ok(pagination_response("/api/v2/demons/", pagination.0, &mut *pool.connection().await?).await?)
 }
 
 #[rocket::get("/listed")]
 pub async fn paginate_listed(
     pool: &State<PointercratePool>, pagination: Query<DemonPositionPagination>,
 ) -> Result<Response2<Json<Vec<Demon>>>> {
-    let mut pagination = pagination.0;
-    let mut connection = pool.connection().await?;
-
-    let mut demons = pagination.page(&mut connection).await?;
-    let max_position = Demon::max_position(&mut connection).await?;
-
-    pagination_response!(
-        "/api/v2/demons/listed/",
-        demons,
-        pagination,
-        1,
-        max_position,
-        before_position,
-        after_position,
-        base.position
-    )
+    Ok(pagination_response("/api/v2/demons/listed/", pagination.0, &mut *pool.connection().await?).await?)
 }
 
 #[rocket::get("/<demon_id>")]
@@ -65,7 +44,7 @@ pub async fn audit(demon_id: i32, mut auth: TokenAuth) -> Result<Json<Vec<AuditL
     let log = pointercrate_demonlist::demon::audit::audit_log_for_demon(demon_id, &mut auth.connection).await?;
 
     if log.is_empty() {
-        return Err(DemonlistError::DemonNotFound { demon_id }.into())
+        return Err(DemonlistError::DemonNotFound { demon_id }.into());
     }
 
     Ok(Json(log))
@@ -76,7 +55,7 @@ pub async fn movement_log(demon_id: i32, pool: &State<PointercratePool>) -> Resu
     let log = pointercrate_demonlist::demon::audit::movement_log_for_demon(demon_id, &mut *pool.connection().await?).await?;
 
     if log.is_empty() {
-        return Err(DemonlistError::DemonNotFound { demon_id }.into())
+        return Err(DemonlistError::DemonNotFound { demon_id }.into());
     }
 
     Ok(Json(log))

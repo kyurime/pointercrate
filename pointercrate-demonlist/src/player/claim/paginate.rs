@@ -1,21 +1,17 @@
-use crate::error::Result;
 use futures::StreamExt;
-use pointercrate_core::{audit::NamedId, error::CoreError, util::non_nullable};
+use pointercrate_core::{
+    audit::NamedId,
+    first_and_last,
+    pagination::{PageContext, Paginatable, PaginationParameters, PaginationQuery, __pagination_compat},
+    util::non_nullable,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgConnection, Row};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct PlayerClaimPagination {
-    #[serde(default, deserialize_with = "non_nullable")]
-    #[serde(rename = "before")]
-    pub before_id: Option<i32>,
-
-    #[serde(default, deserialize_with = "non_nullable")]
-    #[serde(rename = "after")]
-    pub after_id: Option<i32>,
-
-    #[serde(default, deserialize_with = "non_nullable")]
-    pub limit: Option<u8>,
+    #[serde(flatten)]
+    pub params: PaginationParameters,
 
     #[serde(default, deserialize_with = "non_nullable")]
     any_name_contains: Option<String>,
@@ -33,43 +29,33 @@ pub struct ListedClaim {
     verified: bool,
 }
 
-impl ListedClaim {
-    pub async fn extremal_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!(r#"SELECT MAX(id) AS "max_id!: i32", MIN(id) AS "min_id!: i32" FROM player_claims"#)
-            .fetch_one(connection)
-            .await?; // FIXME: crashes on empty table
-        Ok((row.max_id, row.min_id))
+impl PaginationQuery for PlayerClaimPagination {
+    fn parameters(&self) -> PaginationParameters {
+        self.params
+    }
+
+    fn with_parameters(&self, parameters: PaginationParameters) -> Self {
+        Self {
+            params: parameters,
+            ..self.clone()
+        }
     }
 }
 
-impl PlayerClaimPagination {
-    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<ListedClaim>> {
-        if let Some(limit) = self.limit {
-            if !(1..=100).contains(&limit) {
-                return Err(CoreError::InvalidPaginationLimit.into())
-            }
-        }
+impl Paginatable<PlayerClaimPagination> for ListedClaim {
+    first_and_last!("player_claims");
 
-        if let (Some(after), Some(before)) = (self.before_id, self.after_id) {
-            if after < before {
-                return Err(CoreError::AfterSmallerBefore.into())
-            }
-        }
+    async fn page(query: &PlayerClaimPagination, connection: &mut PgConnection) -> Result<(Vec<ListedClaim>, PageContext), sqlx::Error> {
+        let order = query.params.order();
 
-        let order = if self.after_id.is_none() && self.before_id.is_some() {
-            "DESC"
-        } else {
-            "ASC"
-        };
+        let sql_query = format!(include_str!("../../../sql/paginate_claims.sql"), order);
 
-        let query = format!(include_str!("../../../sql/paginate_claims.sql"), order);
-
-        let mut stream = sqlx::query(&query)
-            .bind(self.before_id)
-            .bind(self.after_id)
-            .bind(self.any_name_contains.as_ref())
-            .bind(self.verified)
-            .bind(self.limit.unwrap_or(50) as i32 + 1)
+        let mut stream = sqlx::query(&sql_query)
+            .bind(query.params.before)
+            .bind(query.params.after)
+            .bind(query.any_name_contains.as_ref())
+            .bind(query.verified)
+            .bind(query.params.limit + 1)
             .fetch(connection);
 
         let mut claims = Vec::new();
@@ -91,6 +77,10 @@ impl PlayerClaimPagination {
             })
         }
 
-        Ok(claims)
+        Ok(__pagination_compat(&query.params, claims))
+    }
+
+    fn pagination_id(&self) -> i32 {
+        self.id
     }
 }

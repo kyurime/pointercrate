@@ -1,12 +1,12 @@
 use crate::{
     demon::MinimalDemon,
-    error::Result,
     player::DatabasePlayer,
     record::{MinimalRecordPD, RecordStatus},
 };
 use futures::StreamExt;
 use pointercrate_core::{
-    error::CoreError,
+    first_and_last,
+    pagination::{PageContext, Paginatable, PaginationParameters, PaginationQuery, __pagination_compat},
     util::{non_nullable, nullable},
 };
 use serde::{Deserialize, Serialize};
@@ -14,16 +14,8 @@ use sqlx::{postgres::PgRow, PgConnection, Row};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct RecordPagination {
-    #[serde(default, deserialize_with = "non_nullable")]
-    #[serde(rename = "before")]
-    pub before_id: Option<i32>,
-
-    #[serde(default, deserialize_with = "non_nullable")]
-    #[serde(rename = "after")]
-    pub after_id: Option<i32>,
-
-    #[serde(default, deserialize_with = "non_nullable")]
-    pub limit: Option<u8>,
+    #[serde(flatten)]
+    pub params: PaginationParameters,
 
     progress: Option<i16>,
 
@@ -64,55 +56,44 @@ pub struct RecordPagination {
     pub submitter: Option<i32>,
 }
 
-impl RecordPagination {
-    /// Retrieves the page of records matching the pagination data in here
-    ///
-    /// Note that this method returns _one more record than requested_. This is used as a quick and
-    /// dirty way to determine if further pages exist: If the additional record was returned, more
-    /// pages obviously exist. This additional object is the last in the returned vector.
-    ///
-    /// Additionally, if _before_ is set, but not _after_, the page is returned in reverse order
-    /// (the additional object stays the last)
-    pub async fn page(&self, connection: &mut PgConnection) -> Result<Vec<MinimalRecordPD>> {
-        if let Some(limit) = self.limit {
-            if !(1..=100).contains(&limit) {
-                return Err(CoreError::InvalidPaginationLimit.into())
-            }
+impl PaginationQuery for RecordPagination {
+    fn parameters(&self) -> PaginationParameters {
+        self.params
+    }
+
+    fn with_parameters(&self, parameters: PaginationParameters) -> Self {
+        Self {
+            params: parameters,
+            ..self.clone()
         }
+    }
+}
 
-        if let (Some(after), Some(before)) = (self.before_id, self.after_id) {
-            if after < before {
-                return Err(CoreError::AfterSmallerBefore.into())
-            }
-        }
+impl Paginatable<RecordPagination> for MinimalRecordPD {
+    first_and_last!("records");
 
-        let limit = self.limit.unwrap_or(50) as i32;
+    async fn page(query: &RecordPagination, connection: &mut PgConnection) -> Result<(Vec<MinimalRecordPD>, PageContext), sqlx::Error> {
+        let order = query.params.order();
 
-        let order = if self.after_id.is_none() && self.before_id.is_some() {
-            "DESC"
-        } else {
-            "ASC"
-        };
+        let sql_query = format!(include_str!("../../sql/paginate_records.sql"), order);
 
-        let query = format!(include_str!("../../sql/paginate_records.sql"), order);
-
-        let mut stream = sqlx::query(&query)
-            .bind(self.before_id)
-            .bind(self.after_id)
-            .bind(self.progress)
-            .bind(self.progress_lt)
-            .bind(self.progress_gt)
-            .bind(self.demon_position)
-            .bind(self.demon_position_lt)
-            .bind(self.demon_position_gt)
-            .bind(self.status.map(|s| s.to_sql()))
-            .bind(self.demon.as_deref())
-            .bind(self.demon_id)
-            .bind(&self.video)
-            .bind(self.video == Some(None))
-            .bind(self.player)
-            .bind(self.submitter)
-            .bind(limit + 1)
+        let mut stream = sqlx::query(&sql_query)
+            .bind(query.params.before)
+            .bind(query.params.after)
+            .bind(query.progress)
+            .bind(query.progress_lt)
+            .bind(query.progress_gt)
+            .bind(query.demon_position)
+            .bind(query.demon_position_lt)
+            .bind(query.demon_position_gt)
+            .bind(query.status.map(|s| s.to_sql()))
+            .bind(query.demon.as_deref())
+            .bind(query.demon_id)
+            .bind(&query.video)
+            .bind(query.video == Some(None))
+            .bind(query.player)
+            .bind(query.submitter)
+            .bind(query.params.limit + 1)
             .fetch(&mut *connection);
 
         let mut records = Vec::new();
@@ -138,6 +119,10 @@ impl RecordPagination {
             })
         }
 
-        Ok(records)
+        Ok(__pagination_compat(&query.params, records))
+    }
+
+    fn pagination_id(&self) -> i32 {
+        self.id
     }
 }

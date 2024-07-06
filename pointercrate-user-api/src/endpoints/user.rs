@@ -4,7 +4,7 @@ use pointercrate_core::error::CoreError;
 use pointercrate_core_api::{
     error::Result,
     etag::{Precondition, Tagged},
-    pagination_response,
+    pagination::pagination_response,
     query::Query,
     response::Response2,
 };
@@ -18,7 +18,7 @@ pub async fn paginate(mut auth: TokenAuth, data: Query<UserPagination>) -> Resul
     // permissions
 
     if auth.assignable_permissions().is_empty() {
-        return Err(CoreError::Forbidden.into())
+        return Err(CoreError::Forbidden.into());
     }
 
     // Pointercrate staff need to be able to see all users, not only those whose permissions they can
@@ -32,11 +32,7 @@ pub async fn paginate(mut auth: TokenAuth, data: Query<UserPagination>) -> Resul
         }
     }
 
-    let mut users = pagination.page(&mut auth.connection).await?;
-
-    let (max_id, min_id) = User::extremal_member_ids(&mut auth.connection).await?;
-
-    pagination_response!("/api/v1/users/", users, pagination, min_id, max_id, before_id, after_id, id)
+    Ok(pagination_response("/api/v1/users", pagination, &mut auth.connection).await?)
 }
 
 #[rocket::get("/<user_id>")]
@@ -49,7 +45,7 @@ pub async fn get_user(mut auth: TokenAuth, user_id: i32) -> Result<Tagged<User>>
 
         if !can_assign_any {
             // don't leak information about what users exist
-            return Err(UserError::UserNotFound { user_id }.into())
+            return Err(UserError::UserNotFound { user_id }.into());
         }
     }
 
@@ -65,7 +61,7 @@ pub async fn patch_user(mut auth: TokenAuth, precondition: Precondition, user_id
 
         if !can_assign_any {
             // don't leak information about what users exist
-            return Err(UserError::UserNotFound { user_id }.into())
+            return Err(UserError::UserNotFound { user_id }.into());
         }
     }
 
@@ -82,7 +78,7 @@ pub async fn patch_user(mut auth: TokenAuth, precondition: Precondition, user_id
             return Err(UserError::PermissionNotAssignable {
                 non_assignable: auth.permissions.bits_to_permissions(unassignable_permissions),
             }
-            .into())
+            .into());
         }
 
         info!("assignable permissions are {:b}", assignable_bitmask);
@@ -96,7 +92,7 @@ pub async fn patch_user(mut auth: TokenAuth, precondition: Precondition, user_id
     }
 
     if user_id == auth.user.inner().id {
-        return Err(UserError::PatchSelf.into())
+        return Err(UserError::PatchSelf.into());
     }
 
     precondition.require_etag_match(&user)?;
@@ -113,7 +109,7 @@ pub async fn delete_user(mut auth: TokenAuth, precondition: Precondition, user_i
     auth.require_permission(ADMINISTRATOR)?;
 
     if user_id == auth.user.inner().id {
-        return Err(UserError::DeleteSelf.into())
+        return Err(UserError::DeleteSelf.into());
     }
 
     let to_delete = User::by_id(user_id, &mut auth.connection).await?;

@@ -6,13 +6,13 @@ use crate::{
     statsviewer::stats_viewer_panel,
 };
 use chrono::NaiveDateTime;
-use maud::{html, Markup, PreEscaped, Render};
-use pointercrate_core_pages::{config as page_config, head::HeadLike, PageFragment};
+use maud::{html, Markup, PreEscaped};
+use pointercrate_core_pages::{head::HeadLike, PageFragment};
 use pointercrate_demonlist::{
-    config as list_config,
+    config::{self as list_config, extended_list_size},
     demon::{Demon, FullDemon},
 };
-use pointercrate_integrate::gd::{GDIntegrationResult, Thunk};
+use pointercrate_integrate::gd::{IntegrationLevel, Thunk};
 use url::Url;
 
 #[derive(Debug)]
@@ -26,7 +26,7 @@ pub struct DemonPage {
     pub demonlist: Vec<Demon>,
     pub data: FullDemon,
     pub movements: Vec<DemonMovement>,
-    pub integration: GDIntegrationResult,
+    pub integration: Option<IntegrationLevel>,
 }
 
 impl From<DemonPage> for PageFragment {
@@ -48,17 +48,22 @@ impl From<DemonPage> for PageFragment {
 
 impl DemonPage {
     fn title(&self) -> String {
-        format!(
-            "#{} - {} - 1.9 GDPS Demonlist",
-            self.data.demon.base.position,
+        let mut title = format!(
+            "{} - Geometry Dash Demonlist",
             self.data.demon.base.name // FIXME: flatten the structs, holy shit
-        )
+        );
+
+        if self.data.demon.base.position <= extended_list_size() {
+            title = format!("#{} - {}", self.data.demon.base.position, title);
+        }
+
+        title
     }
 
     fn description(&self) -> String {
-        if let GDIntegrationResult::Success(ref level, ..) = self.integration {
+        if let Some(ref level) = self.integration {
             if let Some(Thunk::Processed(ref description)) = level.description {
-                return format!("{}: {}", self.title(), description.0)
+                return format!("{}: {}", self.title(), description);
             }
         }
         format!("{}: <No Description Provided>", self.title())
@@ -102,7 +107,7 @@ impl DemonPage {
                     "url": "https://pointercrate.xyze.dev/demonlist/permalink/{0}/"
                 }}
                 </script>
-            "##, self.data.demon.base.id, self.data.name(), self.description().render().0, self.data.position())))
+            "##, self.data.demon.base.id, self.data.name(), self.description(), self.data.position())))
             (PreEscaped(format!("
                 <script>
                     window.list_length = {0};
@@ -146,22 +151,6 @@ impl DemonPage {
 
             div.flex.m-center.container {
                 main.left {
-                    @if let Some(publisher_id) = page_config::adsense_publisher_id() {
-                        div.panel.fade style = "padding: 0px; height: 90px" {
-                            (PreEscaped(format!(r#"
-                            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={0}"
-         crossorigin="anonymous"></script>
-    <!-- Demonpage Banner ad -->
-    <ins class="adsbygoogle"
-         style="display:inline-block;width:728px;height:90px"
-         data-ad-client="{0}"
-         data-ad-slot="4829214686"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({{}});
-    </script>
-                            "#, publisher_id)))
-                        }
-                    }
                     (RecordSubmitter::new(false, &self.demonlist))
                     (self.demon_panel())
                     (self.level_info_panel())
@@ -215,9 +204,9 @@ impl DemonPage {
         html! {
             section.panel.fade.js-scroll-anim data-anim = "fade" {
                 div.underlined {
-                    h1 #demon-heading style = "overflow: hidden; text-overflow: ellipsis;"{
-                        @if position != 1 {
-                            a href=(format!("/demonlist/{:?}", position - 1)) {
+                    h1 #demon-heading style = "overflow: hidden"{
+                        @if self.data.demon.base.position != 1 {
+                            a href=(format!("/demonlist/{:?}", self.data.demon.base.position - 1)) {
                                 i class="fa fa-chevron-left" style="padding-right: 5%" {}
                             }
                         }
@@ -244,11 +233,11 @@ impl DemonPage {
                         }
                     }
                 }
-                @if let GDIntegrationResult::Success(ref level, ..) = self.integration {
+                @if let Some(ref level) = self.integration {
                     @if let Some(Thunk::Processed(ref description)) = level.description {
                         div.underlined.pad {
                             q {
-                                (description.0)
+                                (description)
                             }
                         }
                     }
@@ -284,84 +273,63 @@ impl DemonPage {
 
     fn level_info_panel(&self) -> Markup {
         html! {
-            section.records.panel.fade.js-scroll-anim data-anim = "fade" {
-                div.underlined.pad {
-                    h2 {
-                        "Level Info"
+            @if let Some(ref level) = self.integration {
+                section.records.panel.fade.js-scroll-anim data-anim = "fade" {
+                    div.underlined.pad {
+                        h2 {
+                            "Level Info"
+                        }
                     }
-                }
-                div.underlined.pad.flex.wrap #level-info {
-                    @match &self.integration {
-                        GDIntegrationResult::DemonNotFoundByName => {
-                            p.info-red {
-                                "A demon with this name was not found on the 1.9 GDPS servers. Please notify a list moderator of this, as it means they most likely misspelled the name!"
+                    div.underlined.pad.flex.wrap #level-info {
+                        span {
+                            b {
+                                "Level ID: "
+                            }
+                            br;
+                            (level.level_id)
+                        }
+                        span {
+                            b {
+                                "Password: "
+                            }
+                            br;
+                            (level.level_data.password.to_string())
+                        }
+                        span {
+                            b {
+                                "Length: "
+                            }
+                            br;
+                            @let length_in_seconds = level.level_data.length;
+                            (format!("{}:{:02}", length_in_seconds / 60, length_in_seconds % 60))
+                        }
+                        span {
+                            b {
+                                "Objects: "
+                            }
+                            br;
+                            span #level_info_objects {
+                                (level.level_data.object_count)
                             }
                         }
-                        GDIntegrationResult::DemonNotYetCached => {
-                            p.info-yellow {
-                                "The data from the 1.9 GDPS servers has not yet been cached. Please wait a bit and refresh the page."
-                            }
-                        }
-                        GDIntegrationResult::LevelDataNotFound => {
-                            p.info-red {
-                                "It seems like this level has been deleted from the 1.9 GDPS servers."
-                            }
-                        }
-                        GDIntegrationResult::LevelDataNotCached => {
-                            p.info-red {
-                                "This demon's level data is not stored in our database, even though the demon ID was successfully resolved. If this issue persists, please contact an administrator!"
-                            }
-                        }
-                        GDIntegrationResult::Success(level, level_data, song) => {
-                            span {
-                                b {
-                                    "ID: "
-                                }
-                                br;
-                                (level.level_id)
-                            }
-                            span {
-                                b {
-                                    "Password: "
-                                }
-                                br;
-                                (level_data.password)
-                            }
-                            span {
-                                b {
-                                    "Length: "
-                                }
-                                br;
 
-                                @let length_in_seconds = level_data.length;
-                                (format!("{}:{:02}", length_in_seconds / 60, length_in_seconds % 60))
-                            }
-                            span {
+                        // rust doesn't have a built in way to format with commas
+                        // shift the work onto the browser instead
+                        (PreEscaped(format!(r##"
+                        <script>
+                        document.querySelector("#level_info_objects").textContent = new Intl.NumberFormat().format({0});
+                        </script>
+                        "##, level.level_data.object_count)))
+
+                        @if let Some(ref song) = level.custom_song {
+                            span style = "width: 100%"{
                                 b {
-                                    "Objects: "
+                                    "Song:"
                                 }
                                 br;
-                                span #level_info_objects {
-                                    (level_data.object_count)
-                                }
-                            }
-                            // rust doesn't have a built in way to format with commas
-                            // shift the work onto the browser instead
-                            (PreEscaped(format!(r##"
-                            <script>
-                            document.querySelector("#level_info_objects").textContent = new Intl.NumberFormat().format({0});
-                            </script>
-                            "##, level_data.object_count)))
-                            @if let Some(song) = song {
-                                span style = "width: 100%"{
-                                    b {
-                                        "Newgrounds Song:"
-                                    }
-                                    br;
-                                    @match song.link {
-                                        Thunk::Processed(ref link) => a.link href = (link.0) {(song.name) " by " (song.artist) " (ID " (song.song_id) ")"},
-                                        _ => "unreachable!()"
-                                    }
+                                @match song.link {
+                                    Thunk::Processed(ref link) => a.link href = (link) {(song.name) " by " (song.artist) " (ID " (song.song_id) ")"},
+                                    _ => "unreachable!()"
                                 }
                             }
                         }
@@ -432,7 +400,7 @@ impl DemonPage {
                                     tr style = { @if record.progress == 100 {"font-weight: bold"} @else {""} } {
                                         td {
                                             @if let Some(ref nationality) = record.nationality {
-                                                span.flag-icon style={"background-image: url(/static/demonlist/images/flags/" (nationality.iso_country_code.to_lowercase()) ".svg"} title = (nationality.nation) {}
+                                                span.flag-icon style={"background-image: url(/static/demonlist/images/flags/" (nationality.iso_country_code.to_lowercase()) ".svg)"} title = (nationality.nation) {}
                                             }
                                         }
                                         td {

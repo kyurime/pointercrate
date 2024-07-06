@@ -114,16 +114,15 @@ impl<'de> Deserialize<'de> for RecordStatus {
             "submitted" => Ok(RecordStatus::Submitted),
             "rejected" => Ok(RecordStatus::Rejected),
             "under consideration" => Ok(RecordStatus::UnderConsideration),
-            _ =>
-                Err(serde::de::Error::invalid_value(
-                    serde::de::Unexpected::Str(&string),
-                    &"'approved', 'submitted', 'under consideration' or 'rejected'",
-                )),
+            _ => Err(serde::de::Error::invalid_value(
+                serde::de::Unexpected::Str(&string),
+                &"'approved', 'submitted', 'under consideration' or 'rejected'",
+            )),
         }
     }
 }
 
-#[derive(Debug, Serialize, Display, Hash)]
+#[derive(Debug, Deserialize, Serialize, Display, Hash)]
 #[display(fmt = "{} {}% on {} (ID: {})", player, progress, demon, id)]
 pub struct FullRecord {
     pub id: i32,
@@ -162,7 +161,7 @@ pub struct MinimalRecordPD {
     pub player: DatabasePlayer,
 }
 
-#[derive(Debug, Hash, Serialize, Display, PartialEq, Eq)]
+#[derive(Debug, Hash, Serialize, Deserialize, Display, PartialEq, Eq)]
 #[display(fmt = "{}% on {} (ID: {})", progress, demon, id)]
 pub struct MinimalRecordD {
     pub id: i32,
@@ -172,7 +171,7 @@ pub struct MinimalRecordD {
     pub demon: MinimalDemon,
 }
 
-#[derive(Debug, Hash, Serialize, Display, PartialEq, Eq)]
+#[derive(Debug, Hash, Serialize, Deserialize, Display, PartialEq, Eq)]
 #[display(fmt = "{} - {}% (ID: {})", player, progress, id)]
 pub struct MinimalRecordP {
     pub id: i32,
@@ -184,16 +183,6 @@ pub struct MinimalRecordP {
 }
 
 impl FullRecord {
-    /// Gets the maximal and minimal submitter id currently in use
-    ///
-    /// The returned tuple is of the form (max, min)
-    pub async fn extremal_record_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!(r#"SELECT COALESCE(MAX(id), 0) AS "max_id!: i32", COALESCE(MIN(id), 0) AS "min_id!: i32" FROM records"#)
-            .fetch_one(connection)
-            .await?; // FIXME: crashes on empty table
-        Ok((row.max_id, row.min_id))
-    }
-
     pub async fn was_modified(&self, connection: &mut PgConnection) -> Result<bool> {
         Ok(sqlx::query!(
             r#"SELECT EXISTS (SELECT 1 FROM record_modifications WHERE id = $1 AND status_ IS NOT NULL) AS "was_modified!: bool""#,
@@ -203,126 +192,4 @@ impl FullRecord {
         .await?
         .was_modified)
     }
-
-    /*
-    pub async fn validate(self, state: PointercrateState) {
-        let mut connection = match state.connection().await {
-            Ok(connection) => connection,
-            Err(err) => return error!("INTERNAL SERVER ERROR: failed to acquire database connection: {:?}", err),
-        };
-
-        let video = match self.video {
-            Some(ref video) => video,
-            None => return,
-        };
-
-        debug!("Verifying that submission {} with video {} actually is valid", self, video);
-
-        match state.http_client.head(video).send().await {
-            Ok(response) => {
-                let status = response.status().as_u16();
-
-                if status == 401 || status == 403 || status == 405 {
-                    // Some websites (billibilli) respond unfavorably to HEAD requests. Retry with
-                    // GET
-                    match state.http_client.get(video).send().await {
-                        Ok(response) => {
-                            let status = response.status().as_u16();
-
-                            if status >= 200 && status < 400 {
-                                debug!("HEAD request yielded some sort of successful response, executing webhook");
-
-                                self.execute_webhook(&state).await;
-                            }
-                        },
-                        Err(err) => {
-                            error!(
-                                "INTERNAL SERVER ERROR: HEAD request to verify video failed: {:?}. Deleting submission",
-                                err
-                            );
-
-                            match self.delete(&mut connection).await {
-                                Ok(_) => (),
-                                Err(error) => error!("INTERNAL SERVER ERROR: Failure to delete record - {:?}!", error),
-                            }
-                        },
-                    }
-                } else if status >= 200 && status < 400 {
-                    debug!("HEAD request yielded some sort of successful response, executing webhook");
-
-                    self.execute_webhook(&state).await;
-                } else {
-                    warn!("Server response to 'HEAD {}' was {:?}, deleting submission!", video, response);
-
-                    match self.delete(&mut connection).await {
-                        Ok(_) => (),
-                        Err(error) => error!("INTERNAL SERVER ERROR: Failure to delete record - {:?}!", error),
-                    }
-                }
-            },
-            Err(error) => {
-                error!(
-                    "INTERNAL SERVER ERROR: HEAD request to verify video failed: {:?}. Deleting submission",
-                    error
-                );
-
-                match self.delete(&mut connection).await {
-                    Ok(_) => (),
-                    Err(error) => error!("INTERNAL SERVER ERROR: Failure to delete record - {:?}!", error),
-                }
-            },
-        }
-    }*/
-    /*
-    async fn execute_webhook(&self, state: &PointercrateState) {
-        if let Some(ref webhook_url) = state.webhook_url {
-            match state
-                .http_client
-                .post(&**webhook_url)
-                .header("Content-Type", "application/json")
-                .body(self.webhook_embed().to_string())
-                .send()
-                .await
-            {
-                Err(error) => error!("INTERNAL SERVER ERROR: Failure to execute discord webhook: {:?}", error),
-                Ok(_) => debug!("Successfully executed discord webhook"),
-            }
-        } else {
-            warn!("Trying to execute webhook, though no link was configured!");
-        }
-    }*/
-    /*
-    fn webhook_embed(&self) -> serde_json::Value {
-        let mut payload = json!({
-            "content": format!("**New record submitted! ID: {}**", self.id),
-            "embeds": [
-                {
-                    "type": "rich",
-                    "title": format!("{}% on {}", self.progress, self.demon.name),
-                    "description": format!("{} just got {}% on {}! Go add their record!", self.player.name, self.progress, self.demon.name),
-                    "footer": {
-                        "text": format!("This record has been submitted by submitter #{}", self.submitter.map(|s|s.id).unwrap_or(1))
-                    },
-                    "author": {
-                        "name": format!("{} (ID: {})", self.player.name, self.player.id),
-                        "url": self.video
-                    },
-                    "thumbnail": {
-                        "url": "https://cdn.discordapp.com/avatars/277391246035648512/b03c85d94dc02084c413a7fdbe2cea79.webp?size=1024"
-                    },
-                }
-            ]
-        });
-
-        if let Some(ref video) = self.video {
-            payload["embeds"][0]["fields"] = json! {
-                [{
-                    "name": "Video Proof:",
-                    "value": video
-                }]
-            };
-        }
-
-        payload
-    }*/
 }

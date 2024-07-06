@@ -1,6 +1,6 @@
 use crate::statsviewer::stats_viewer_html;
-use maud::{html, Markup, PreEscaped};
-use pointercrate_core_pages::{config, head::HeadLike, PageFragment};
+use maud::{html, Markup};
+use pointercrate_core_pages::{head::HeadLike, PageFragment};
 use pointercrate_demonlist::nationality::Nationality;
 
 #[derive(Debug)]
@@ -41,50 +41,23 @@ impl IndividualStatsViewer {
             }
             div.flex.m-center.container {
                 main.left {
-                    @if let Some(publisher_id) = config::adsense_publisher_id() {
-                        section.panel.fade style = "padding: 0px; height: 90px"{
-                            (PreEscaped(format!(r#"
-                            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={0}"
-                                 crossorigin="anonymous"></script>
-                            <!-- Statsviewer Banner Ad -->
-                            <ins class="adsbygoogle"
-                                 style="display:inline-block;width:728px;height:90px"
-                                 data-ad-client="{}"
-                                 data-ad-slot="5855948132"></ins>
-                            <script>
-                                 (adsbygoogle = window.adsbygoogle || []).push({{}});
-                            </script>
-                            "#, publisher_id)))
-                        }
-                    }
                     (stats_viewer_html(Some(&self.nationalities_in_use), super::standard_stats_viewer_rows()))
                 }
                 aside.right {
                     (super::continent_panel())
-                    @if let Some(publisher_id) = config::adsense_publisher_id() {
-                        section.panel.fade.js-scroll-anim data-anim = "fade" style = "order: 1; padding: 0px; border: 0" {
-                            (PreEscaped(format!(r#"
-                            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={0}"
-                                 crossorigin="anonymous"></script>
-                            <!-- Statsviewer Sidebar Ad -->
-                            <ins class="adsbygoogle"
-                                 style="display:block"
-                                 data-ad-client="{0}"
-                                 data-ad-slot="2211027222"
-                                 data-ad-format="auto"
-                                 data-full-width-responsive="true"></ins>
-                            <script>
-                                 (adsbygoogle = window.adsbygoogle || []).push({{}});
-                            </script>
-                            "#, publisher_id)))
-                        }
-                    }
                     section.panel.fade style = "overflow: initial;" {
                         h3.underlined {
                             "Political Subdivision:"
                         }
                         p {
-                            "For the " i {"United States of America"} ", " i {"The United Kingdom of Great Britain and Northern Ireland"} ", " i{"Australia"} " and " i{"Canada"} " you can select a state/province from the dropdown below to focus the stats viewer to that state/province."
+                            "For the "
+                            span.tooltip {
+                                "following countries"
+                                span.tooltiptext.fade {
+                                    "Argentina, Australia, Brazil, Canada, Chile, Colombia, Finland, France, Germany, Italy, Mexico, Netherlands, Norway, Peru, Poland, Russian Federation, South Korea, Spain, Ukraine, United Kingdom, United States"
+                                }
+                            }
+                            " you can select a state/province from the dropdown below to focus the stats viewer to that state/province."
                         }
                         div.dropdown-menu.js-search #subdivision-dropdown data-default = "None" {
                             div{

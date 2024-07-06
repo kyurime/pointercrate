@@ -2,7 +2,6 @@ use crate::permission::Permission;
 use derive_more::Display;
 use log::error;
 use serde::Serialize;
-use sqlx::postgres::PgDatabaseError;
 use std::{error::Error, time::Duration};
 
 pub type Result<T> = std::result::Result<T, CoreError>;
@@ -194,10 +193,7 @@ pub enum CoreError {
         fmt = "The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there \
                is an error in the application. Please notify a server administrator and have them look at the server logs!"
     )]
-    InternalServerError {
-        #[serde(skip)]
-        message: String,
-    },
+    InternalServerError,
 
     /// `500 INTERNAL SERVER ERROR`
     ///
@@ -208,12 +204,34 @@ pub enum CoreError {
     )]
     DatabaseError,
 
+    /// `500 INTERNAL SERVER ERROR` reported when postgres terminates a query due to hitting `statement_timeout`
+    ///
+    /// Error Code `50004`
+    #[display(
+        fmt = "Internally, a database query timed out. This could be due to high server load, or because of a logic error resulting in a deadlock. If this issue persists after retrying, please notify a server administrator!"
+    )]
+    QueryTimeout,
+
     /// `500 INTERNAL SERVER ERROR` variant returned if the server fails to acquire a database
     /// connection
     ///
     /// Error Code `50005`
     #[display(fmt = "Failed to retrieve connection to the database. The server might be temporarily overloaded.")]
     DatabaseConnectionError,
+
+    /// `503 SERVICE UNAVAILABLE` variant returned by all non-GET (e.g. all possible mutating) requests if the server is in maintenance mode.
+    ///
+    /// Error Core `50301`
+    #[display(fmt = "The website is currently in read-only maintenance mode.")]
+    ReadOnlyMaintenance,
+}
+
+impl CoreError {
+    pub fn internal_server_error(message: impl AsRef<str>) -> CoreError {
+        error!("INTERNAL SERVER ERROR: {}", message.as_ref());
+
+        CoreError::InternalServerError
+    }
 }
 
 impl Error for CoreError {}
@@ -244,41 +262,21 @@ impl PointercrateError for CoreError {
             CoreError::Ratelimited { .. } => 42900,
             CoreError::InternalServerError { .. } => 50000,
             CoreError::DatabaseError => 50003,
+            CoreError::QueryTimeout => 50004,
             CoreError::DatabaseConnectionError => 50005,
+            CoreError::ReadOnlyMaintenance => 50301,
         }
     }
 }
 
 impl From<sqlx::Error> for CoreError {
     fn from(error: sqlx::Error) -> Self {
+        error!("Database error: {:?}. Backtrace:\n {}", error, std::backtrace::Backtrace::capture());
+
         match error {
-            sqlx::Error::Database(database_error) => {
-                let database_error = database_error.downcast::<PgDatabaseError>();
-
-                error!("Database error: {:?}. ", database_error);
-
-                CoreError::DatabaseError
-            },
-            sqlx::Error::PoolClosed | sqlx::Error::PoolTimedOut => {
-                error!("Failed to acquire database connection");
-
-                CoreError::DatabaseConnectionError
-            },
-            sqlx::Error::ColumnNotFound(column) => {
-                format!("Invalid access to column {}, which does not exist", column);
-
-                CoreError::DatabaseError
-            },
-            sqlx::Error::RowNotFound => {
-                error!("Unhandled 'NotFound', this is a logic or data consistency error");
-
-                CoreError::DatabaseError
-            },
-            _ => {
-                error!("Database error: {:?}", error);
-
-                CoreError::DatabaseError
-            },
+            sqlx::Error::Database(err) if err.code().as_deref() == Some("57014") => CoreError::QueryTimeout,
+            sqlx::Error::PoolClosed | sqlx::Error::PoolTimedOut => CoreError::DatabaseConnectionError,
+            _ => CoreError::DatabaseError,
         }
     }
 }

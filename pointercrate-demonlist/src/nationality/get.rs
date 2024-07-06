@@ -52,6 +52,28 @@ impl Nationality {
         })
     }
 
+    pub async fn subdivision_by_code(&self, code: &str, connection: &mut PgConnection) -> Result<Subdivision> {
+        let result = sqlx::query!(
+            "SELECT name FROM subdivisions WHERE iso_code = $1 AND nation = $2",
+            code,
+            self.iso_country_code
+        )
+        .fetch_one(&mut *connection)
+        .await;
+
+        match result {
+            Ok(row) => Ok(Subdivision {
+                iso_code: code.to_string(),
+                name: row.name,
+            }),
+            Err(sqlx::Error::RowNotFound) => Err(DemonlistError::SubdivisionNotFound {
+                nation_code: self.iso_country_code.clone(),
+                subdivision_code: code.to_string(),
+            }),
+            Err(err) => Err(err.into()),
+        }
+    }
+
     pub async fn all(connection: &mut PgConnection) -> Result<Vec<Nationality>> {
         let mut stream =
             sqlx::query!(r#"SELECT nation as "nation: String", iso_country_code as "iso_country_code: String" FROM nationalities"#)
@@ -137,13 +159,12 @@ pub async fn created_in(nation: &Nationality, connection: &mut PgConnection) -> 
 
         match creations.last_mut() {
             Some(mini_demon) if mini_demon.demon == row.demon_name => mini_demon.players.push(row.player_name),
-            _ =>
-                creations.push(MiniDemonWithPlayers {
-                    id: row.demon,
-                    demon: row.demon_name,
-                    position: row.position,
-                    players: vec![row.player_name],
-                }),
+            _ => creations.push(MiniDemonWithPlayers {
+                id: row.demon,
+                demon: row.demon_name,
+                position: row.position,
+                players: vec![row.player_name],
+            }),
         }
     }
 
@@ -204,14 +225,13 @@ pub async fn best_records_in(nation: &Nationality, connection: &mut PgConnection
 
         match records.last_mut() {
             Some(record) if record.demon == row.demon_name => record.players.push(row.player_name),
-            _ =>
-                records.push(BestRecord {
-                    id: row.demon_id,
-                    demon: row.demon_name,
-                    position: row.position,
-                    progress: row.progress,
-                    players: vec![row.player_name],
-                }),
+            _ => records.push(BestRecord {
+                id: row.demon_id,
+                demon: row.demon_name,
+                position: row.position,
+                progress: row.progress,
+                players: vec![row.player_name],
+            }),
         }
     }
 

@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use rocket::{response::Redirect, State};
 
-use chrono::{DateTime, FixedOffset, NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, Datelike, FixedOffset, NaiveDate, Utc};
 use pointercrate_core::{audit::AuditLogEntryType, pool::PointercratePool};
 use pointercrate_core_api::{
     error::Result,
@@ -19,9 +21,10 @@ use pointercrate_demonlist_pages::{
     overview::OverviewPage,
     statsviewer::individual::IndividualStatsViewer,
 };
-use pointercrate_integrate::gd::{GDIntegrationResult, PgCache};
+use pointercrate_integrate::gd::GeometryDashConnector;
 use pointercrate_user::User;
 use pointercrate_user_api::auth::TokenAuth;
+use rand::Rng;
 use rocket::{futures::StreamExt, http::CookieJar};
 
 #[rocket::get("/?statsviewer=true")]
@@ -33,35 +36,51 @@ pub fn stats_viewer_redirect() -> Redirect {
 pub async fn overview(
     pool: &State<PointercratePool>, timemachine: Option<bool>, submitter: Option<bool>, cookies: &CookieJar<'_>, auth: Option<TokenAuth>,
 ) -> Result<Page> {
-    // should be const, but chrono aint const :(
-    let beginning_of_time: DateTime<FixedOffset> =
-        FixedOffset::east(0).from_utc_datetime(&NaiveDate::from_ymd(2019, 4, 19).and_hms(0, 0, 0));
+    // A few months before pointercrate first went live - definitely the oldest data we have
+    let beginning_of_time = NaiveDate::from_ymd_opt(2019, 4, 19).unwrap().and_hms_opt(0, 0, 0).unwrap();
 
     let mut connection = pool.connection().await?;
 
-    let demonlist = current_list(&mut connection).await?;
+    let demonlist = current_list(&mut *connection).await?;
 
-    let specified_when = cookies
+    let mut specified_when = cookies
         .get("when")
-        .map(|cookie| DateTime::<FixedOffset>::parse_from_rfc3339(cookie.value()));
+        .map(|cookie| DateTime::<FixedOffset>::parse_from_rfc3339(cookie.value()).ok())
+        .flatten();
+
+    // On april's fools, ignore the cookie and just pick a random day to display
+    let today = Utc::now().naive_utc();
+    let is_april_1st = today.day() == 1 && today.month() == 4;
+    if is_april_1st {
+        let seconds_since_beginning_of_time = (today - beginning_of_time).num_seconds();
+        let go_back_by = chrono::Duration::seconds(rand::thread_rng().gen_range(0..seconds_since_beginning_of_time));
+
+        if let Some(date) = today.checked_sub_signed(go_back_by) {
+            // We do not neccessarily know the time zone of the user here (we get it from the 'when' cookie in the normal case).
+            // This however is not a problem, the UI will simply display "GMT+0" instead of the correct local timezone.
+            specified_when = Some(date.and_utc().fixed_offset());
+        }
+    }
 
     let specified_when = match specified_when {
-        Some(Ok(when)) if when < beginning_of_time => Some(beginning_of_time),
-        Some(Ok(when)) if when >= Utc::now() => None,
-        Some(Ok(when)) => Some(when),
+        Some(when) if when.naive_utc() < beginning_of_time => Some(DateTime::from_naive_utc_and_offset(beginning_of_time, *when.offset())),
+        Some(when) if when >= Utc::now() => None,
+        Some(when) => Some(when),
         _ => None,
     };
 
-    let tardis = match specified_when {
-        Some(destination) => Tardis::new(timemachine.unwrap_or(false)).activate(destination, list_at(&mut connection, destination).await?),
-        _ => Tardis::new(timemachine.unwrap_or(false)),
-    };
+    let mut tardis = Tardis::new(timemachine.unwrap_or(false));
+
+    if let Some(destination) = specified_when {
+        let demons_then = list_at(&mut *connection, destination.naive_utc()).await?;
+        tardis.activate(destination, demons_then, !is_april_1st)
+    }
 
     let mut page = Page::new(OverviewPage {
         team: Team {
-            admins: User::by_permission(LIST_ADMINISTRATOR, &mut connection).await?,
-            moderators: User::by_permission(LIST_MODERATOR, &mut connection).await?,
-            helpers: User::by_permission(LIST_HELPER, &mut connection).await?,
+            admins: User::by_permission(LIST_ADMINISTRATOR, &mut *connection).await?,
+            moderators: User::by_permission(LIST_MODERATOR, &mut *connection).await?,
+            helpers: User::by_permission(LIST_HELPER, &mut *connection).await?,
         },
         demonlist,
         time_machine: tardis,
@@ -76,65 +95,58 @@ pub async fn overview(
 }
 
 #[rocket::get("/permalink/<demon_id>")]
-pub async fn demon_permalink(demon_id: i32, pool: &State<PointercratePool>, gd: &State<PgCache>, auth: Option<TokenAuth>) -> Result<Page> {
+pub async fn demon_permalink(
+    demon_id: i32, pool: &State<PointercratePool>, gd: &State<GeometryDashConnector>, auth: Option<TokenAuth>
+) -> Result<Page> {
     let mut connection = pool.connection().await?;
 
     let full_demon = FullDemon::by_id(demon_id, &mut connection).await?;
 
-    let audit_log = audit_log_for_demon(full_demon.demon.base.id, &mut connection).await?;
+    let audit_log = audit_log_for_demon(full_demon.demon.base.id, &mut *connection).await?;
 
     let mut addition_time = None;
 
     let mut modifications = audit_log
         .iter()
-        .filter_map(|entry| {
-            match entry.r#type {
-                AuditLogEntryType::Modification(ref modification) =>
-                    match modification.position {
-                        Some(old_position) if old_position > 0 =>
-                            Some(DemonMovement {
-                                from_position: old_position,
-                                at: entry.time,
-                            }),
-                        _ => None,
-                    },
-                AuditLogEntryType::Addition => {
-                    addition_time = Some(entry.time);
-
-                    None
-                },
+        .filter_map(|entry| match entry.r#type {
+            AuditLogEntryType::Modification(ref modification) => match modification.position {
+                Some(old_position) if old_position > 0 => Some(DemonMovement {
+                    from_position: old_position,
+                    at: entry.time,
+                }),
                 _ => None,
-            }
+            },
+            AuditLogEntryType::Addition => {
+                addition_time = Some(entry.time);
+
+                None
+            },
+            _ => None,
         })
         .collect::<Vec<_>>();
 
     if let Some(addition) = addition_time {
-        modifications.insert(0, DemonMovement {
-            from_position: modifications
-                .first()
-                .map(|m| m.from_position)
-                .unwrap_or(full_demon.demon.base.position),
-            at: addition,
-        });
+        modifications.insert(
+            0,
+            DemonMovement {
+                from_position: modifications
+                    .first()
+                    .map(|m| m.from_position)
+                    .unwrap_or(full_demon.demon.base.position),
+                at: addition,
+            },
+        );
     }
 
     let mut page = Page::new(DemonPage {
         team: Team {
-            admins: User::by_permission(LIST_ADMINISTRATOR, &mut connection).await?,
-            moderators: User::by_permission(LIST_MODERATOR, &mut connection).await?,
-            helpers: User::by_permission(LIST_HELPER, &mut connection).await?,
+            admins: User::by_permission(LIST_ADMINISTRATOR, &mut *connection).await?,
+            moderators: User::by_permission(LIST_MODERATOR, &mut *connection).await?,
+            helpers: User::by_permission(LIST_HELPER, &mut *connection).await?,
         },
-        demonlist: current_list(&mut connection).await?,
+        demonlist: current_list(&mut *connection).await?,
         movements: modifications,
-        integration: gd
-            .data_for_demon(
-                reqwest::Client::new(),
-                full_demon.demon.level_id,
-                full_demon.demon.base.name.clone(),
-                full_demon.demon.base.id,
-            )
-            .await
-            .unwrap_or(GDIntegrationResult::LevelDataNotFound),
+        integration: gd.load_level_for_demon(&full_demon.demon).await,
         data: full_demon,
     });
 
@@ -159,7 +171,7 @@ pub async fn stats_viewer(pool: &State<PointercratePool>) -> Result<Page> {
     let mut connection = pool.connection().await?;
 
     Ok(Page::new(IndividualStatsViewer {
-        nationalities_in_use: Nationality::used(&mut connection).await?,
+        nationalities_in_use: Nationality::used(&mut *connection).await?,
     }))
 }
 
@@ -168,51 +180,53 @@ pub async fn nation_stats_viewer() -> Page {
     Page::new(pointercrate_demonlist_pages::statsviewer::national::nation_based_stats_viewer())
 }
 
-macro_rules! heatmap_query {
-    ($connection: expr, $query: expr, $($param:expr),*) => {
-        {
-            let mut css = String::new();
-            let mut stream = sqlx::query!($query, $($param),*).fetch(&mut $connection);
-
-            if let Some(firstrow) = stream.next().await {
-                // first one is the one with most score
-                let firstrow = firstrow.map_err(DemonlistError::from)?;
-                let highest_score = firstrow.score * 1.5;
-
-                css.push_str(&make_css_rule(&firstrow.code, firstrow.score, highest_score));
-
-                while let Some(row) = stream.next().await {
-                    let row = row.map_err(DemonlistError::from)?;
-
-                    css.push_str(&make_css_rule(&row.code, row.score, highest_score));
-                }
-            }
-
-            css
-        }
-    };
-}
-
 #[rocket::get("/statsviewer/heatmap.css")]
 pub async fn heatmap_css(pool: &State<PointercratePool>) -> Result<Response2<String>> {
     let mut connection = pool.connection().await?;
-    let mut css = heatmap_query!(
-        connection,
-        r#"SELECT LOWER(iso_country_code) as "code!", score as "score!" from nations_with_score order by score desc"#,
-    );
+    let mut css = String::new();
 
-    for nation in ["AU", "CA", "US", "GB"] {
-        css.push_str(&heatmap_query!(
-            connection,
-            r#"SELECT CONCAT($1, '-', UPPER(subdivision_code)) AS "code!", score AS "score!" FROM subdivision_ranking_of($1) ORDER BY score DESC"#,
-            nation
-        ));
+    let mut nation_scores = HashMap::new();
+    let mut nations_stream = sqlx::query!("SELECT iso_country_code, score FROM nationalities WHERE score > 0.0").fetch(&mut *connection);
+
+    while let Some(row) = nations_stream.next().await {
+        let row = row.map_err(DemonlistError::from)?;
+
+        nation_scores.insert(row.iso_country_code, row.score);
+    }
+
+    let Some(&max_nation_score) = nation_scores.values().max_by(|a, b| a.total_cmp(b)) else {
+        // Not a single nation has a score > 0. This means there are no approved records. So return no CSS
+        return Ok(Response2::new(css).with_header("Content-Type", "text/css"));
+    };
+
+    for (nation, &score) in &nation_scores {
+        css.push_str(&make_css_rule(&nation.to_lowercase(), score, max_nation_score));
+    }
+
+    // un-borrow `connection`
+    drop(nations_stream);
+
+    let mut subdivisions_stream =
+        sqlx::query!("SELECT nation, iso_code, score FROM subdivisions WHERE score > 0.0").fetch(&mut *connection);
+
+    while let Some(row) = subdivisions_stream.next().await {
+        let row = row.map_err(DemonlistError::from)?;
+
+        css.push_str(&make_css_rule(
+            &format!("{}-{}", row.nation, row.iso_code),
+            row.score,
+            *nation_scores.get(&row.nation).unwrap_or(&f64::INFINITY),
+        ))
     }
 
     Ok(Response2::new(css).with_header("Content-Type", "text/css"))
 }
 
 fn make_css_rule(code: &str, score: f64, highest_score: f64) -> String {
+    // Artificially adjust the highest score so that score/high_score is never 1. If it were 1, the resulting
+    // color will be equal to the "hover"/"selected" color, which looks bad.
+    let highest_score = highest_score * 1.5;
+
     format!(
         ".heatmapped #{0}, .heatmapped #{0} > path {{ fill: rgb({1}, {2}, {3}); }}",
         code,

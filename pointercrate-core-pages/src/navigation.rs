@@ -70,7 +70,7 @@ impl Render for NavigationBar {
             header {
                 nav.center.collapse.underlined {
                     div.nav-icon style = "margin-right: auto" {
-                        a href = "/" {
+                        a href = "/" aria-label = "Go to homepage" {
                             img src = (self.logo_path) style="height:50px" alt="1.9 Demonlist";
                         }
                     }

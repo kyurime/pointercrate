@@ -262,6 +262,7 @@ input[type="text"],
 input[type="number"],
 input[type="url"],
 input[type="password"],
+input[type="datetime-local"],
 textarea {
   border: 1px solid #444;
   min-width: 0; /* Firefox and Egde need this */
@@ -279,16 +280,29 @@ textarea {
 input[type="text"],
 input[type="number"],
 input[type="url"],
-input[type="password"] {
+input[type="password"],
+input[type="datetime-local"]{
   min-height: 1em;
   padding: 0.65rem;
 }
+
+/*
+form input[type="text"]:valid,
+form input[type="number"]:valid,
+form input[type="url"]:valid,
+form input[type="password"]:valid,
+form input[type="datetime-local"]:valid,
+textarea:valid {
+  border-bottom: 1px solid lime;
+}
+*/
 
 form input[type="text"]:focus:invalid,
 form input[type="number"]:focus:invalid,
 form input[type="url"]:focus:invalid,
 form input[type="password"]:focus:invalid,
-textarea:invalid {
+form input[type="datetime-local"]:focus:invalid,
+textarea:focus:invalid {
   border-color: rgb(255, 0, 0);
 }
 
@@ -486,7 +500,7 @@ textarea:invalid {
   top: 2em; /* place it below the box! */
 
   width: calc(100% - 2px);
-  max-height: 400px;
+  max-height: 290px;
   overflow-y: scroll;
 
   background: #1f1f1f;
@@ -693,6 +707,19 @@ h2 .dropdown-menu ul {
   border-left-width: 4px;
   border-left-style: solid;
   border-left-color: yellow;
+}
+
+.info-blue {
+  background: #181818;
+  padding: 10px 15px;
+  color: white;
+  margin: 25px 0px;
+
+  border-radius: 4px;
+
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-left-color: #6e7dff;
 }
 
 .info-red {

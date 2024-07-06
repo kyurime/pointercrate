@@ -1,36 +1,42 @@
-use chrono::{DateTime, Datelike, FixedOffset, TimeZone, Utc};
+use chrono::{DateTime, Datelike, FixedOffset};
 use maud::{html, Markup, Render};
-use pointercrate_core_pages::util::simple_dropdown;
 use pointercrate_demonlist::demon::TimeShiftedDemon;
 
 pub enum Tardis {
     Activated {
         destination: DateTime<FixedOffset>,
         demons: Vec<TimeShiftedDemon>,
-        visible: bool,
+        /// Whether the time selection panel should be visible.
+        show_selector: bool,
+        /// Whether the "You are currently looking at the demonlist as it was on ..." panel should be visible.
+        show_destination: bool,
     },
     Deactivated {
-        visible: bool,
+        /// Whether the time selection panel should be visible.
+        show_selector: bool,
     },
 }
 
 impl Tardis {
     pub fn new(visible: bool) -> Self {
-        Tardis::Deactivated { visible }
+        Tardis::Deactivated { show_selector: visible }
     }
 
-    pub fn activate(self, destination: DateTime<FixedOffset>, demons_then: Vec<TimeShiftedDemon>) -> Self {
-        Tardis::Activated {
-            visible: self.visible(),
+    pub fn activate(&mut self, destination: DateTime<FixedOffset>, demons_then: Vec<TimeShiftedDemon>, show_destination: bool) {
+        *self = Tardis::Activated {
+            show_selector: self.visible(),
             demons: demons_then,
             destination,
-        }
+            show_destination,
+        };
     }
 
     pub fn visible(&self) -> bool {
         match self {
-            Tardis::Activated { visible, .. } => *visible,
-            Tardis::Deactivated { visible } => *visible,
+            Tardis::Activated {
+                show_selector: visible, ..
+            } => *visible,
+            Tardis::Deactivated { show_selector: visible } => *visible,
         }
     }
 }
@@ -40,28 +46,9 @@ impl Render for Tardis {
     // {destination,..} = self". If errors out on the comma.
     #[allow(clippy::single_match)]
     fn render(&self) -> Markup {
-        let current_year = FixedOffset::east(3600 * 23 + 3599)
-            .from_utc_datetime(&Utc::now().naive_utc())
-            .year();
-
-        let months = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ];
-
         html! {
             @match self {
-                Tardis::Activated { destination, ..} => {
+                Tardis::Activated { destination, show_destination, ..} if *show_destination => {
                     div.panel.fade.medium-gray.flex style="align-items: center;" {
                         span style = "text-align: end"{
                             "You are currently looking at the demonlist how it was on"
@@ -70,6 +57,7 @@ impl Render for Tardis {
                                 @match destination.day() {
                                    1 | 21 | 31 => (destination.format("%A, %B %est %Y at %l:%M:%S%P GMT%Z")),
                                    2 | 22 => (destination.format("%A, %B %end %Y at %l:%M:%S%P GMT%Z")),
+                                   3 | 23 => (destination.format("%A, %B %erd %Y at %l:%M:%S%P GMT%Z")),
                                    _ => (destination.format("%A, %B %eth %Y at %l:%M:%S%P GMT%Z"))
                                 }
                             }
@@ -89,36 +77,9 @@ impl Render for Tardis {
                         "Enter the date you want to view the demonlist at below. For technical reasons, the earliest possible date is April 21st 2019."
                     }
                     div.flex {
-                        span.form-input data-type = "dropdown" style = "max-width:33%" {
-                            h3 {"Year:"}
-                            (simple_dropdown("time-machine-year", None, 2019..=current_year))
-                            p.error {}
-                        }
-                        span.form-input data-type = "dropdown" style = "max-width:33%"  {
-                            h3 {"Month:"}
-                            (simple_dropdown("time-machine-month", None, months.iter()))
-                            p.error {}
-                        }
-                        span.form-input data-type = "dropdown" style = "max-width:33%"  {
-                            h3 {"Day:"}
-                            (simple_dropdown("time-machine-day", None, 1..=31))
-                            p.error {}
-                        }
-                    }
-                    div.flex {
-                        span.form-input data-type = "dropdown" style = "max-width:33%" {
-                            h3 {"Hour:"}
-                            (simple_dropdown("time-machine-hour", Some(0), 0..24))
-                            p.error {}
-                        }
-                        span.form-input data-type = "dropdown" style = "max-width:33%"  {
-                            h3 {"Minute:"}
-                            (simple_dropdown("time-machine-minute", Some(0), 0..=59))
-                            p.error {}
-                        }
-                        span.form-input data-type = "dropdown" style = "max-width:33%"  {
-                            h3 {"Second:"}
-                            (simple_dropdown("time-machine-second", Some(0), 0..=59))
+                        span.form-input #time-machine-destination data-type = "datetime-local" {
+                            h3 {"Destination:"}
+                            input name="time-machine-destination" type="datetime-local" min="2019-04-19T00:00" required value="1971-06-19T00:00";
                             p.error {}
                         }
                     }

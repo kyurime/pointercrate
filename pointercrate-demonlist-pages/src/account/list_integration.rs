@@ -56,7 +56,7 @@ impl AccountPageTab for ListIntegrationTab {
                     reason: "Internal Server Error".to_string(),
                     message: err.to_string(),
                 }
-                .body()
+                .body();
             },
         };
         let is_moderator = permissions.require_permission(user.inner().permissions, LIST_MODERATOR).is_ok();
@@ -122,7 +122,7 @@ impl AccountPageTab for ListIntegrationTab {
                                         input #lock-submissions-checkbox type = "checkbox" name = "lock_submissions" style="margin-right: 8px;";
                                     }
                                     b {
-                                        "Lock Submissions:"
+                                        "Lock Submissions"
                                     }
                                 }
                                 p {
@@ -139,7 +139,11 @@ impl AccountPageTab for ListIntegrationTab {
                                 "Your claimed player's records"
                             }
                             p {
-                                "A list of your claimed player's records, including all under consideration and rejected records and all submissions. Use this to track the status of your submissions. Clicking on a record will pull up any public notes a list mod left on the given record."
+                                "A list of your claimed player's records, including all under consideration and rejected records and all submissions. Use this to track the status of your submissions. Clicking on a record will pull up any public notes a list mod left on the given record. The border of each record tells you whether the record is "
+                                span  style = "text-decoration: underline; text-decoration-color: #a4fd6acc" { "Approved"  } ", "
+                                span style = "text-decoration: underline; text-decoration-color: #ffff00cc" { "Unchecked" } ", "
+                                span style = "text-decoration: underline; text-decoration-color: #dd364ecc" { "Rejected" } " or "
+                                span style = "text-decoration: underline; text-decoration-color: #8ee6e6cc" { "Under Consideration" } "."
                             }
                             (paginator("claims-record-pagination", "/api/v1/records/"))
                         }

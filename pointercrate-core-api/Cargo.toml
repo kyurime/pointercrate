@@ -1,17 +1,18 @@
 [package]
 name = "pointercrate-core-api"
 version = "0.1.0"
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = "1.0.118"
-rocket = {version = "0.5.0-rc.3", features = ["json"]}
+serde = "1.0.203"
+rocket = {version = "0.5.1", features = ["json"]}
 pointercrate-core = {path = "../pointercrate-core"}
 pointercrate-core-pages = {path = "../pointercrate-core-pages"}
-serde_json = "1.0.60"
-sqlx = { version = "0.6", default-features = false, features = [ "runtime-tokio-native-tls", "macros", "postgres", "chrono", "offline" ] }
-log = "0.4.11"
+serde_json = "1.0.118"
+sqlx = { version = "0.7", default-features = false, features = [ "runtime-tokio-native-tls", "macros", "postgres", "chrono" ] }
+log = "0.4.22"
 serde_urlencoded = "0.7.0"
-maud = "0.25"
+maud = "0.26.0"

@@ -1,7 +1,6 @@
-use crate::error::Result;
 use derive_more::Display;
+use serde::Deserialize;
 use serde::Serialize;
-use sqlx::PgConnection;
 
 pub use paginate::SubmitterPagination;
 pub use patch::PatchSubmitter;
@@ -12,7 +11,7 @@ mod paginate;
 mod patch;
 mod post;
 
-#[derive(Debug, Serialize, Hash, Display, Copy, Clone)]
+#[derive(Debug, Deserialize, Serialize, Hash, Display, Copy, Clone, PartialEq, Eq)]
 #[display(fmt = "{} (Banned: {})", id, banned)]
 pub struct Submitter {
     pub id: i32,
@@ -20,17 +19,3 @@ pub struct Submitter {
 }
 
 impl Taggable for Submitter {}
-
-impl Submitter {
-    /// Gets the maximal and minimal submitter id currently in use
-    ///
-    /// The returned tuple is of the form (max, min)
-    pub async fn extremal_submitter_ids(connection: &mut PgConnection) -> Result<(i32, i32)> {
-        let row = sqlx::query!(
-            r#"SELECT COALESCE(MAX(submitter_id), 0) AS "max_id!: i32", COALESCE(MIN(submitter_id), 0) AS "min_id!: i32" FROM submitters"#
-        )
-        .fetch_one(connection)
-        .await?; // FIXME: crashes on empty table
-        Ok((row.max_id, row.min_id))
-    }
-}
