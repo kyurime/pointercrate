@@ -96,7 +96,7 @@ pub async fn overview(
 
 #[rocket::get("/permalink/<demon_id>")]
 pub async fn demon_permalink(
-    demon_id: i32, pool: &State<PointercratePool>, gd: &State<GeometryDashConnector>, auth: Option<TokenAuth>
+    demon_id: i32, pool: &State<PointercratePool>, gd: &State<GeometryDashConnector>, auth: Option<TokenAuth>,
 ) -> Result<Page> {
     let mut connection = pool.connection().await?;
 
