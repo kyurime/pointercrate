@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT CAST(MIN(id) AS INTEGER), CAST(MAX(id) AS INTEGER) FROM records",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "min",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "max",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "0c48e03d3e370efb28bf12d9d5a5327ad85a617a61a06e5a4fe3e0cdac1c13f8"
+}

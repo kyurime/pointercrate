@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select demons.id as demon, demons.name::text as \"demon_name!\", demons.position, players.name::text as \"player_name!\" from demons inner join players on players.id=verifier where nationality=$1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "demon",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "demon_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "position",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 3,
+        "name": "player_name!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      null
+    ]
+  },
+  "hash": "4e4309fd6f5695903cf5fc5bf9544cb6c4d04257ce6c7ccdc11795132ec74a8d"
+}

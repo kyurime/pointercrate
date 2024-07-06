@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT members.name AS name FROM record_notes_modifications AS rnm INNER JOIN members ON members.member_id = rnm.userid WHERE id = $1 AND content IS NOT NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d63d06f22bab6ea14f2b1bab59ab013d7d990deca34962c8b64b6f0916a06c04"
+}

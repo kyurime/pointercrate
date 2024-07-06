@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE demons SET position = position - 1 WHERE position > $1 AND position <= $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int2",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "df375aad68b44fe12f85efdaf763082c7e5c004b6bba30ea1981c2541304b5d9"
+}

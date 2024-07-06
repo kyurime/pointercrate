@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE demons SET thumbnail = $1::text WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d141ce0254973be1a59e03be5a1c1e6d581d9dd9dd26b116ff20edbcc5f49c08"
+}

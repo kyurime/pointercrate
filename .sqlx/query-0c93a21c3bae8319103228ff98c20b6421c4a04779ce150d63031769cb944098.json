@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT CAST(MIN(position) AS INTEGER), CAST(MAX(position) AS INTEGER) FROM demons",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "min",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "max",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "0c93a21c3bae8319103228ff98c20b6421c4a04779ce150d63031769cb944098"
+}

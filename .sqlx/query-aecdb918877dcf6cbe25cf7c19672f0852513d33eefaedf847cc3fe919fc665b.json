@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, record, content, is_public, members.name AS \"author?: String\", EXISTS(SELECT 1 FROM record_notes_modifications WHERE record IS NOT NULL AND \n         id = $1) AS \"transferred!: bool\"  FROM record_notes NATURAL JOIN record_notes_additions LEFT OUTER JOIN members on members.member_id = \n         record_notes_additions.userid WHERE record = $1 AND (NOT $2 OR is_public)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "record",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_public",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "author?: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "transferred!: bool",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "aecdb918877dcf6cbe25cf7c19672f0852513d33eefaedf847cc3fe919fc665b"
+}

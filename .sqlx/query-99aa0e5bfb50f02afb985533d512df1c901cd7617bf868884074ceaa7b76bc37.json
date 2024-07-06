@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE members SET youtube_channel = NULL WHERE member_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "99aa0e5bfb50f02afb985533d512df1c901cd7617bf868884074ceaa7b76bc37"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM player_claims WHERE player_id = $1 AND member_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c296614bda5c2368543eae7156571fc5508773d7b697c808fc44d6c0f67cd3ce"
+}

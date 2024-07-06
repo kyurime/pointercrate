@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT submitter_id, banned FROM submitters WHERE submitter_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "submitter_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "banned",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "06c84acd396c1c9ea52f31fe1243008a9229f8e81d508be9ede77f43393881fd"
+}

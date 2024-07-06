@@ -1,0 +1,31 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT nation as \"nation: String\", iso_country_code as \"iso_country_code: String\" FROM players INNER JOIN nationalities ON nationality=iso_country_code ORDER BY nation",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nation: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "iso_country_code: String",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "7d8437e225355a22ea0a0a004d69da01cca83e8b4db95cce5df46c4dfb924ec0"
+}

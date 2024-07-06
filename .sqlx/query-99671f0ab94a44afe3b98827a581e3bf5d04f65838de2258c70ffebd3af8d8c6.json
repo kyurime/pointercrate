@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE records SET status_ = cast($1::text as record_status) WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "99671f0ab94a44afe3b98827a581e3bf5d04f65838de2258c70ffebd3af8d8c6"
+}

@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT records.id, progress, CASE WHEN players.link_banned THEN NULL ELSE video::text END, players.id AS player_id, \n         players.name, players.banned, nation::TEXT, iso_country_code::TEXT FROM records INNER JOIN players ON records.player = players.id LEFT OUTER JOIN nationalities ON nationality = iso_country_code WHERE status_ = 'APPROVED' AND \n         records.demon = $1 ORDER BY progress DESC, id ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "progress",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 2,
+        "name": "video",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "player_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "banned",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "nation",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "iso_country_code",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      false,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "18ce2e0cdec8b73d4b57b26373c227010ddcdbc8d77227d5891008b9ecd5ac97"
+}

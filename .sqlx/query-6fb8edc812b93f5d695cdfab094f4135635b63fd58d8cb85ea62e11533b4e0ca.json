@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT time, audit_id, \n                  userid,\n                  members.name AS \"name?\"\n                  FROM record_additions LEFT OUTER JOIN members ON members.member_id = userid WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "time",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 1,
+        "name": "audit_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "userid",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "name?",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6fb8edc812b93f5d695cdfab094f4135635b63fd58d8cb85ea62e11533b4e0ca"
+}

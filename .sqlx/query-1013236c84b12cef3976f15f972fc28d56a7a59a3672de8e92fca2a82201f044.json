@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM records WHERE id <> $1 AND player = $2 AND demon = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1013236c84b12cef3976f15f972fc28d56a7a59a3672de8e92fca2a82201f044"
+}

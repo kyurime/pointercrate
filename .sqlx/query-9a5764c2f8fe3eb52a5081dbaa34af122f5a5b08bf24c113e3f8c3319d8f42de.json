@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE members SET permissions = $2::INTEGER::BIT(16) WHERE member_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9a5764c2f8fe3eb52a5081dbaa34af122f5a5b08bf24c113e3f8c3319d8f42de"
+}

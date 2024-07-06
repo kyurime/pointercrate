@@ -1,0 +1,57 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT records.id, progress, CASE WHEN players.link_banned THEN NULL ELSE records.video::text END, demons.id AS demon_id, \n         demons.name, demons.position FROM records INNER JOIN demons ON records.demon = demons.id INNER JOIN players ON players.id \n         = $1 WHERE status_ = 'APPROVED' AND records.player = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "progress",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 2,
+        "name": "video",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "demon_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "position",
+        "type_info": "Int2"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "42559b0fcd340d147fb177e5ccdb0b3e74a3cc9ed2560b2e101044aab42886b5"
+}

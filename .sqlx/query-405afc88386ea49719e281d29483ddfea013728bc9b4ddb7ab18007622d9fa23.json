@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE subdivisions SET score = coalesce(score_of_subdivision($1, $2), 0) WHERE nation = $1 AND iso_code = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "405afc88386ea49719e281d29483ddfea013728bc9b4ddb7ab18007622d9fa23"
+}

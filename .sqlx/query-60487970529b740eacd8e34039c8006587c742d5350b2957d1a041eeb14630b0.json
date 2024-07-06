@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT member_id, members.name, permissions::integer, display_name, youtube_channel::text, email_address::text, password_hash FROM members WHERE members.name = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "member_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "permissions",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "youtube_channel",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "email_address",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "password_hash",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      true,
+      null,
+      null,
+      false
+    ]
+  },
+  "hash": "60487970529b740eacd8e34039c8006587c742d5350b2957d1a041eeb14630b0"
+}

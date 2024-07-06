@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (SELECT 1 FROM record_modifications WHERE id = $1 AND status_ IS NOT NULL) AS \"was_modified!: bool\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "was_modified!: bool",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "f7f7862732ed3b42e2e2eeeab76a70ac18887c6bcb51983b71a616d79964e5ae"
+}

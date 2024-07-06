@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT MAX(position) as max_position FROM demons",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "max_position",
+        "type_info": "Int2"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "3fc18de3c600277f482ce6cd21bfd803289950645fba0996b899f8f06236a52c"
+}

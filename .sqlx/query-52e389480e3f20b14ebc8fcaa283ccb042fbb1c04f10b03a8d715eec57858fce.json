@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE members SET email_address = ($1::text)::email WHERE member_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "52e389480e3f20b14ebc8fcaa283ccb042fbb1c04f10b03a8d715eec57858fce"
+}

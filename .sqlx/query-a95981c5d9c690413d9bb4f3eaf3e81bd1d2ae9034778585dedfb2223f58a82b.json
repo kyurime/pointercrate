@@ -1,0 +1,51 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT rank as \"rank!\", score as \"score!\", nation as \"nation!\", iso_country_code as \"iso_country_code!\" FROM ranked_nations WHERE (STRPOS(nation, $1) > \n             0 OR $1 is NULL) AND (continent::text = $2 OR $2 IS NULL)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "rank!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "score!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "nation!",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "iso_country_code!",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        "Text"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "a95981c5d9c690413d9bb4f3eaf3e81bd1d2ae9034778585dedfb2223f58a82b"
+}

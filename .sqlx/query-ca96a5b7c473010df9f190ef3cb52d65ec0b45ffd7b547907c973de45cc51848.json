@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select distinct on (demon) demon, demons.name::text as \"demon_name!\", demons.position, players.name::text as \"player_name!\" from creators inner join demons on demons.id=demon inner join players on players.id=creator where nationality=$1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "demon",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "demon_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "position",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 3,
+        "name": "player_name!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      null
+    ]
+  },
+  "hash": "ca96a5b7c473010df9f190ef3cb52d65ec0b45ffd7b547907c973de45cc51848"
+}

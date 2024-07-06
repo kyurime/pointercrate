@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT iso_country_code, score FROM nationalities WHERE score > 0.0",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "iso_country_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "score",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "7b9a34be22989c78dc72e02371086e2061ec0d01e326c63b0189659103165b25"
+}

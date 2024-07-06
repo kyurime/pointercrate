@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM gj_level_data WHERE level_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "level_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "level_password",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "level_length",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "level_objects_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "c46019cb06e9fa165e41912d45a807d5d0b2dca197e5cbe128a726e60e434de2"
+}

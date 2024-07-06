@@ -1,0 +1,92 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT progress, CASE WHEN players.link_banned THEN NULL ELSE records.video::text END, status_::text AS \"status!: String\" ,\n       players.id AS player_id, players.name AS \"player_name: String\", players.banned AS player_banned,\n       demons.id AS demon_id, demons.name AS \"demon_name: String\", demons.position,\n       submitters.submitter_id AS submitter_id, submitters.banned AS submitter_banned\nFROM records\nINNER JOIN players ON records.player = players.id\nINNER JOIN demons ON records.demon = demons.id\nINNER JOIN submitters ON records.submitter = submitters.submitter_id\nWHERE records.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "progress",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 1,
+        "name": "video",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status!: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "player_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "player_name: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "player_banned",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "demon_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "demon_name: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "position",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 9,
+        "name": "submitter_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "submitter_banned",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "fdf4b8d077815ed50054a781cc83357b0f226888f6977d10d27c7fa3a618727d"
+}

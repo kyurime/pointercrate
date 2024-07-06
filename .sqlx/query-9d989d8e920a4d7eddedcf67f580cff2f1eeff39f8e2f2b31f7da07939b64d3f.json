@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\nSELECT EXISTS (\n    SELECT FROM pg_tables\n    WHERE schemaname = 'public'\n      AND tablename  = '__diesel_schema_migrations'\n    )\nAND NOT EXISTS (\n    SELECT FROM pg_tables\n    WHERE schemaname = 'public'\n      AND tablename = '_sqlx_migrations'\n) AS \"unsupported_db_config!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "unsupported_db_config!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "9d989d8e920a4d7eddedcf67f580cff2f1eeff39f8e2f2b31f7da07939b64d3f"
+}

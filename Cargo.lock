@@ -1689,7 +1689,7 @@ checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
 
 [[package]]
 name = "pointercrate-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "derive_more",
@@ -1700,7 +1700,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-core-api"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "log",
  "maud",
@@ -1715,7 +1715,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-core-pages"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "maud",
  "pointercrate-core",
@@ -1723,7 +1723,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-demonlist"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "derive_more",
@@ -1740,7 +1740,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-demonlist-api"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "governor",
@@ -1765,7 +1765,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-demonlist-pages"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1837,7 +1837,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-user"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "bcrypt",
@@ -1855,7 +1855,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-user-api"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "governor",
@@ -1873,7 +1873,7 @@ dependencies = [
 
 [[package]]
 name = "pointercrate-user-pages"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "maud",

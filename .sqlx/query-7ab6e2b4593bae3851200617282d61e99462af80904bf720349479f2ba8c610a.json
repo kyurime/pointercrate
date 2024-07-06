@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO submitters (ip_address) VALUES (cast($1::text as inet)) RETURNING submitter_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "submitter_id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7ab6e2b4593bae3851200617282d61e99462af80904bf720349479f2ba8c610a"
+}

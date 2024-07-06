@@ -1,0 +1,36 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, progress, video::TEXT FROM records WHERE status_ = 'APPROVED' AND demon = $1 AND player = $2 AND progress > $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "progress",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 2,
+        "name": "video",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "0b80b32a17532edd54d712eb84e53d3fabd56cfe24527363f1eec79edc01f9a3"
+}

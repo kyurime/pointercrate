@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE submitters SET banned = false WHERE submitter_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "861ba199b0ff3a8ef8b2c6450081fef25af3e2074ece8e2ddd498b86a253f1af"
+}

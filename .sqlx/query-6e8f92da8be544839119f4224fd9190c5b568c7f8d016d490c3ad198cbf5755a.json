@@ -1,0 +1,160 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM gj_level WHERE level_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "level_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "level_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "level_version",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "creator_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "difficulty",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_demon",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "downloads",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "main_song",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 9,
+        "name": "gd_version",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 10,
+        "name": "likes",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "level_length",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 12,
+        "name": "stars",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 13,
+        "name": "featured",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 14,
+        "name": "copy_of",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 15,
+        "name": "two_player",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 16,
+        "name": "custom_song_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 17,
+        "name": "coin_amount",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 18,
+        "name": "coins_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 19,
+        "name": "stars_requested",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 20,
+        "name": "is_epic",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 21,
+        "name": "object_amount",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 22,
+        "name": "index_46",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 23,
+        "name": "index_47",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "6e8f92da8be544839119f4224fd9190c5b568c7f8d016d490c3ad198cbf5755a"
+}

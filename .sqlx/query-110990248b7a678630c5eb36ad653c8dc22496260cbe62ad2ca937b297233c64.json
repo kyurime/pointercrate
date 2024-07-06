@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT iso_code as \"iso_code: String\", name as \"name: String\" FROM subdivisions WHERE nation = $1 ORDER BY name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "iso_code: String",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "name: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "110990248b7a678630c5eb36ad653c8dc22496260cbe62ad2ca937b297233c64"
+}

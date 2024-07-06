@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM records WHERE demon = $1 AND progress < $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3644d1f3ef88bc21585bc7ff18dd44ef7fd4b31c717d0886d56f1ea8745e36f0"
+}

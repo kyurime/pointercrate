@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT member_id, lock_submissions FROM player_claims WHERE player_id = $1 AND verified",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "member_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "lock_submissions",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "e580431ed9676cc060c9433058a4f71fc6c0ea888a80fed0747dbe6e1a822fb9"
+}

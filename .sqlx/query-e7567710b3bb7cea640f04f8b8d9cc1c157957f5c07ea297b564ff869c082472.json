@@ -1,0 +1,107 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT demons.id AS \"demon_id!\", demons.name AS \"demon_name!: String\", demons.position as \"position!\", demons.requirement as \"requirement!\", demons.level_id, CASE WHEN verifiers.link_banned THEN NULL ElSE demons.video::text END, demons.thumbnail, verifiers.id AS \"verifier_id!\", verifiers.name AS \"verifier_name!: String\", verifiers.banned AS \"verifier_banned!\", publishers.id AS \"publisher_id!\", publishers.name AS \"publisher_name!: String\", publishers.banned AS \"publisher_banned!\"\nFROM demons\n    INNER JOIN players as publishers\n        ON demons.publisher = publishers.id\n    INNER JOIN players AS verifiers\n        ON demons.verifier = verifiers.id\nORDER BY position",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "demon_id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "demon_name!: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "position!",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 3,
+        "name": "requirement!",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 4,
+        "name": "level_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "video",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "thumbnail",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "verifier_id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "verifier_name!: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "verifier_banned!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "publisher_id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "publisher_name!: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "publisher_banned!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      null,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e7567710b3bb7cea640f04f8b8d9cc1c157957f5c07ea297b564ff869c082472"
+}

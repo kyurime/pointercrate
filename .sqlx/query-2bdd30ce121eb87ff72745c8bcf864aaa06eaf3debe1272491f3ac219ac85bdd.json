@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE subdivisions SET score = coalesce(score_of_subdivision(subdivisions.nation, subdivisions.iso_code), 0) FROM players WHERE players.id = $1 AND players.nationality = subdivisions.nation AND players.subdivision = subdivisions.iso_code",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2bdd30ce121eb87ff72745c8bcf864aaa06eaf3debe1272491f3ac219ac85bdd"
+}

@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT progress as \"progress!\", demons.id AS \"demon_id!\", demons.name as \"demon_name!: String\", demons.position as \"position!\", players.name as \"player_name!: String\" FROM best_records_in($1) as records INNER JOIN demons ON records.demon = demons.id INNER JOIN players ON players.id = records.player",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "progress!",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 1,
+        "name": "demon_id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "demon_name!: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "position!",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 4,
+        "name": "player_name!: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0b5e38bc74dbb3c4f21cba76b5955bc60e1fec59b77cb67f8149c86f2142e131"
+}

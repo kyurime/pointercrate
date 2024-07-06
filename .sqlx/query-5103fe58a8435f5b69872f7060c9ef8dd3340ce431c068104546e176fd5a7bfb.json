@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE demons SET publisher = $1 WHERE publisher = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5103fe58a8435f5b69872f7060c9ef8dd3340ce431c068104546e176fd5a7bfb"
+}

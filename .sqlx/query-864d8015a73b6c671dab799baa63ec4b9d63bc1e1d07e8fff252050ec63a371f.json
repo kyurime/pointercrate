@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE creators SET creator = $1 WHERE creator = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "864d8015a73b6c671dab799baa63ec4b9d63bc1e1d07e8fff252050ec63a371f"
+}

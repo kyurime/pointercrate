@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT member_id, name, permissions::integer, display_name, youtube_channel::text FROM members WHERE permissions & CAST($1::INTEGER AS BIT(16)) = CAST($1::INTEGER AS BIT(16))",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "member_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "permissions",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "youtube_channel",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      true,
+      null
+    ]
+  },
+  "hash": "4cdbaa4240f4b3715d31dc0cd9ef959c6b5b2f00cbdb645823b602c46e20ac6e"
+}

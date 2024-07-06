@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE demons SET verifier = $1 WHERE verifier = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "51ac7926e4ba75e49b3ebc7ce899d7b306e16824ebfeac7b8ef077faf516b3b0"
+}

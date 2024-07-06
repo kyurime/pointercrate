@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO records (progress, status_, player, submitter, demon, video) VALUES ($1, $2::text::record_status, $3, $4, $5, NULL) RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2",
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "03e9146abb715896f0de967f0a127e8b3858bc15ffa87af30268778f2f8bdfd2"
+}

@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT CAST(MIN(id) AS INTEGER), CAST(MAX(id) AS INTEGER) FROM player_claims",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "min",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "max",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "f9c1014f50e2f6e74a4bc5d5b9c8423edcfbf5cd8b3c16463cc95f1f0920adfa"
+}

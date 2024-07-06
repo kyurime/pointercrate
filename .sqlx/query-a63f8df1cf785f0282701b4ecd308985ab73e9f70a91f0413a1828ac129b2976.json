@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT recompute_player_scores();",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "recompute_player_scores",
+        "type_info": "Void"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "a63f8df1cf785f0282701b4ecd308985ab73e9f70a91f0413a1828ac129b2976"
+}

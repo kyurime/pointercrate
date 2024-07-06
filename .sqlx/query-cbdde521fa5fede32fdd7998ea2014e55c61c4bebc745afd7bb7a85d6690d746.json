@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT nation as \"nation: String\", iso_country_code as \"iso_country_code: String\" FROM nationalities WHERE iso_country_code = $1 or nation = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nation: String",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "iso_country_code: String",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "cbdde521fa5fede32fdd7998ea2014e55c61c4bebc745afd7bb7a85d6690d746"
+}

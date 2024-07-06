@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM records WHERE demon = $1 AND player = $2 AND (status_ = 'REJECTED' OR progress <= $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "be014f838e7058b8635c6cfc3c49aa041652ff15b4760831700daf3e66a74107"
+}

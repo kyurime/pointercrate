@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM records WHERE submitter = $1 AND status_ = 'SUBMITTED'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f912869ff8805ea1d80ddc713889e9f5b268f8941192a68deed369b20f892553"
+}

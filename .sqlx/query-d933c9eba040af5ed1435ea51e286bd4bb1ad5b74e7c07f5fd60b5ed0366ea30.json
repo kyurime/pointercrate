@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE records SET status_ = 'REJECTED' WHERE player = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d933c9eba040af5ed1435ea51e286bd4bb1ad5b74e7c07f5fd60b5ed0366ea30"
+}

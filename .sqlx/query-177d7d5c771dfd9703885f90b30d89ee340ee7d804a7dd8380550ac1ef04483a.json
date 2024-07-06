@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, players.name, banned, players.score, nationalities.nation::text, iso_country_code::text, iso_code::text as subdivision_code, subdivisions.name::text as subdivision_name FROM players LEFT OUTER JOIN nationalities ON \n             players.nationality = nationalities.iso_country_code LEFT OUTER JOIN subdivisions ON players.subdivision = subdivisions.iso_code WHERE id = $1 AND (subdivisions.nation=nationalities.iso_country_code or players.subdivision is null)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "banned",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "score",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "nation",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "iso_country_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "subdivision_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "subdivision_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "177d7d5c771dfd9703885f90b30d89ee340ee7d804a7dd8380550ac1ef04483a"
+}

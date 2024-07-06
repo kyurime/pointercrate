@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM active_user",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "33e7fa0719772085ee25e5a1fdcb293bdd5725bf5947733ca7fd21050610b7a5"
+}

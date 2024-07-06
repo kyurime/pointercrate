@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE record_notes SET record = $1 FROM records WHERE record_notes.record = records.id AND records.player = $2 AND records.demon = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fec88e6882d7269743eddf4d3718d8baad94a4dc7b29404164a1c17ed06e0980"
+}

@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT verified, lock_submissions, player_id, players.name::text as \"name!\", players.banned FROM player_claims INNER JOIN players ON player_id=players.id\n             WHERE member_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 1,
+        "name": "lock_submissions",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "player_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "banned",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "2d7c72534f92f17291a63f6cf73b6ebf43a59b643f28814cc7420fff1d32c8c2"
+}

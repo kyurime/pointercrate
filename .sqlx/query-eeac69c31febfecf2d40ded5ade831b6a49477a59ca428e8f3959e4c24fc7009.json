@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE player_claims SET lock_submissions = $3 WHERE member_id = $1 AND player_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "eeac69c31febfecf2d40ded5ade831b6a49477a59ca428e8f3959e4c24fc7009"
+}

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT submitter_id, banned FROM submitters WHERE ip_address = cast($1::text as inet)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "submitter_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "banned",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "8a013411dca034426584c5052ebf6fe23fd14e5f299fbcd7700c3248f3510107"
+}

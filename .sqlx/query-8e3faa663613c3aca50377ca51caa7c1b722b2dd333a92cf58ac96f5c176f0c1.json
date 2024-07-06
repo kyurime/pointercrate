@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE nationalities SET score = coalesce(score_of_nation($1), 0) WHERE iso_country_code = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8e3faa663613c3aca50377ca51caa7c1b722b2dd333a92cf58ac96f5c176f0c1"
+}

@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT time,\n                audit_id,\n                members.name as \"username?\",\n                userid,\n                demon_modifications.name::text,\n                position,\n                requirement,\n                video,\n                verifier,\n                verifiers.name::text as verifier_name,\n                publisher,\n                publishers.name::text as publisher_name\n           FROM demon_modifications\n           LEFT OUTER JOIN members ON members.member_id = userid\n           LEFT OUTER JOIN players AS verifiers ON verifier=verifiers.id\n           LEFT OUTER JOIN players AS publishers ON publisher=publishers.id\n           WHERE demon_modifications.id = $1\n           ORDER BY time\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "time",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 1,
+        "name": "audit_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "username?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "userid",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "position",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 6,
+        "name": "requirement",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 7,
+        "name": "video",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "verifier",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "verifier_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "publisher",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "publisher_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      true,
+      true,
+      true,
+      true,
+      null,
+      true,
+      null
+    ]
+  },
+  "hash": "b846e50efd1ee0ba7dd9505cb8e2277fc457b1eef5a02278c4ec29c6b4222678"
+}
